@@ -27,3 +27,6 @@ edq_parser-*.tar
 
 # worktrees
 /work/
+
+# sqlite database files
+myapp_test.db*

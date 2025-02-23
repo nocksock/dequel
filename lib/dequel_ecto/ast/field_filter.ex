@@ -1,4 +1,3 @@
-# TODO: move to Dequel.Adapter.Ecto
 defmodule Dequel.Adapter.Ecto.Filter do
   import Ecto.Query
 
