@@ -13,6 +13,12 @@ defmodule Dequel.Parser.FieldMatch do
   defparsec(
     :field_match,
     choice([
+      # inverted expression, prefixed by !
+      ignore(spaced("!"))
+      |> parsec(:field_match)
+      |> reduce(:wrap_not),
+
+      # normal expression
       field_expression()
       |> ignore(spaced(":"))
       |> parsec(:function_call)
@@ -36,4 +42,6 @@ defmodule Dequel.Parser.FieldMatch do
   def wrap_or([a, b]), do: {:or, [], [a, b]}
   def wrap_or([a]), do: a
   def wrap_or(a), do: a
+
+  def wrap_not([a]), do: {:not, [], a}
 end

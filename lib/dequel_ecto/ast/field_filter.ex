@@ -35,9 +35,12 @@ defmodule Dequel.Adapter.Ecto.Filter do
       dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}"))
     end
 
-
     def where({:contains, [], [field, value]}) do
       dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}%"))
+    end
+
+    def where({:not, [], expression}) do
+      dynamic(not(^where(expression)))
     end
 
     #

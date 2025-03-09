@@ -39,6 +39,10 @@ defmodule DequelParserTest do
     assert ~Q<field:  *"value with spaces"> ==
       {:contains, [], [:field, "value with spaces"]}
 
+  test "invert expression with ! prefix", do:
+    assert ~Q<!field:value> ==
+      {:not, [], {:==, [], [:field, "value"]}}
+
   describe "implicit and literal binary operation:" do
     test "implicit and", do:
       assert ~Q<a:a b:b> == # {{{

@@ -17,7 +17,7 @@ defmodule Dequel.Parser.Predicates do
   So the predicate is actually called like `contains(field_name, value[, options])`.
   `options` is an optional array of additional args.
 
-  One crucial deviation from conventional methods is that in the DEQUEL form, the parenthesis may contain a list, which is not a list of parameters.
+  One crucial deviation from conventional methods is that in the DQL form, the parenthesis may contain a list, which is not a list of parameters.
   Instead it's combined into an `OR` condition:
 
   ```

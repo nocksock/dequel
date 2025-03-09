@@ -82,6 +82,14 @@ defmodule Dequel.Adapter.EctoTest do
     > == [frodo, samwise]
   end
 
+  test "not operator" do
+    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
+    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
+
+    assert ~ALL<!name:frodo> == [bilbo, samwise]
+  end
+
   test "string predicates" do
     frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
     bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
