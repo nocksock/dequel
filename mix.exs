@@ -10,8 +10,8 @@ defmodule DequelParser.MixProject do
       deps: deps(),
       name: "Dequel Parser",
       elixirc_paths: elixirc_paths(Mix.env()),
-      source_url: "https://github.com/USER/PROJECT",
-      homepage_url: "http://YOUR_PROJECT_HOMEPAGE",
+      source_url: "https://github.com/nocksock/dequel",
+      homepage_url: "http://bleepbloop.studio/dequel",
       docs: [
         extras: [
           "README.md",
