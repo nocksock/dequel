@@ -93,6 +93,7 @@ defmodule Dequel.Adapter.EctoTest do
   test "string predicates" do
     frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
     bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    item_fixture(%{"name" => "bilfroxdox", "description" => "baggins"})
 
     assert ~ALL<name:*od> == [frodo]
     assert ~ALL<name:^fro> == [frodo]

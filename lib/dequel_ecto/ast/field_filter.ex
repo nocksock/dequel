@@ -24,11 +24,7 @@ defmodule Dequel.Adapter.Ecto.Filter do
   end
 
     def where({:starts_with, [], [field, value]}) do
-      dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{String.replace(value, "%", "\\%")}%"))
-    end
-
-    def where({:starts_with, [], [field, value]}) do
-      dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{String.replace(value, "%", "\\%")}%"))
+      dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"#{String.replace(value, "%", "\\%")}%"))
     end
 
     def where({:ends_with, [], [field, value]}) do
