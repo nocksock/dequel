@@ -1,4 +1,4 @@
-defmodule DequelParserTest do
+defmodule Dequel.ParserTest do
   alias Dequel.Parser.ValueExpression
   use ExUnit.Case
   doctest Dequel.Parser

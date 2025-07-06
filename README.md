@@ -17,21 +17,20 @@ priority:"high" assignee:"sarah" status:!="completed"
 
 - Simple `field:value` filtering that users already know from search interfaces
 - Support for quoted strings, numeric comparisons, and date ranges
-- Rich string matching with contains (*), starts_with (^), and ends_with ($)
+- String matching with contains (*), starts_with (^), and ends_with ($)
 - Logical operators (AND/OR) with grouping 
-- Automatic handling of relationships and joins
 - Extensible through adapters 
-- Ecto adapter included
+- Ecto and ETS adapter included
 
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `dequel_parser` to your list of dependencies in `mix.exs`:
+by adding `dequel` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:dequel_parser, "~> 0.1.0"}
+    {:dequel, "~> 0.0.1"}
   ]
 end
 ```
@@ -48,11 +47,11 @@ posts = Repo.all(query)
 
 # Compatible with Ecto's composition API:
 user_input = "title:contains(css, html)"
+
 from(Content, where: ^Dequel.where(user_input))
 |> where(:status, "published") # include only published content
 |> where(:user_id, ^current_user.id) # limit to what a user is allowed to see
 |> Repo.all()
-
 ```
 
 ## Why Dequel?
@@ -65,4 +64,5 @@ Dequel provides a query interface that's powerful enough for developers but appr
 - Provide domain-specific search predicates
 
 ## License
+
 MIT

@@ -1,23 +1,22 @@
-defmodule DequelParser.MixProject do
+defmodule Dequel.MixProject do
   use Mix.Project
 
   def project do
     [
+      name: "Dequel",
       app: :dequel,
-      version: "0.1.0",
+      version: "0.0.1",
       elixir: "~> 1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      name: "Dequel Parser",
+      package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
       source_url: "https://github.com/nocksock/dequel",
-      homepage_url: "http://bleepbloop.studio/dequel",
       docs: [
         extras: [
-          "README.md",
-          "lib/parser/pages/syntax-reference.md"
+          "README.md"
         ]
-      ]
+      ],
     ]
   end
 
@@ -27,7 +26,7 @@ defmodule DequelParser.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support", "test/dequel_ecto"]
+  defp elixirc_paths(:test), do: ["lib", "test/support", "test/dequel_ecto", "test/dequel_ets"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
@@ -38,6 +37,16 @@ defmodule DequelParser.MixProject do
       {:telemetry, "~> 1.3"},
       {:ecto_sql, "~> 3.10"},
       {:ecto_sqlite3, "~> 0.16"}
+    ]
+  end
+
+  defp package() do
+    [
+      description: "friendly query language for user input built on Ecto",
+      licenses: ["MIT"],
+      links: %{
+        "Github" => "https://github.com/nocksock/dequel"
+      }
     ]
   end
 end
