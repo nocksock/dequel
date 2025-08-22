@@ -18,7 +18,7 @@ defmodule Dequel.Adapter.EctoTest do
       attrs
       |> Enum.into(%{
         "description" => "some description",
-        "name" => "some name",
+        "name" => "some name"
       })
       |> create_item()
 
@@ -26,14 +26,14 @@ defmodule Dequel.Adapter.EctoTest do
   end
 
   defp sigil_ONE(input, []) do
-    where = input |> Filter.where
-    q = from ItemSchema, where: ^where
+    where = input |> Filter.where()
+    q = from(ItemSchema, where: ^where)
     Repo.one(q)
   end
 
   defp sigil_ALL(input, []) do
-    where = input |> Filter.where
-    q = from ItemSchema, where: ^where
+    where = input |> Filter.where()
+    q = from(ItemSchema, where: ^where)
     Repo.all(q)
   end
 

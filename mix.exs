@@ -16,7 +16,7 @@ defmodule Dequel.MixProject do
         extras: [
           "README.md"
         ]
-      ],
+      ]
     ]
   end
 
