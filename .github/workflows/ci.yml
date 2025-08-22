@@ -72,8 +72,15 @@ jobs:
     - name: Compile project
       run: mix compile --warnings-as-errors
 
-    - name: Check formatting
-      run: mix format --check-formatted
+    - name: Create test database
+      run: MIX_ENV=test mix ecto.create
+
+    - name: Run database migrations
+      run: MIX_ENV=test mix ecto.migrate
 
     - name: Run tests
       run: mix test
+
+    - name: Check formatting
+      run: mix format --check-formatted
+

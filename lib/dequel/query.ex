@@ -1,3 +1,3 @@
 defmodule Dequel.Query do
-  defstruct [where: [], relations: []]
+  defstruct where: [], relations: []
 end

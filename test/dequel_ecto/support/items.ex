@@ -3,9 +3,9 @@ defmodule Dequel.Adapter.Ecto.ItemSchema do
   import Ecto.Changeset
 
   schema "items" do
-    field :name, :string
-    field :description, :string
-    field :parent, :string
+    field(:name, :string)
+    field(:description, :string)
+    field(:parent, :string)
   end
 
   @doc false

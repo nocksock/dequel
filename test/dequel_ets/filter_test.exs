@@ -10,13 +10,14 @@ defmodule Dequel.Adapter.EtsTest do
     attrs
     |> Enum.into(%{
       "description" => "some description",
-      "name" => "some name",
+      "name" => "some name"
     })
     |> create_item()
   end
 
   defp sigil_ONE(input, []) do
     records = ItemStore.all()
+
     case Dequel.Adapter.Ets.FilterImpl.find_one(input, records) do
       nil -> nil
       record -> record
@@ -36,7 +37,7 @@ defmodule Dequel.Adapter.EtsTest do
     item = item_fixture(%{"name" => "test name"})
     assert item.name == "test name"
     assert item.description == "some description"
-    
+
     all_items = ItemStore.all()
     assert length(all_items) == 1
     assert List.first(all_items).name == "test name"

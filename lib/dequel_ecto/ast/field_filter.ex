@@ -23,30 +23,33 @@ defmodule Dequel.Adapter.Ecto.Filter do
     dynamic(^lhs or ^rhs)
   end
 
-    def where({:starts_with, [], [field, value]}) do
-      dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"#{String.replace(value, "%", "\\%")}%"))
-    end
+  def where({:starts_with, [], [field, value]}) do
+    dynamic(
+      [schema],
+      fragment("? LIKE ?", field(schema, ^field), ^"#{String.replace(value, "%", "\\%")}%")
+    )
+  end
 
-    def where({:ends_with, [], [field, value]}) do
-      dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}"))
-    end
+  def where({:ends_with, [], [field, value]}) do
+    dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}"))
+  end
 
-    def where({:contains, [], [field, value]}) do
-      dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}%"))
-    end
+  def where({:contains, [], [field, value]}) do
+    dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}%"))
+  end
 
-    def where({:not, [], expression}) do
-      dynamic(not(^where(expression)))
-    end
+  def where({:not, [], expression}) do
+    dynamic(not (^where(expression)))
+  end
 
-    #
-    # def where(%FieldFilter{args: [], field: field, op: :isEmpty}) do
-    #   dynamic([schema], is_nil(field(schema, ^field)) or field(schema, ^field) == "")
-    # end
-    #
-    def where({op, [], [field, value]}) do
-      raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
-    end
+  #
+  # def where(%FieldFilter{args: [], field: field, op: :isEmpty}) do
+  #   dynamic([schema], is_nil(field(schema, ^field)) or field(schema, ^field) == "")
+  # end
+  #
+  def where({op, [], [field, value]}) do
+    raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
+  end
 
   def predicates,
     do: [

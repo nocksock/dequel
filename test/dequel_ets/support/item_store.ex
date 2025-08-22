@@ -18,12 +18,14 @@ defmodule Dequel.Adapter.Ets.ItemStore do
 
   def insert(item) do
     id = :erlang.unique_integer([:positive])
+
     item_with_id = %__MODULE__{
       id: id,
       name: item.name,
       description: item.description,
       parent: item.parent
     }
+
     :ets.insert(@table_name, {id, item_with_id})
     item_with_id
   end

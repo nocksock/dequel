@@ -31,6 +31,7 @@ defmodule Dequel.Parser.FieldMatch do
   def postfix([rhs, op, lhs]), do: {op, [], [rhs, lhs]}
 
   def postfix_inject([field, op, [value]]), do: {op, [], [field, value]}
+
   def postfix_inject([field, op | params]) do
     Enum.map(params, fn
       [value] -> {op, [], [field, value]}

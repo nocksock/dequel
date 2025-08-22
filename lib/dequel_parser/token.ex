@@ -28,20 +28,21 @@ defmodule Dequel.Parser.Token do
 
   def colon, do: spaced(string(":"))
 
-  def op_implicit_and, do:
-    string(" ") |> replace(:and)
+  def op_implicit_and, do: string(" ") |> replace(:and)
 
-  def op_explicit_and, do:
-    ["&&", "AND", "and"]
-    |> Enum.map(&spaced/1)
-    |> choice()
-    |> replace(:and)
+  def op_explicit_and,
+    do:
+      ["&&", "AND", "and"]
+      |> Enum.map(&spaced/1)
+      |> choice()
+      |> replace(:and)
 
-  def op_explicit_or, do:
-    ["||", "OR", "or"]
-    |> Enum.map(&spaced/1)
-    |> choice()
-    |> replace(:or)
+  def op_explicit_or,
+    do:
+      ["||", "OR", "or"]
+      |> Enum.map(&spaced/1)
+      |> choice()
+      |> replace(:or)
 
   def field_expression do
     identifier() |> reduce(:to_existing_atom)
