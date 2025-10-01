@@ -1,5 +1,8 @@
 # Dequel 
 
+> [!WARNING]
+> Under active development. Only nightly pre-release available at the moment.
+
 Dequel (DQL, Data Query Language) is a human-friendly query language that feels familiar to anyone who has used search filters on sites like GitHub, Discord, or Gmail.
 
 ```dequel
@@ -20,7 +23,7 @@ priority:"high" assignee:"sarah" status:!="completed"
 - String matching with contains (*), starts_with (^), and ends_with ($)
 - Logical operators (AND/OR) with grouping 
 - Extensible through adapters 
-- Ecto and ETS adapter included
+- Adapter for Ecto and Enums included
 
 ## Installation
 
@@ -30,7 +33,7 @@ by adding `dequel` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dequel, "~> 0.0.1"}
+    {:dequel, "~> 0.0.1-dev"} # current
   ]
 end
 ```

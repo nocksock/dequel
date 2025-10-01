@@ -1,9 +1,9 @@
-defmodule Dequel.Query.AST.Not do
+defmodule Dequel.Ecto.AST.Not do
   defstruct [:expression]
 
   import Ecto.Query
 
-  alias Dequel.Query.Filter
+  alias Dequel.Ecto.Filter
 
   defimpl Filter do
     def where(not_filter) do

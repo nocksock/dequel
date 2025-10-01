@@ -1,9 +1,9 @@
-defmodule Dequel.Query.AST.BinaryOp do
+defmodule Dequel.Ecto.AST.BinaryOp do
   defstruct [:lhs, :rhs, :operator]
 
   import Ecto.Query
 
-  alias Dequel.Query.Filter
+  alias Dequel.Ecto.Filter
 
   defimpl Filter do
     def where(binary_op) do

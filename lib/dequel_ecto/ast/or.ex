@@ -1,9 +1,9 @@
-defmodule Dequel.Query.AST.Or do
+defmodule Dequel.Ecto.AST.Or do
   defstruct [:lhs, :rhs]
 
   import Ecto.Query
 
-  alias Dequel.Query.Filter
+  alias Dequel.Ecto.Filter
 
   defimpl Filter do
     def where(op) do

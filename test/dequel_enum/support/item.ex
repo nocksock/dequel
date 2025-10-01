@@ -1,10 +1,14 @@
-defmodule Dequel.Adapter.Ets.Item do
+defmodule Dequel.Enum.Item do
   @moduledoc """
-  Simple item struct for ETS testing.
+  Simple item struct for Enum adapter testing.
   """
 
   defstruct [:name, :description, :parent]
 
+  @doc """
+  Creates a new Item from a map of attributes.
+  Accepts both string and atom keys.
+  """
   def new(attrs \\ %{}) do
     %__MODULE__{
       name: attrs["name"] || attrs[:name],
