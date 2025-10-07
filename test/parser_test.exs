@@ -1,5 +1,5 @@
 defmodule Dequel.ParserTest do
-  alias Dequel.Parser.ValueExpression
+
   use ExUnit.Case
   doctest Dequel.Parser
 
@@ -305,22 +305,30 @@ defmodule Dequel.ParserTest do
     test "$", do: assert(~Q<a :$"foo bar"> == {:ends_with, [], [:a, "foo bar"]})
 
     # Continue:
-    # test "a: $(b, c)" #, do: assert ~Q<a: $(b, c)> == {:ends_with, [], [:a, "foo bar"]}
+    # test "a: $(b, c)" , do: 
+    #   assert ~Q<a: $(b, c)> == 
+    #     {:or, [], 
+    #         [
+    #           {:ends_with, [], [:a, "b"]}, 
+    #           {:ends_with, [], [:a, "c"]}
+    #         ]
+    #     }
   end
 
-  # describe "numeric comparators" do
-  # # these don't need the foo > (10, 20) as it doesn't makes sense.
-  #   test "title > 10"  # , do: assert ~Q[a > 10] === {:>, [], [:a, 10]}
-  #   test "a < 10"  # , do: assert ~Q[a < 10] === {:<, [], [:a, 10]}
-  #   test "a <= 10" # , do: assert ~Q[a < 10] === {:<=, [], [:a, 10]}
-  #   test "a >= 10" # , do: assert ~Q[a < 10] === {:>=, [], [:a, 10]}
-  # 
-  # # but these can have that again
-  #   test "a <> (10 20)" # in between 10 and 20, inclusive
-  #   test "a <> (10 20, 40 60)" # in between
-  #   test "a >< (10 20)" # outside of
-  #   test "a >< (10 20, 30)" # outside of, basicalle alternate way to describe in betweens
-  # end
+  describe "numeric comparators" do
+  # these don't need the foo > (10, 20) as it doesn't makes sense.
+    test "title > 10"   , do: assert ~Q[a > 10] === {:>, [], [:a, "10"]}
+    test "a < 10"       , do: assert ~Q[a < 10] === {:<, [], [:a, "10"]}
+    test "a <= 10"      , do: assert ~Q[a <= 10] === {:<=, [], [:a, "10"]}
+    test "a >= 10"      , do: assert ~Q[a >= 10] === {:>=, [], [:a, "10"]}
+    test "a:lt(10)"      , do: assert ~Q[a:lt(10)] === {:<, [], [:a, "10"]}
+
+  # but these can have that again
+    # test "a <> (10 20)" # in between 10 and 20, inclusive
+    # test "a <> (10 20, 40 60)" # in between
+    # test "a >< (10 20)" # outside of
+    # test "a >< (10 20, 30)" # outside of, basicalle alternate way to describe in betweens
+  end
 
   # describe "date comparators" do
   #   test "a > 2024-08-12"  # , do: assert ~Q[a > 10] === {:>, [], [:a, 10]}

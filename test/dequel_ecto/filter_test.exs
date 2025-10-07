@@ -1,11 +1,11 @@
 defmodule Dequel.Adapter.EctoTest do
   use Dequel.Adapter.Ecto.RepoCase
   alias Dequel.Adapter.Ecto.Filter
-  alias Dequel.Parser
   alias Dequel.Adapter.Ecto
   alias Dequel.Adapter.Ecto.ItemSchema
   alias Dequel.Adapter.Ecto.Repo
-  import Ecto.Query
+
+  require Ecto.Query
 
   def create_item(attrs \\ %{}) do
     %ItemSchema{}
@@ -37,11 +37,35 @@ defmodule Dequel.Adapter.EctoTest do
     Repo.all(q)
   end
 
+  setup do
+    Logger.configure(level: :info)
+  end
+
   test "base" do
     item = item_fixture(%{"name" => "some name"})
     _ = item_fixture(%{"name" => "some other name"})
 
     assert ~ONE<name: "some name"> == item
+  end
+
+  test "ecto composition" do
+    item = item_fixture(%{"name" => "some name"})
+    _ = item_fixture(%{"name" => "some other name"})
+
+    dql = ~S< name: "some name" 
+      service.foo.name=""
+      foo.name=""
+    >
+
+    # result = from(ItemSchema)
+    #   |> Dequel.Ecto.where(dql)
+    #   |> Repo.one()
+
+    result = from(ItemSchema)
+      |> where(^Filter.where(dql))
+      |> Repo.one()
+
+    assert result == item
   end
 
   test "binary and" do

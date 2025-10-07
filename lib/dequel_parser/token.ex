@@ -1,4 +1,31 @@
 defmodule Dequel.Parser.Token do
+  @moduledoc """
+  Token definitions and combinators for the Dequel parser.
+
+  This module defines all the basic tokens used in the Dequel query language,
+  including field names, values, operators, and keywords.
+
+  ## Token Types
+
+  - **Identifiers**: Field names and unquoted string values (`a-z`, `A-Z`, `_`)
+  - **Numbers**: Integer values (converted to strings for consistency)
+  - **Strings**: Quoted string literals with escape support
+  - **Operators**: Logical (AND/OR), comparison (<, >, <=, >=)
+  - **Symbols**: Colon (`:`) for field assignment
+
+  ## Examples
+
+      # Field identifier
+      identifier() # matches: "name", "status", "user_id"
+
+      # Values
+      value() # matches: "alice", "123", "\"quoted string\""
+
+      # Operators
+      op_explicit_and() # matches: "&&", "AND", "and"
+      op_explicit_or() # matches: "||", "OR", "or"
+  """
+
   import NimbleParsec
   import Dequel.Parser.Helper
 

@@ -1,4 +1,18 @@
 defmodule Dequel.Parser.Helper do
+  @moduledoc """
+  Parser combinator helpers and utilities for the Dequel parser.
+
+  This module provides common parsing utilities used throughout the Dequel parser,
+  including whitespace handling, debugging tools, and result unwrapping.
+
+  ## Key Functions
+
+  - `spaced/2` - Wraps a combinator with optional whitespace on both sides
+  - `whitespace/0` - Matches and ignores whitespace characters
+  - `unwrap/1` - Converts NimbleParsec results to simpler success/error tuples
+  - `tap/1` - Debug helper to inspect parser state during development
+  """
+
   import NimbleParsec
 
   def whitespace, do: ignore(ascii_string([?\s, ?\t, ?\n, ?\r], min: 1))
