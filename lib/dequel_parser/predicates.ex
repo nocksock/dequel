@@ -39,30 +39,20 @@ defmodule Dequel.Parser.Predicates do
   import Dequel.Parser.Helper
   import Dequel.Parser.Token
 
-  @predicates %{
-    contains: "*",
-    starts_with: "^",
-    ends_with: "$"
-  }
-
-  any_predicate =
-    @predicates
-    |> Map.keys()
-    |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)
-    |> choice()
-
-  any_shorthand =
-    @predicates
-    |> Enum.map(fn {op, sym} ->
-      colon()
-      |> concat(string(sym))
-      |> replace(op)
-    end)
-
   defcombinator(
     :comparator,
-    any_shorthand
-    |> Enum.concat([colon() |> replace(:==)])
+    [
+      colon() |> concat(string("*")) |> replace(:contains),
+      colon() |> concat(string("^")) |> replace(:starts_with),
+      colon() |> concat(string("$")) |> replace(:ends_with),
+      spaced(string("<=")) |> replace(:<=),
+      spaced(string(">=")) |> replace(:>=),
+      spaced(string("<>")) |> replace(:in_between),
+      spaced(string("><")) |> replace(:outside_of),
+      spaced(string("<")) |> replace(:<),
+      spaced(string(">")) |> replace(:>),
+      colon() |> replace(:==)
+    ]
     |> choice()
   )
 
@@ -81,7 +71,17 @@ defmodule Dequel.Parser.Predicates do
 
   defparsec(
     :function_call,
-    any_predicate
+    choice([
+      string("contains") |> replace(:contains),
+      string("starts_with") |> replace(:starts_with),
+      string("ends_with") |> replace(:ends_with),
+      string("in_between") |> replace(:in_between),
+      string("outside_of") |> replace(:outside_of),
+      string("lt") |> replace(:<),
+      string("lte") |> replace(:<=),
+      string("gt") |> replace(:>),
+      string("gte") |> replace(:>=)
+    ])
     |> ignore(ascii_char([?(]))
     |> spaced(
       choice([
