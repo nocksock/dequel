@@ -16,8 +16,8 @@ defmodule Dequel.Adapter.Ecto.Logger do
     end
   end
 
-  def dequel_query_execution_stop(_event, measuerment, metadata, _config) do
-    %{duration: duration} = measuerment
+  def dequel_query_execution_stop(_event, measurement, metadata, _config) do
+    %{duration: duration} = measurement
 
     Logger.notice(fn ->
       [

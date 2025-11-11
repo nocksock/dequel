@@ -1,4 +1,8 @@
 defmodule Dequel.Adapter.Ecto.Filter do
+  @moduledoc """
+  Ecto adapter for Dequel queries. Converts parsed AST to Ecto dynamic queries.
+  """
+
   import Ecto.Query
 
   def where(input) when is_binary(input) do

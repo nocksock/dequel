@@ -1,4 +1,8 @@
 defmodule Dequel.Parser.Helper do
+  @moduledoc """
+  Helper functions for building NimbleParsec combinators in the Dequel parser.
+  """
+
   import NimbleParsec
 
   def whitespace, do: ignore(ascii_string([?\s, ?\t, ?\n, ?\r], min: 1))
@@ -15,12 +19,19 @@ defmodule Dequel.Parser.Helper do
     |> optional(whitespace())
   end
 
+  # Debug helper for parser development - call with |> tap()
+  # Only use during parser debugging, comment out in production
   def tap(comb),
     do:
       comb
       |> post_traverse(:tap)
 
-  def tap(rest, buffer, context, line, offset), do: dbg({rest, buffer, context, line, offset})
+  # credo:disable-for-next-line Credo.Check.Warning.IoInspect
+  def tap(rest, buffer, context, _line, _offset) do
+    # Uncomment the line below when debugging parser issues:
+    # IO.inspect({rest, buffer, context, line, offset}, label: "Parser Debug")
+    {rest, buffer, context}
+  end
 
   def unwrap(result) do
     case result do

@@ -1,4 +1,10 @@
 defmodule Dequel.Parser do
+  @moduledoc """
+  Parser for the Dequel query language using NimbleParsec.
+
+  Parses query strings into AST tuples like `{:==, [], [:field, "value"]}`.
+  """
+
   import NimbleParsec
   import Dequel.Parser.Token
   import Dequel.Parser.Helper

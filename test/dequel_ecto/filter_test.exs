@@ -1,10 +1,9 @@
 defmodule Dequel.Adapter.EctoTest do
   use Dequel.Adapter.Ecto.RepoCase
   alias Dequel.Adapter.Ecto.Filter
-  alias Dequel.Parser
-  alias Dequel.Adapter.Ecto
   alias Dequel.Adapter.Ecto.ItemSchema
   alias Dequel.Adapter.Ecto.Repo
+  alias Dequel.Parser
   import Ecto.Query
 
   def create_item(attrs \\ %{}) do

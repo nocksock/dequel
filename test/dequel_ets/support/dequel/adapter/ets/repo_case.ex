@@ -1,4 +1,5 @@
 defmodule Dequel.Adapter.Ets.RepoCase do
+  @moduledoc false
   use ExUnit.CaseTemplate
 
   alias Dequel.Adapter.Ets.ItemStore

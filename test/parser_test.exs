@@ -7,6 +7,9 @@ defmodule Dequel.ParserTest do
     Dequel.Parser.parse!(str)
   end
 
+  require Logger
+  Logger.configure(level: :info)
+
   test "base experssion",
     do:
       assert(
@@ -308,13 +311,116 @@ defmodule Dequel.ParserTest do
     # test "a: $(b, c)" #, do: assert ~Q<a: $(b, c)> == {:ends_with, [], [:a, "foo bar"]}
   end
 
+  describe "one_of predicate" do
+    test "with single value",
+      do:
+        assert(
+          ~Q<a:one_of(b)> ==
+            {:==, [], [:a, "b"]}
+        )
+
+    test "with single value and spaced",
+      do:
+        assert(
+          ~Q<a: one_of(b)> ==
+            {:==, [], [:a, "b"]}
+        )
+
+
+    test "with multiple values",
+      do:
+        assert(
+          ~Q<a:one_of(b, c)> ==
+            {:or, [],
+             [
+               {:==, [], [:a, "b"]},
+               {:==, [], [:a, "c"]}
+             ]}
+        )
+    test "with multiple values and spaced",
+      do:
+        assert(
+          ~Q<a: one_of(b, c)> ==
+            {:or, [],
+             [
+               {:==, [], [:a, "b"]},
+               {:==, [], [:a, "c"]}
+             ]}
+        )
+
+    test "with quoted values",
+      do:
+        assert(
+          ~Q<city:one_of("New York", London)> ==
+            {:or, [],
+             [
+               {:==, [], [:city, "New York"]},
+               {:==, [], [:city, "London"]}
+             ]}
+        )
+  end
+
+  describe "bracket shorthand for one_of" do
+    test "with single value",
+      do:
+        assert(
+          ~Q<a:[b]> ==
+            {:==, [], [:a, "b"]}
+        )
+
+    test "with multiple values",
+      do:
+        assert(
+          ~Q<a:[b, c]> ==
+            {:or, [],
+             [
+               {:==, [], [:a, "b"]},
+               {:==, [], [:a, "c"]}
+             ]}
+        )
+
+    test "with quoted values",
+      do:
+        assert(
+          ~Q<city:["New York", London]> ==
+            {:or, [],
+             [
+               {:==, [], [:city, "New York"]},
+               {:==, [], [:city, "London"]}
+             ]}
+        )
+  end
+
+  describe "minus prefix negation" do
+    test "basic negation",
+      do:
+        assert(
+          ~Q<-field:value> ==
+            {:not, [], {:==, [], [:field, "value"]}}
+        )
+
+    test "with predicate",
+      do:
+        assert(
+          ~Q<-field:contains(value)> ==
+            {:not, [], {:contains, [], [:field, "value"]}}
+        )
+
+    test "with quoted value",
+      do:
+        assert(
+          ~Q<-field:"some value"> ==
+            {:not, [], {:==, [], [:field, "some value"]}}
+        )
+  end
+
   # describe "numeric comparators" do
   # # these don't need the foo > (10, 20) as it doesn't makes sense.
   #   test "title > 10"  # , do: assert ~Q[a > 10] === {:>, [], [:a, 10]}
   #   test "a < 10"  # , do: assert ~Q[a < 10] === {:<, [], [:a, 10]}
   #   test "a <= 10" # , do: assert ~Q[a < 10] === {:<=, [], [:a, 10]}
   #   test "a >= 10" # , do: assert ~Q[a < 10] === {:>=, [], [:a, 10]}
-  # 
+  #
   # # but these can have that again
   #   test "a <> (10 20)" # in between 10 and 20, inclusive
   #   test "a <> (10 20, 40 60)" # in between

@@ -45,10 +45,15 @@ defmodule Dequel.Parser.Predicates do
     ends_with: "$"
   }
 
+  # one_of expands to equality checks - shorthand is bracket syntax handled in FieldMatch
+  @equality_predicates [:one_of]
+
   any_predicate =
-    @predicates
-    |> Map.keys()
-    |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)
+    ((@predicates
+      |> Map.keys()
+      |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)) ++
+       (@equality_predicates
+        |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)))
     |> choice()
 
   any_shorthand =

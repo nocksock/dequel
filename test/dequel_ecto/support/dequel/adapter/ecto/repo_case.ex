@@ -1,4 +1,5 @@
 defmodule Dequel.Adapter.Ecto.RepoCase do
+  @moduledoc false
   use ExUnit.CaseTemplate
 
   using do

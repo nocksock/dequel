@@ -1,4 +1,8 @@
 defmodule Dequel.Query.Result do
+  @moduledoc """
+  Represents query results with entries, schema, and query metadata.
+  """
+
   alias Dequel.Query.Result
   @derive Jason.Encoder
   defstruct [:entries, :schema, :query]

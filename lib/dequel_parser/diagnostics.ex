@@ -1,4 +1,8 @@
 defmodule Dequel.Parser.Diagnostics do
+  @moduledoc """
+  Diagnostic helpers for parser errors and warnings.
+  """
+
   def add(context, diagnostic) do
     context =
       context

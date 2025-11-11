@@ -1,4 +1,8 @@
 defmodule Dequel.Parser.Token do
+  @moduledoc """
+  Token parsers for the Dequel query language (identifiers, strings, operators, etc.).
+  """
+
   import NimbleParsec
   import Dequel.Parser.Helper
 

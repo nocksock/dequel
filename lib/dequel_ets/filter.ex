@@ -62,9 +62,15 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
   end
 
   defp get_field_value(record, field) when is_binary(field) do
-    Map.get(record, String.to_existing_atom(field))
+    # Note: String.to_existing_atom/1 raises ArgumentError if atom doesn't exist.
+    # This is expected for dynamic field names and indicates the field isn't in the schema.
+    # We treat this as "field not present" for filtering purposes.
+    atom_field = String.to_existing_atom(field)
+    Map.get(record, atom_field)
   rescue
-    ArgumentError -> nil
+    ArgumentError ->
+      # Field name not recognized - treat as nil (no match)
+      nil
   end
 
   # Public function to filter a single record (for testing)

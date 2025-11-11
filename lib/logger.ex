@@ -17,8 +17,8 @@ defmodule Dequel.Parser.Logger do
   end
 
   def dequel_parser_parse_stop(_, measurement, _meta, _config) do
-    # TODO: IO.inspect should probably be removed, no?
-    IO.inspect(measurement)
-    Logger.info("PARSE")
+    Logger.debug(fn ->
+      "Parser completed in #{inspect(measurement)} μs"
+    end)
   end
 end
