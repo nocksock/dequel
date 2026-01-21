@@ -8,7 +8,7 @@ import { buildParser } from "@lezer/generator";
 import { Tag, styleTags, tags as t } from "@lezer/highlight";
 
 export const parser = buildParser(`
-@top QueryList { Query (Separator Query)* }
+@top QueryList { Query }
 @skip { "\n" | Comment }
 
 Query {
