@@ -1,0 +1,78 @@
+import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { render } from 'preact'
+import { SyntaxNode } from '@lezer/common'
+import { StateEffect, StateField } from '@codemirror/state'
+import axios from 'axios'
+import { SuggestionView } from '../../components/SuggestionView'
+import { raise } from '../../lib/error'
+import { Optional } from '../../lib/types'
+import { DequelEditorOptions } from '../options'
+
+export type SuggestionsAPIResponse = Record<
+  string,
+  {
+    title?: string
+    description?: string
+    values: {
+      action: SuggestionAction
+      description: string
+      label: string
+    }[]
+  }
+>
+
+const SuggestionSchemaEffectType = StateEffect.define<SuggestionsAPIResponse>()
+
+export const SuggestionSchemaField = StateField.define<SuggestionsAPIResponse>({
+  create: () => ({}),
+  update: (value, tr) => {
+    for (const effect of tr.effects) {
+      if (effect.is(SuggestionSchemaEffectType)) {
+        return effect.value
+      }
+    }
+    return value
+  },
+})
+
+export const Suggestions = ViewPlugin.fromClass(
+  class {
+    #dom: HTMLElement
+
+    constructor(view: EditorView) {
+      const options = view.state.facet(DequelEditorOptions)[0]
+      this.#dom =
+        document.querySelector(`[for="${view.dom.parentElement?.id}"]`) ||
+        raise(`no suggestion container found`)
+
+      axios
+        .get(options.completionEndpoint + '/schema')
+        .then(({ data }) => {
+          view.dispatch({
+            effects: SuggestionSchemaEffectType.of(data),
+          })
+        })
+        .catch(console.error)
+    }
+
+    update(update: ViewUpdate) {
+      render(<SuggestionView view={update.view} />, this.#dom)
+    }
+  },
+  {
+    // @ts-ignore
+    provide: v => [SuggestionSchemaField, v],
+  }
+)
+
+export type ActionContext = {
+  view: EditorView
+  node: SyntaxNode
+  field: Optional<SyntaxNode>
+  action: SuggestionAction
+}
+
+export type SuggestionAction = {
+  type: 'insert' | 'replaceCondition' | 'append' | 'appendDoc' | 'setMatcher'
+  value: string
+}

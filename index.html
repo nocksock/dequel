@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body class="p-4 bg-slate-100 dark:bg-slate-900 font-sans stack">
+    <div class="max-w-screen-md container mx-auto my-12 stack">
+      <header class="stack-2">
+        <h1 class="font-mono text-2xl font-bold text-blue-600">
+          Dequel-Editor
+        </h1>
+      </header>
+      <form id="form" class="stack rounded-lg">
+        <div class="border dark:border-slate-700 rounded-lg overflow-hidden">
+          <dequel-editor
+            class="
+              w-full
+              flex
+              text-slate-700
+              dark:text-slate-200
+              gap-2
+              text-lg
+              relative
+              z-10
+              bg-white
+            dark:bg-slate-950
+              border-b
+              dark:border-slate-600
+              dark:bg-slate-950
+              shadow-inner
+              items-center
+              p-2
+            "
+            id="primary"
+            name="query"
+            endpoint="/api/edq"
+            ></dequel-editor
+          >
+
+          <dequel-suggestions
+            class="
+              stack
+              text-sm
+              p-4
+            text-slate-900
+            dark:text-slate-300
+              bg-slate-50
+              dark:bg-slate-800
+            "
+            for="primary"
+          >
+          </dequel-suggestions>
+        </div>
+
+        <div class="bar w-full justify-end">
+          <button
+            class="p-2 shadow rounded-lg flex gap-2 text-teal-50 bg-slate-400"
+            name="preview"
+          >
+            Preview
+          </button>
+          <button
+            type="submit"
+            name="save"
+            class="p-2 shadow rounded-lg flex gap-2 text-teal-50 bg-slate-950"
+          >
+            Save
+          </button>
+        </div>
+      </form>
+
+      <div
+        id="result"
+        class="empty:hidden stack text-slate-800"
+      ></div>
+    </div>
+
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

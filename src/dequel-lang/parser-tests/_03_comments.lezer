@@ -1,0 +1,52 @@
+# comments
+
+thing:foo
+# foobar
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+  ),
+  Comment
+)
+
+# comments and multiple queries
+
+thing:foo
+
+# just multiple
+# comments
+---
+thing:foo
+# comments
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+  ),
+  Comment,
+  Comment,
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+  ),
+  Comment,
+)
+
+# comment condition inline
+
+some:thing !dont.need:this but:this
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+    IgnoredCondition(Field, ":", Matcher(Value(Identifier)))
+    Condition(Field, ":", Matcher(Value(Identifier))),
+  ),
+)
+

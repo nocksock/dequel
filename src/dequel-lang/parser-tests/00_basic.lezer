@@ -1,0 +1,60 @@
+# simple 
+
+type:markets title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+    Condition(Field, ":", Matcher(Value(Identifier)))
+  )
+)
+
+# spaces between conditions don't matter 
+
+type:markets    title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+    Condition(Field, ":", Matcher(Value(Identifier)))
+  )
+)
+
+# exclude
+
+type:markets -title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+    ExcludeCondition(Field, ":", Matcher(Value(Identifier)))
+  )
+)
+
+# values 
+
+type:markets 
+  title:EDEKA 
+  title:"Some string" 
+  id:123 
+  some.field:/^EDEKA/i
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Value(Identifier))),
+    Condition(Field, ":", Matcher(Value(Identifier))),
+    Condition(Field, ":", Matcher(Value(String))),
+    Condition(Field, ":", Matcher(Value(Number))),
+    Condition(Field, ":", Matcher(Regex)),
+  )
+)
+
+

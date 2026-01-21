@@ -1,0 +1,33 @@
+# basic command
+
+id:oneOf(1,2,3)
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Command(
+      Identifier, 
+      Argument(Number),
+      Argument(Number),
+      Argument(Number),
+    )))
+  )
+)
+
+# various args
+
+id:anyFn(something,1,2)
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Matcher(Command(
+      Identifier, 
+      Argument(Identifier),
+      Argument(Number),
+      Argument(Number),
+    )))
+  )
+)

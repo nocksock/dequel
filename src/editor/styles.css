@@ -1,0 +1,13 @@
+.cm-editor {
+  width: 100%;
+  border-radius: 12px;
+  transition: all 0.2s ease-out;
+  opacity: 0.9;
+
+  &.cm-focused {
+    filter: none;
+    opacity: 1;
+    outline: none;
+  }
+
+}
