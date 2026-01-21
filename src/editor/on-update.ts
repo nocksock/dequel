@@ -18,5 +18,9 @@ const StateWatcher = StateField.define({
   },
 })
 
+/**
+  * A simple facet that allows you to run a callback function whenever the
+  * editor's content is updated.
+  */
 export const OnUpdate = (cb?: OnUpdateCallbackFn) =>
   cb ? [UpdateCallback.of(cb), StateWatcher] : []
