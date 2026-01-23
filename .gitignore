@@ -28,3 +28,15 @@ erl_crash.dump
 # sqlite database files
 myapp_test.db*
 .aider*
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+.beans.yml
