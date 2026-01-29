@@ -3,26 +3,7 @@ defmodule Dequel.Adapter.EctoTest do
   alias Dequel.Adapter.Ecto.Filter
   alias Dequel.Adapter.Ecto.ItemSchema
   alias Dequel.Adapter.Ecto.Repo
-  alias Dequel.Parser
   import Ecto.Query
-
-  def create_item(attrs \\ %{}) do
-    %ItemSchema{}
-    |> ItemSchema.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def item_fixture(attrs \\ %{}) do
-    {:ok, item} =
-      attrs
-      |> Enum.into(%{
-        "description" => "some description",
-        "name" => "some name"
-      })
-      |> create_item()
-
-    item
-  end
 
   defp sigil_ONE(input, []) do
     where = input |> Filter.where()
@@ -91,11 +72,107 @@ defmodule Dequel.Adapter.EctoTest do
 
   test "string predicates" do
     frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    item_fixture(%{"name" => "bilfroxdox", "description" => "baggins"})
+    _bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    _other = item_fixture(%{"name" => "bilfroxdox", "description" => "baggins"})
 
     assert ~ALL<name:*od> == [frodo]
     assert ~ALL<name:^fro> == [frodo]
     assert ~ALL<name:$do> == [frodo]
+  end
+
+  describe "relationship filtering with query/3" do
+    test "filters by single-level association field" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("author.name:Tolkien", base_query)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == lotr.id
+    end
+
+    test "filters by association field with contains predicate" do
+      tolkien = author_fixture(%{name: "J.R.R. Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Frank Herbert", bio: "American author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("author.name:*Tolkien", base_query)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == lotr.id
+    end
+
+    test "combines association and local field filters" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy epic"}, tolkien)
+
+      _hobbit =
+        item_with_author(%{"name" => "Hobbit", "description" => "fantasy adventure"}, tolkien)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("author.name:Tolkien name:LOTR", base_query)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == lotr.id
+    end
+
+    test "filters with OR on association fields" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+      asimov = author_fixture(%{name: "Asimov", bio: "Russian-American author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+      _foundation = item_with_author(%{"name" => "Foundation", "description" => "scifi"}, asimov)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("author.name:Tolkien or author.name:Herbert", base_query)
+      items = Repo.all(result) |> Enum.sort_by(& &1.name)
+
+      assert length(items) == 2
+      assert Enum.map(items, & &1.id) |> Enum.sort() == Enum.sort([lotr.id, dune.id])
+    end
+
+    test "filters with negation on association field" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("!author.name:Tolkien", base_query)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == dune.id
+    end
+
+    test "reuses joins for same association" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(i in ItemSchema)
+      # Both conditions use author - should only create one join
+      result = Filter.query("author.name:Tolkien author.bio:*British", base_query)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == lotr.id
+    end
   end
 end

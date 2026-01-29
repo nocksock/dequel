@@ -326,7 +326,6 @@ defmodule Dequel.ParserTest do
             {:==, [], [:a, "b"]}
         )
 
-
     test "with multiple values",
       do:
         assert(
@@ -337,6 +336,7 @@ defmodule Dequel.ParserTest do
                {:==, [], [:a, "c"]}
              ]}
         )
+
     test "with multiple values and spaced",
       do:
         assert(
@@ -388,6 +388,86 @@ defmodule Dequel.ParserTest do
                {:==, [], [:city, "New York"]},
                {:==, [], [:city, "London"]}
              ]}
+        )
+  end
+
+  describe "dotted field paths (relationship filtering)" do
+    test "single dot - two segments",
+      do:
+        assert(
+          ~Q<author.name:"frodo"> ==
+            {:==, [], [[:author, :name], "frodo"]}
+        )
+
+    test "multiple dots - three segments",
+      do:
+        assert(
+          ~Q<author.address.city:"Shire"> ==
+            {:==, [], [[:author, :address, :city], "Shire"]}
+        )
+
+    test "dotted field with contains predicate",
+      do:
+        assert(
+          ~Q<author.name:*frodo> ==
+            {:contains, [], [[:author, :name], "frodo"]}
+        )
+
+    test "dotted field with starts_with predicate",
+      do:
+        assert(
+          ~Q<author.bio:^"Once upon"> ==
+            {:starts_with, [], [[:author, :bio], "Once upon"]}
+        )
+
+    test "dotted field with ends_with predicate",
+      do:
+        assert(
+          ~Q<author.name:$do> ==
+            {:ends_with, [], [[:author, :name], "do"]}
+        )
+
+    test "dotted field with negation",
+      do:
+        assert(
+          ~Q<!author.name:frodo> ==
+            {:not, [], {:==, [], [[:author, :name], "frodo"]}}
+        )
+
+    test "dotted field with predicate function",
+      do:
+        assert(
+          ~Q<author.name:contains(frodo)> ==
+            {:contains, [], [[:author, :name], "frodo"]}
+        )
+
+    test "dotted field in AND expression",
+      do:
+        assert(
+          ~Q<author.name:frodo title:LOTR> ==
+            {:and, [],
+             [
+               {:==, [], [[:author, :name], "frodo"]},
+               {:==, [], [:title, "LOTR"]}
+             ]}
+        )
+
+    test "dotted field in OR expression",
+      do:
+        assert(
+          ~Q<author.name:frodo || author.name:bilbo> ==
+            {:or, [],
+             [
+               {:==, [], [[:author, :name], "frodo"]},
+               {:==, [], [[:author, :name], "bilbo"]}
+             ]}
+        )
+
+    test "backward compatibility - simple field unchanged",
+      do:
+        assert(
+          ~Q<name:"frodo"> ==
+            {:==, [], [:name, "frodo"]}
         )
   end
 

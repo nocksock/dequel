@@ -49,10 +49,13 @@ defmodule Dequel.Parser.Token do
       |> replace(:or)
 
   def field_expression do
-    identifier() |> reduce(:to_existing_atom)
+    identifier()
+    |> repeat(ignore(string(".")) |> concat(identifier()))
+    |> reduce(:to_field_path)
   end
 
-  def to_existing_atom([field]), do: String.to_existing_atom(field)
+  def to_field_path([single]), do: String.to_existing_atom(single)
+  def to_field_path(segments), do: Enum.map(segments, &String.to_existing_atom/1)
 
   def string_with_quotes do
     ignore(ascii_char([?"]))

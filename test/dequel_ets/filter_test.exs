@@ -102,4 +102,90 @@ defmodule Dequel.Adapter.EtsTest do
     assert ~ALL<name:^fro> == [frodo]
     assert ~ALL<name:$do> == [frodo]
   end
+
+  describe "nested field paths (relationship filtering)" do
+    # These tests use raw maps with nested structure instead of the Item struct
+    # to test the ETS adapter's ability to handle nested data
+
+    test "filters by single-level nested field" do
+      records = [
+        %{id: 1, name: "LOTR", author: %{name: "Tolkien"}},
+        %{id: 2, name: "Dune", author: %{name: "Herbert"}}
+      ]
+
+      ast = Dequel.Parser.parse!("author.name:Tolkien")
+      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
+
+      assert length(result) == 1
+      assert hd(result).name == "LOTR"
+    end
+
+    test "filters by deeply nested field" do
+      records = [
+        %{id: 1, name: "LOTR", author: %{name: "Tolkien", address: %{city: "Oxford"}}},
+        %{id: 2, name: "Dune", author: %{name: "Herbert", address: %{city: "Seattle"}}}
+      ]
+
+      ast = Dequel.Parser.parse!("author.address.city:Oxford")
+      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
+
+      assert length(result) == 1
+      assert hd(result).name == "LOTR"
+    end
+
+    test "filters nested field with contains predicate" do
+      records = [
+        %{id: 1, name: "LOTR", author: %{name: "J.R.R. Tolkien"}},
+        %{id: 2, name: "Dune", author: %{name: "Frank Herbert"}}
+      ]
+
+      ast = Dequel.Parser.parse!("author.name:*Tolkien")
+      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
+
+      assert length(result) == 1
+      assert hd(result).name == "LOTR"
+    end
+
+    test "handles missing nested path gracefully" do
+      records = [
+        %{id: 1, name: "LOTR", author: %{name: "Tolkien"}},
+        # No author
+        %{id: 2, name: "Dune"}
+      ]
+
+      ast = Dequel.Parser.parse!("author.name:Tolkien")
+      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
+
+      assert length(result) == 1
+      assert hd(result).name == "LOTR"
+    end
+
+    test "combines nested and simple fields" do
+      records = [
+        %{id: 1, name: "LOTR", genre: "fantasy", author: %{name: "Tolkien"}},
+        %{id: 2, name: "Dune", genre: "scifi", author: %{name: "Herbert"}},
+        %{id: 3, name: "Hobbit", genre: "fantasy", author: %{name: "Tolkien"}}
+      ]
+
+      ast = Dequel.Parser.parse!("author.name:Tolkien genre:fantasy")
+      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
+
+      assert length(result) == 2
+      names = Enum.map(result, & &1.name) |> Enum.sort()
+      assert names == ["Hobbit", "LOTR"]
+    end
+
+    test "nested field with negation" do
+      records = [
+        %{id: 1, name: "LOTR", author: %{name: "Tolkien"}},
+        %{id: 2, name: "Dune", author: %{name: "Herbert"}}
+      ]
+
+      ast = Dequel.Parser.parse!("!author.name:Tolkien")
+      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
+
+      assert length(result) == 1
+      assert hd(result).name == "Dune"
+    end
+  end
 end

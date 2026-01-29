@@ -61,6 +61,14 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
     Map.get(record, field)
   end
 
+  defp get_field_value(record, path) when is_list(path) do
+    Enum.reduce_while(path, record, fn
+      _field, nil -> {:halt, nil}
+      field, current when is_map(current) -> {:cont, Map.get(current, field)}
+      _field, _ -> {:halt, nil}
+    end)
+  end
+
   defp get_field_value(record, field) when is_binary(field) do
     # Note: String.to_existing_atom/1 raises ArgumentError if atom doesn't exist.
     # This is expected for dynamic field names and indicates the field isn't in the schema.
