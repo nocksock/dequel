@@ -52,6 +52,12 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
     records -- filtered_records
   end
 
+  def filter({:in, [], [field, values]}, records) do
+    Enum.filter(records, fn record ->
+      get_field_value(record, field) in values
+    end)
+  end
+
   def filter({op, [], [field, value]}, _records) do
     raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
   end

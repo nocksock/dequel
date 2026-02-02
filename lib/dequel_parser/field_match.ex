@@ -54,31 +54,32 @@ defmodule Dequel.Parser.FieldMatch do
 
   def postfix([rhs, op, lhs]), do: {op, [], [rhs, lhs]}
 
-  # Bracket shorthand produces equality checks
-  def postfix_bracket([field | values]) do
-    values
-    |> Enum.map(fn value -> {:==, [], [field, value]} end)
-    |> wrap_or
+  # Bracket shorthand: single value → equality, multiple values → IN
+  def postfix_bracket([field, value]), do: {:==, [], [field, value]}
+  def postfix_bracket([field | values]), do: {:in, [], [field, values]}
+
+  # one_of: single value → equality, multiple values → IN
+  def postfix_inject([field, :one_of, [value]]), do: {:==, [], [field, value]}
+
+  def postfix_inject([field, :one_of | params]) do
+    values = Enum.map(params, fn [value | _opts] -> value end)
+    {:in, [], [field, values]}
   end
 
-  # one_of expands to equality checks
-  defp normalize_op(:one_of), do: :==
-  defp normalize_op(op), do: op
-
-  def postfix_inject([field, op, [value]]), do: {normalize_op(op), [], [field, value]}
+  # Other predicates: single value → direct, multiple values → wrap in OR
+  def postfix_inject([field, op, [value]]), do: {op, [], [field, value]}
 
   def postfix_inject([field, op | params]) do
-    actual_op = normalize_op(op)
-
     Enum.map(params, fn
-      [value] -> {actual_op, [], [field, value]}
-      [value | options] -> {actual_op, [], [field, value, options]}
+      [value] -> {op, [], [field, value]}
+      [value | options] -> {op, [], [field, value, options]}
     end)
     |> wrap_or
   end
 
   def wrap_or([a, b]), do: {:or, [], [a, b]}
   def wrap_or([a]), do: a
+  def wrap_or([head | tail]), do: {:or, [], [head, wrap_or(tail)]}
   def wrap_or(a), do: a
 
   def wrap_not([a]), do: {:not, [], a}

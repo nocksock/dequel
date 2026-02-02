@@ -330,33 +330,28 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<a:one_of(b, c)> ==
-            {:or, [],
-             [
-               {:==, [], [:a, "b"]},
-               {:==, [], [:a, "c"]}
-             ]}
+            {:in, [], [:a, ["b", "c"]]}
         )
 
     test "with multiple values and spaced",
       do:
         assert(
           ~Q<a: one_of(b, c)> ==
-            {:or, [],
-             [
-               {:==, [], [:a, "b"]},
-               {:==, [], [:a, "c"]}
-             ]}
+            {:in, [], [:a, ["b", "c"]]}
         )
 
     test "with quoted values",
       do:
         assert(
           ~Q<city:one_of("New York", London)> ==
-            {:or, [],
-             [
-               {:==, [], [:city, "New York"]},
-               {:==, [], [:city, "London"]}
-             ]}
+            {:in, [], [:city, ["New York", "London"]]}
+        )
+
+    test "with three or more values",
+      do:
+        assert(
+          ~Q<a:one_of(b, c, d)> ==
+            {:in, [], [:a, ["b", "c", "d"]]}
         )
   end
 
@@ -372,22 +367,21 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<a:[b, c]> ==
-            {:or, [],
-             [
-               {:==, [], [:a, "b"]},
-               {:==, [], [:a, "c"]}
-             ]}
+            {:in, [], [:a, ["b", "c"]]}
         )
 
     test "with quoted values",
       do:
         assert(
           ~Q<city:["New York", London]> ==
-            {:or, [],
-             [
-               {:==, [], [:city, "New York"]},
-               {:==, [], [:city, "London"]}
-             ]}
+            {:in, [], [:city, ["New York", "London"]]}
+        )
+
+    test "with three or more values",
+      do:
+        assert(
+          ~Q<a:[b, c, d]> ==
+            {:in, [], [:a, ["b", "c", "d"]]}
         )
   end
 
@@ -404,6 +398,13 @@ defmodule Dequel.ParserTest do
         assert(
           ~Q<author.address.city:"Shire"> ==
             {:==, [], [[:author, :address, :city], "Shire"]}
+        )
+
+    test "multiple dots - several segments",
+      do:
+        assert(
+          ~Q<foo.bar.baz.any.thing:"Shire"> ==
+            {:==, [], [[:foo, :bar, :baz, :any, :thing], "Shire"]}
         )
 
     test "dotted field with contains predicate",

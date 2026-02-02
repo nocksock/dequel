@@ -83,6 +83,18 @@ defmodule Dequel.Adapter.Ecto.Filter do
     build_filter(ast, ctx)
   end
 
+  # IN clause - simple field
+  defp build_filter({:in, [], [field, values]}, ctx) when is_atom(field) do
+    {dynamic([schema], field(schema, ^field) in ^values), ctx}
+  end
+
+  # IN clause - relationship path
+  defp build_filter({:in, [], [path, values]}, ctx) when is_list(path) do
+    {binding, ctx} = Context.ensure_joins(ctx, path)
+    field_name = List.last(path)
+    {dynamic([{^binding, x}], field(x, ^field_name) in ^values), ctx}
+  end
+
   # Simple field - use base binding
   defp build_filter({op, [], [field, value]}, ctx) when is_atom(field) do
     {where({op, [], [field, value]}), ctx}
@@ -206,6 +218,10 @@ defmodule Dequel.Adapter.Ecto.Filter do
 
   def where({:not, [], expression}) do
     dynamic(not (^where(expression)))
+  end
+
+  def where({:in, [], [field, values]}) do
+    dynamic([schema], field(schema, ^field) in ^values)
   end
 
   #

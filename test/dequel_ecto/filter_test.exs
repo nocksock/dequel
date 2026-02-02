@@ -70,6 +70,22 @@ defmodule Dequel.Adapter.EctoTest do
     assert ~ALL<!name:frodo> == [bilbo, samwise]
   end
 
+  test "one_of predicate with multiple values" do
+    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
+    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    _samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
+
+    assert ~ALL<name:one_of(frodo, bilbo)> == [frodo, bilbo]
+  end
+
+  test "bracket shorthand with multiple values" do
+    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
+    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    _samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
+
+    assert ~ALL<name:[frodo, bilbo]> == [frodo, bilbo]
+  end
+
   test "string predicates" do
     frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
     _bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
