@@ -80,6 +80,6 @@ export type ActionContext = {
 }
 
 export type SuggestionAction = {
-  type: 'insert' | 'replaceCondition' | 'append' | 'appendDoc' | 'setMatcher'
+  type: 'insert' | 'replaceCondition' | 'append' | 'appendDoc' | 'setMatcher' | 'negateCondition' | 'disableCondition'
   value: string
 }

@@ -1,14 +1,27 @@
 import { useState } from 'preact/hooks'
 import { BugIcon } from 'lucide-react'
 import { EditorView } from '@codemirror/view'
+import { syntaxTree } from '@codemirror/language'
+import { SyntaxNode } from '@lezer/common'
 import { CurrentNodeField } from '../editor/current-node'
 import { createTransaction } from '../editor/suggestions/createTransaction'
-import { getSuggestionContext } from '../editor/suggestions/getSuggestionContext'
+import { getSuggestionContextWithTree } from '../editor/suggestions/getSuggestionContext'
 import {
   SuggestionSchemaField,
   SuggestionAction,
 } from '../editor/suggestions/suggestions'
 import { renderState } from '../lib/debug'
+import { closest } from '../lib/syntax'
+import { ANY_CONDITION } from '../dequel-lang/parser'
+
+// Find the closest condition node (Condition, ExcludeCondition, or IgnoredCondition)
+const closestCondition = (node: SyntaxNode): SyntaxNode | null => {
+  for (const conditionType of ANY_CONDITION) {
+    const found = closest(conditionType, node)
+    if (found) return found
+  }
+  return null
+}
 
 export type SuggestionViewProps = {
   view: EditorView
@@ -32,9 +45,16 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
     )
   }
 
-  const field = getSuggestionContext(current.node)
+  const tree = syntaxTree(state)
+  const cursorPos = state.selection.main.anchor
+  const field = getSuggestionContextWithTree(tree, cursorPos, current.node)
   const fieldValue = field ? state.doc.sliceString(field.from, field.to) : '*'
   const suggestions = suggestionSchema[fieldValue]
+
+  // Check if we're inside a condition for universal suggestions
+  const condition = closestCondition(current.node)
+  const isExcluded = condition?.name === 'ExcludeCondition'
+  const isIgnored = condition?.name === 'IgnoredCondition'
 
   const createClickHandler =
     (action: SuggestionAction): React.MouseEventHandler<HTMLButtonElement> =>
@@ -62,7 +82,7 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
         <p className="text-sm text-base-content/60 mb-2">{suggestions.description}</p>
       )}
 
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
+      <ul className="grid gap-2">
         {suggestions?.values?.map(({ description, action, label }) => (
           <li key={label || action.value} className="contents">
             <button
@@ -82,6 +102,30 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
           </li>
         ))}
       </ul>
+
+      {condition && (
+        <div className="mt-4">
+          <h3 className="divider text-xs text-base-content/50">Condition modifiers</h3>
+          <div className="flex gap-2">
+            <button
+              className={`btn btn-sm flex-1 ${isExcluded ? 'btn-active' : ''}`}
+              onClick={createClickHandler({ type: 'negateCondition', value: '' })}
+              title={isExcluded ? 'Remove negation' : 'Negate this condition'}
+            >
+              <span className="font-mono">-</span>
+              <span className="text-xs">{isExcluded ? 'Un-negate' : 'Negate'}</span>
+            </button>
+            <button
+              className={`btn btn-sm flex-1 ${isIgnored ? 'btn-active' : ''}`}
+              onClick={createClickHandler({ type: 'disableCondition', value: '' })}
+              title={isIgnored ? 'Enable condition' : 'Disable this condition'}
+            >
+              <span className="font-mono">!</span>
+              <span className="text-xs">{isIgnored ? 'Enable' : 'Disable'}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end">
         <button
