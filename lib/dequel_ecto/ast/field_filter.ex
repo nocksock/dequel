@@ -171,6 +171,8 @@ defmodule Dequel.Adapter.Ecto.Filter do
     |> where()
   end
 
+  def where([]), do: dynamic(true)
+
   def where({:==, [], [field, value]}) do
     dynamic([schema], field(schema, ^field) == ^value)
   end
