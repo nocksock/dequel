@@ -5,15 +5,14 @@ import { SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
 import axios from 'axios'
 
-const inputEvent = new Event('input')
 
 export class DequelEditorElement extends HTMLElement {
   static formAssociated = true
   static observedAttributes = ['value', 'autocompletions', 'suggestions']
 
-  #value = this.getAttribute('value') || ''
-  #endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
-  #autocompletions = this.getAttribute('autocompletions') || ''
+  #value = ''
+  #endpoint?: string
+  #autocompletions?: string
   #internals: ElementInternals
   editor?: DequelEditor
 
@@ -24,6 +23,11 @@ export class DequelEditorElement extends HTMLElement {
 
   connectedCallback() {
     if (this.editor) return;
+
+    this.#value = this.getAttribute('value') || ''
+    this.#endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
+    this.#autocompletions = this.getAttribute('autocompletions') || ''
+
     // Check if there's a suggestions container for this editor
     const hasSuggestions = !!document.querySelector(`[for="${this.id}"]`)
 
@@ -34,8 +38,7 @@ export class DequelEditorElement extends HTMLElement {
       suggestions: hasSuggestions,
       onUpdate: value => {
         this.#value = value
-        console.log('DequelEditorElement updated value:', value)
-        this.dispatchEvent(inputEvent)
+        this.dispatchEvent(new Event('input', { bubbles: true }))
       },
     })
   }
