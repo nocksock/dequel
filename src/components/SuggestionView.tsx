@@ -16,6 +16,10 @@ import { ANY_CONDITION } from '../dequel-lang/parser'
 
 // Find the closest condition node (Condition, ExcludeCondition, or IgnoredCondition)
 const closestCondition = (node: SyntaxNode): SyntaxNode | null => {
+  // Check if the node itself is a condition
+  if (ANY_CONDITION.includes(node.name)) return node
+
+  // Check ancestors
   for (const conditionType of ANY_CONDITION) {
     const found = closest(conditionType, node)
     if (found) return found

@@ -61,6 +61,16 @@ describe('createTransaction', () => {
       const result = applyAction('title:foo reg|ion:bar', { type: 'negateCondition', value: '' })
       expect(result).toBe('title:foo -region:bar')
     })
+
+    test('works when cursor is right after prefix -|foo:bar', () => {
+      const result = applyAction('-|foo:bar', { type: 'negateCondition', value: '' })
+      expect(result).toBe('foo:bar')
+    })
+
+    test('works when cursor is right after prefix !|foo:bar', () => {
+      const result = applyAction('!|foo:bar', { type: 'negateCondition', value: '' })
+      expect(result).toBe('-foo:bar')
+    })
   })
 
   describe('disableCondition', () => {
@@ -92,6 +102,16 @@ describe('createTransaction', () => {
     test('works with multiple conditions - second condition', () => {
       const result = applyAction('title:foo reg|ion:bar', { type: 'disableCondition', value: '' })
       expect(result).toBe('title:foo !region:bar')
+    })
+
+    test('works when cursor is right after prefix !|foo:bar', () => {
+      const result = applyAction('!|foo:bar', { type: 'disableCondition', value: '' })
+      expect(result).toBe('foo:bar')
+    })
+
+    test('works when cursor is right after prefix -|foo:bar', () => {
+      const result = applyAction('-|foo:bar', { type: 'disableCondition', value: '' })
+      expect(result).toBe('!foo:bar')
     })
   })
 })
