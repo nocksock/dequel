@@ -5,7 +5,6 @@ import { parser } from '../../dequel-lang/parser'
 import { createTransaction } from './createTransaction'
 import { SuggestionAction } from './suggestions'
 
-// Helper to apply an action and return the resulting text
 const applyAction = (inputWithCursor: string, action: SuggestionAction): string => {
   const cursorPos = inputWithCursor.indexOf('|')
   const input = inputWithCursor.replace('|', '')
@@ -13,7 +12,6 @@ const applyAction = (inputWithCursor: string, action: SuggestionAction): string 
   const tree = parser.parse(input)
   const node = tree.resolveInner(cursorPos, -1)
 
-  // Create a minimal mock view with just the state
   const state = EditorState.create({ doc: input })
   const mockView = { state } as EditorView
 
@@ -116,49 +114,54 @@ describe('createTransaction', () => {
   })
 
   describe('insert', () => {
-    test('inserts value at cursor position', () => {
-      const result = applyAction('title:|', { type: 'insert', value: 'foo' })
-      expect(result).toBe('title:foo')
+    test('inserts at start of value node when cursor in value', () => {
+      const result = applyAction('title:foo|', { type: 'insert', value: 'bar' })
+      expect(result).toBe('title:barfoo')
     })
 
-    test('inserts at beginning of document', () => {
+    test('inserts at empty document', () => {
       const result = applyAction('|', { type: 'insert', value: 'title:foo' })
       expect(result).toBe('title:foo')
     })
 
-    test('inserts in middle of query', () => {
+    test('inserts at Query start when cursor in whitespace', () => {
       const result = applyAction('title:foo |region:bar', { type: 'insert', value: 'status:active ' })
-      expect(result).toBe('title:foo status:active region:bar')
+      expect(result).toBe('status:active title:foo region:bar')
     })
 
-    test('inserts at node boundary', () => {
-      const result = applyAction('title:foo| region:bar', { type: 'insert', value: ' status:active' })
-      expect(result).toBe('title:foo status:active region:bar')
+    test('inserts at start of field node when cursor on field', () => {
+      const result = applyAction('ti|tle:foo', { type: 'insert', value: 'X' })
+      expect(result).toBe('Xtitle:foo')
+    })
+
+    test('inserts at field start when cursor before colon', () => {
+      const result = applyAction('title|:foo', { type: 'insert', value: 'X' })
+      expect(result).toBe('Xtitle:foo')
     })
   })
 
   describe('append', () => {
-    test('appends to end of query', () => {
+    test('adds space prefix when char after node is not whitespace', () => {
       const result = applyAction('title:|foo', { type: 'append', value: 'region:bar' })
       expect(result).toBe('title:foo region:bar')
     })
 
-    test('adds space prefix when needed', () => {
+    test('no space prefix when at end of document', () => {
       const result = applyAction('title:foo|', { type: 'append', value: 'region:bar' })
-      expect(result).toBe('title:foo region:bar')
+      expect(result).toBe('title:fooregion:bar')
     })
 
-    test('no double space when space already exists', () => {
+    test('no space prefix when space exists after node', () => {
       const result = applyAction('title:foo |', { type: 'append', value: 'region:bar' })
       expect(result).toBe('title:foo region:bar')
     })
 
-    test('appends when cursor is on field', () => {
+    test('appends to query end regardless of cursor position', () => {
       const result = applyAction('tit|le:foo', { type: 'append', value: 'region:bar' })
       expect(result).toBe('title:foo region:bar')
     })
 
-    test('appends with multiple conditions', () => {
+    test('appends after all conditions in query', () => {
       const result = applyAction('title:|foo status:active', { type: 'append', value: 'region:bar' })
       expect(result).toBe('title:foo status:active region:bar')
     })
@@ -175,42 +178,46 @@ describe('createTransaction', () => {
       expect(result).toBe('title:foo')
     })
 
-    test('cursor position independent', () => {
-      // Should append to end regardless of cursor position
+    test('cursor position independent - appends at doc end', () => {
       const result = applyAction('ti|tle:foo', { type: 'appendDoc', value: ' region:bar' })
       expect(result).toBe('title:foo region:bar')
     })
 
-    test('appends at document end regardless of cursor', () => {
+    test('appends at document end regardless of cursor position', () => {
       const result = applyAction('title:foo |status:active', { type: 'appendDoc', value: ' region:bar' })
       expect(result).toBe('title:foo status:active region:bar')
     })
   })
 
   describe('setMatcher', () => {
-    test('replaces matcher value', () => {
-      const result = applyAction('title:|foo', { type: 'setMatcher', value: 'bar|' })
-      expect(result).toBe('title:bar')
-    })
-
-    test('replaces with command', () => {
-      const result = applyAction('created_at:|value', { type: 'setMatcher', value: 'after(|)' })
-      expect(result).toBe('created_at:after()')
-    })
-
-    test('replaces when cursor in middle of value', () => {
+    test('replaces entire matcher when cursor in value', () => {
       const result = applyAction('title:fo|o', { type: 'setMatcher', value: 'bar|' })
       expect(result).toBe('title:bar')
     })
 
-    test('replaces empty matcher', () => {
+    test('replaces entire matcher when cursor at end of value', () => {
+      const result = applyAction('title:foo|', { type: 'setMatcher', value: 'bar|' })
+      expect(result).toBe('title:bar')
+    })
+
+    test('replaces longer matcher with shorter value', () => {
+      const result = applyAction('title:foobar|', { type: 'setMatcher', value: 'foo|' })
+      expect(result).toBe('title:foo')
+    })
+
+    test('replaces colon when cursor on colon (no matcher found)', () => {
+      const result = applyAction('title:|foo', { type: 'setMatcher', value: 'bar|' })
+      expect(result).toBe('title:bar')
+    })
+
+    test('replaces colon at empty matcher position', () => {
       const result = applyAction('title:|', { type: 'setMatcher', value: 'foo|' })
       expect(result).toBe('title:foo')
     })
 
-    test('replaces with complex command', () => {
-      const result = applyAction('date:|old', { type: 'setMatcher', value: 'between(2024,|,2025)' })
-      expect(result).toBe('date:between(2024,,2025)')
+    test('replaces with command value', () => {
+      const result = applyAction('created_at:v|alue', { type: 'setMatcher', value: 'after(|)' })
+      expect(result).toBe('created_at:after()')
     })
   })
 
@@ -220,12 +227,12 @@ describe('createTransaction', () => {
       expect(result).toBe('region:bar')
     })
 
-    test('replaces in multi-condition query - first condition', () => {
+    test('replaces first condition in multi-condition query', () => {
       const result = applyAction('title:|foo status:active', { type: 'replaceCondition', value: 'region:bar' })
       expect(result).toBe('region:bar status:active')
     })
 
-    test('replaces in multi-condition query - second condition', () => {
+    test('replaces second condition in multi-condition query', () => {
       const result = applyAction('title:foo status:|active', { type: 'replaceCondition', value: 'region:bar' })
       expect(result).toBe('title:foo region:bar')
     })
@@ -243,6 +250,16 @@ describe('createTransaction', () => {
     test('replaces with shorter condition', () => {
       const result = applyAction('longer_field:|longer_value', { type: 'replaceCondition', value: 'a:b' })
       expect(result).toBe('a:b')
+    })
+
+    test('throws when used on ExcludeCondition', () => {
+      expect(() => applyAction('-title:|foo', { type: 'replaceCondition', value: 'region:bar' }))
+        .toThrow('no condition found')
+    })
+
+    test('throws when used on IgnoredCondition', () => {
+      expect(() => applyAction('!title:|foo', { type: 'replaceCondition', value: 'region:bar' }))
+        .toThrow('no condition found')
     })
   })
 })

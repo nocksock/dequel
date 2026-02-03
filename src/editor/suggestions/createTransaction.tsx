@@ -68,16 +68,35 @@ export function createTransaction({
     }
 
     case "setMatcher": {
-      const matcher = closest("Matcher", node) || node;
+      // Find the Matcher node - either as an ancestor, or as a sibling via parent Condition
+      const matcher =
+        closest("Matcher", node) ||
+        closestCondition(node)?.getChild("Matcher");
+
+      const value = action.value.replace("|", "");
+      const cursorOffset = action.value.indexOf("|");
+
+      // If no Matcher found (empty value after colon), insert at end of condition
+      if (!matcher) {
+        const condition = closestCondition(node);
+        const insertPos = condition?.to ?? node.to;
+        return {
+          selection: { anchor: insertPos + cursorOffset },
+          changes: view.state.changes({
+            from: insertPos,
+            insert: value,
+          }),
+        };
+      }
 
       return {
         selection: {
-          anchor: matcher.from + action.value.indexOf("|") + 1,
+          anchor: matcher.from + cursorOffset,
         },
         changes: view.state.changes({
-          from: matcher.from + 1, // FIXME: ":" is somehow part of the matcher's range
+          from: matcher.from,
           to: matcher.to,
-          insert: action.value.replace("|", ""),
+          insert: value,
         }),
       };
     }
