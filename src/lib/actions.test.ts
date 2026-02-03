@@ -9,14 +9,17 @@ import { negate, disable } from './transforms'
 /**
  * Helper to build an ActionContext from a cursor-marked input string.
  */
-const buildContext = (inputWithCursor: string): { ctx: ActionContext; input: string } => {
+const buildContext = (inputWithCursor: string): { ctx: ActionContext; input: string; cursorPos: number } => {
   const cursorPos = inputWithCursor.indexOf('|')
   const input = inputWithCursor.replace('|', '')
 
   const tree = parser.parse(input)
   const node = tree.resolveInner(cursorPos, -1)
 
-  const state = EditorState.create({ doc: input })
+  const state = EditorState.create({
+    doc: input,
+    selection: { anchor: cursorPos },
+  })
   const mockView = { state } as EditorView
 
   const condition = closestCondition(node)
@@ -32,6 +35,7 @@ const buildContext = (inputWithCursor: string): { ctx: ActionContext; input: str
       condition,
     },
     input,
+    cursorPos,
   }
 }
 
@@ -46,6 +50,23 @@ const applyAndGetResult = (inputWithCursor: string, action: SuggestionAction): s
 
   const newState = ctx.state.update(transaction).state
   return newState.doc.toString()
+}
+
+/**
+ * Apply an action and return result with cursor position marked.
+ */
+const applyAndGetResultWithCursor = (inputWithCursor: string, action: SuggestionAction): string => {
+  const { ctx } = buildContext(inputWithCursor)
+  const transaction = applyAction(ctx, action)
+
+  if (!transaction.changes) return inputWithCursor
+
+  const newState = ctx.state.update(transaction).state
+  const newDoc = newState.doc.toString()
+  const newCursor = newState.selection.main.anchor
+
+  // Insert cursor marker at position
+  return newDoc.slice(0, newCursor) + '|' + newDoc.slice(newCursor)
 }
 
 describe('transform actions', () => {
@@ -95,6 +116,28 @@ describe('transform actions', () => {
     test('works when cursor is right after prefix !|foo:bar', () => {
       const result = applyAndGetResult('!|foo:bar', negateAction)
       expect(result).toBe('-foo:bar')
+    })
+
+    describe('cursor position preservation', () => {
+      test('maintains cursor in value when adding prefix', () => {
+        const result = applyAndGetResultWithCursor('foo:"ba|r"', negateAction)
+        expect(result).toBe('-foo:"ba|r"')
+      })
+
+      test('maintains cursor in value when removing prefix', () => {
+        const result = applyAndGetResultWithCursor('-foo:"ba|r"', negateAction)
+        expect(result).toBe('foo:"ba|r"')
+      })
+
+      test('maintains cursor on field when adding prefix', () => {
+        const result = applyAndGetResultWithCursor('tit|le:foo', negateAction)
+        expect(result).toBe('-tit|le:foo')
+      })
+
+      test('maintains cursor on field when removing prefix', () => {
+        const result = applyAndGetResultWithCursor('-tit|le:foo', negateAction)
+        expect(result).toBe('tit|le:foo')
+      })
     })
   })
 
@@ -280,9 +323,46 @@ describe('setPredicate actions', () => {
     expect(result).toBe('title:foo')
   })
 
-  test('replaces with command value', () => {
+  test('replaces value with command, preserving value as arg', () => {
     const result = applyAndGetResult('created_at:v|alue', makeSetPredicateAction('after(|)'))
-    expect(result).toBe('created_at:after()')
+    expect(result).toBe('created_at:after(value)')
+  })
+
+  describe('preserves arguments when switching commands', () => {
+    test('preserves string value when switching to command', () => {
+      const result = applyAndGetResult('title:"fo|oo"', makeSetPredicateAction('ends_with("|")'))
+      expect(result).toBe('title:ends_with("fooo")')
+    })
+    test('preserves string arg when switching from starts_with to ends_with', () => {
+      const result = applyAndGetResult('title:starts_with("fo|oo")', makeSetPredicateAction('ends_with("|")'))
+      expect(result).toBe('title:ends_with("fooo")')
+    })
+
+    test('preserves string arg when switching from contains to starts_with', () => {
+      const result = applyAndGetResult('title:contains("hel|lo")', makeSetPredicateAction('starts_with("|")'))
+      expect(result).toBe('title:starts_with("hello")')
+    })
+
+    test('preserves multiple args when switching commands', () => {
+      const result = applyAndGetResult('date:between(2024|,2025)', makeSetPredicateAction('range(|,)'))
+      expect(result).toBe('date:range(2024,2025)')
+    })
+
+    test('preserves identifier arg when switching commands', () => {
+      const result = applyAndGetResult('status:one_of(acti|ve)', makeSetPredicateAction('any_of(|)'))
+      expect(result).toBe('status:any_of(active)')
+    })
+
+    test('preserves identifier value when switching to command', () => {
+      const result = applyAndGetResult('title:fo|o', makeSetPredicateAction('contains("|")'))
+      expect(result).toBe('title:contains(foo)')
+    })
+
+    test('cursor positioned after preserved args', () => {
+      // The | in the template should position cursor after the preserved args
+      const result = applyAndGetResult('title:starts_with("test|")', makeSetPredicateAction('ends_with("|")'))
+      expect(result).toBe('title:ends_with("test")')
+    })
   })
 })
 

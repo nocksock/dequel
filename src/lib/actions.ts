@@ -68,6 +68,7 @@ export type SuggestionAction = TransformAction | InsertAction | AppendAction | S
 /**
  * Apply a transform to the current condition.
  * Returns a transaction that replaces the condition with the transformed version.
+ * Maintains cursor position relative to condition content.
  */
 export function applyTransform(ctx: ActionContext, transform: Transform): TransactionSpec {
   if (!ctx.condition) return {}
@@ -76,12 +77,19 @@ export function applyTransform(ctx: ActionContext, transform: Transform): Transa
   const newParts = transform(parts)
   const newText = serializeCondition(newParts)
 
+  // Calculate cursor adjustment based on prefix change
+  const cursorPos = ctx.state.selection.main.anchor
+  const offsetInCondition = cursorPos - ctx.condition.from
+  const prefixDelta = newParts.prefix.length - parts.prefix.length
+  const newCursorPos = ctx.condition.from + offsetInCondition + prefixDelta
+
   return {
     changes: {
       from: ctx.condition.from,
       to: ctx.condition.to,
       insert: newText,
     },
+    selection: { anchor: newCursorPos },
   }
 }
 
@@ -132,8 +140,50 @@ export function applyAppendDoc(ctx: ActionContext, value: string): TransactionSp
 }
 
 /**
+ * Extract argument text from a Command node.
+ * Returns the text between the parentheses (excluding them).
+ */
+function extractCommandArgs(command: SyntaxNode, doc: { sliceString: (from: number, to: number) => string }): string | null {
+  const args = command.getChildren('Argument')
+  if (args.length === 0) return null
+
+  // Get text from first arg start to last arg end
+  const firstArg = args[0]
+  const lastArg = args[args.length - 1]
+  return doc.sliceString(firstArg.from, lastArg.to)
+}
+
+/**
+ * Check if a value is a command template (e.g., "ends_with(|)" or "contains("|")")
+ * and substitute existing args into it.
+ */
+function substituteCommandArgs(newValue: string, existingArgs: string | null): string {
+  if (!existingArgs) return newValue
+
+  // Match command pattern: name(...) where ... contains the cursor marker
+  const match = newValue.match(/^(\w+)\(([^)]*)\)$/)
+  if (!match) return newValue
+
+  const [, commandName, templateContent] = match
+
+  // Check if template content is just placeholder content (empty, "|", '"|"', '|,', etc.)
+  // These patterns indicate "user should type here" - we replace with existing args
+  // A placeholder contains only: |, ", comma, whitespace - no actual alphanumeric values
+  const isPlaceholder = !/[a-zA-Z0-9]/.test(templateContent)
+
+  if (isPlaceholder) {
+    // Preserve cursor position marker at end of args if original had one
+    const hadCursor = templateContent.includes('|')
+    return `${commandName}(${existingArgs}${hadCursor ? '|' : ''})`
+  }
+
+  return newValue
+}
+
+/**
  * Apply a setPredicate action.
  * The value can contain '|' to indicate cursor position.
+ * When switching between commands, preserves existing arguments.
  */
 export function applySetPredicate(ctx: ActionContext, value: string): TransactionSpec {
   if (!ctx.node) return {}
@@ -141,8 +191,21 @@ export function applySetPredicate(ctx: ActionContext, value: string): Transactio
   // Find the Predicate node - either as an ancestor, or as a sibling via parent Condition
   const predicate = closest('Predicate', ctx.node) || closestCondition(ctx.node)?.getChild('Predicate')
 
-  const cleanValue = value.replace('|', '')
-  const cursorOffset = value.indexOf('|')
+  // Extract existing value to preserve when switching predicates
+  // Priority: Command args > Value content (String, Identifier, Number)
+  const currentCommand = predicate?.getChild('Command')
+  const currentValue = predicate?.getChild('Value')
+  const existingArgs = currentCommand
+    ? extractCommandArgs(currentCommand, ctx.state.doc)
+    : currentValue
+      ? ctx.state.doc.sliceString(currentValue.from, currentValue.to)
+      : null
+
+  // Substitute args into the new value if applicable
+  const substitutedValue = substituteCommandArgs(value, existingArgs)
+
+  const cleanValue = substitutedValue.replace('|', '')
+  const cursorOffset = substitutedValue.indexOf('|')
 
   // If no Predicate found (empty value after colon), insert at end of condition
   if (!predicate) {
