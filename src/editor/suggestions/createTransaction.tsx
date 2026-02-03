@@ -57,12 +57,12 @@ export function createTransaction({
 
       return {
         selection: {
-          anchor: matcher.from + action.value.indexOf("*") + 1,
+          anchor: matcher.from + action.value.indexOf("|") + 1,
         },
         changes: view.state.changes({
           from: matcher.from + 1, // FIXME: ":" is somehow part of the matcher's range
           to: matcher.to,
-          insert: action.value.replace("*", ""),
+          insert: action.value.replace("|", ""),
         }),
       };
     }
