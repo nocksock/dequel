@@ -21,8 +21,12 @@
         </select>
 
         <div class="card bg-base-100 shadow-sm ">
-          <dequel-editor id="primary" name="query" endpoint="http://localhost:4000/api/selections/preview" autocompletions="http://localhost:4000/api/selections/schema?collection=markets" suggestions="http://localhost:4000/api/selections/preview/schema?collection=markets"></dequel-editor>
-          <dequel-suggestions class="empty:hidden flex flex-col gap-2 text-sm p-4" for="primary"></dequel-suggestions>
+          <div class="card-body">
+            <dequel-editor class="textarea" id="primary" name="query" endpoint="http://localhost:4000/api/selections/preview" autocompletions="http://localhost:4000/api/selections/schema?collection=markets" suggestions="http://localhost:4000/api/selections/preview/schema?collection=markets"></dequel-editor>
+          </div>
+          <div class="card-footer">
+            <dequel-suggestions class="empty:hidden flex flex-col gap-2 text-sm p-4" for="primary"></dequel-suggestions>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary">

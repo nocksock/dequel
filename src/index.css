@@ -2,6 +2,10 @@
 @import "./editor/styles.css";
 @plugin "daisyui";
 
+@source "./components";
+@source "./lib";
+@source "./editor";
+
 @plugin "daisyui/theme" {
   name: "edk light";
   default: false;
