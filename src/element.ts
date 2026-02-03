@@ -1,7 +1,6 @@
 import { createDequelEditor } from './editor/index.js'
 import type { DequelEditor } from './editor/index.js'
 import { CompletionSchemaEffect } from './editor/completion.js'
-import { SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
 import axios from 'axios'
 
@@ -9,12 +8,11 @@ const inputEvent = new Event('input')
 
 export class DequelEditorElement extends HTMLElement {
   static formAssociated = true
-  static observedAttributes = ['value', 'autocompletions', 'suggestions']
+  static observedAttributes = ['value', 'autocompletions']
 
   #value = this.getAttribute('value') || ''
   #endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
   #autocompletions = this.getAttribute('autocompletions') || ''
-  #suggestions = this.getAttribute('suggestions') || ''
   #internals: ElementInternals
   editor?: DequelEditor
 
@@ -25,14 +23,13 @@ export class DequelEditorElement extends HTMLElement {
 
   connectedCallback() {
     if (this.editor) return;
-    const suggestionsAttr = this.#suggestions
-    const hasSuggestions = suggestionsAttr !== null && suggestionsAttr !== ''
+    // Check if there's a suggestions container for this editor
+    const hasSuggestions = !!document.querySelector(`[for="${this.id}"]`)
 
     this.editor = createDequelEditor(this, {
       value: this.value,
       completionEndpoint: this.#endpoint,
       autocompletionsEndpoint: this.#autocompletions || undefined,
-      suggestionsEndpoint: hasSuggestions ? suggestionsAttr : undefined,
       suggestions: hasSuggestions,
       onUpdate: value => {
         this.#value = value
@@ -64,13 +61,6 @@ export class DequelEditorElement extends HTMLElement {
         }
         break
       }
-      case 'suggestions': {
-        this.#suggestions = newValue
-        if (this.editor && newValue) {
-          this.fetchSuggestions(newValue)
-        }
-        break
-      }
     }
   }
 
@@ -79,16 +69,6 @@ export class DequelEditorElement extends HTMLElement {
       .then(({ data }) => {
         this.editor?.dispatch({
           effects: CompletionSchemaEffect.of(data),
-        })
-      })
-      .catch(console.error)
-  }
-
-  private fetchSuggestions(endpoint: string) {
-    axios.get(endpoint)
-      .then(({ data }) => {
-        this.editor?.dispatch({
-          effects: SuggestionSchemaEffect.of(data),
         })
       })
       .catch(console.error)

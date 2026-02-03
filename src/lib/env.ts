@@ -1,1 +1,1 @@
-export const isProduction: boolean = window.location.href.includes('prod')
+export const isProduction: boolean = typeof window !== 'undefined' && window.location.href.includes('prod')

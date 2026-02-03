@@ -6,7 +6,6 @@ import axios from 'axios'
 import { SuggestionView } from '../../components/SuggestionView'
 import { raise } from '../../lib/error'
 import { Optional } from '../../lib/types'
-import { DequelEditorOptions } from '../options'
 
 export type SuggestionsAPIResponse = Record<
   string,
@@ -42,13 +41,14 @@ export const Suggestions = ViewPlugin.fromClass(
     #dom: HTMLElement
 
     constructor(view: EditorView) {
-      const options = view.state.facet(DequelEditorOptions)[0]
       this.#dom =
         document.querySelector(`[for="${view.dom.parentElement?.id}"]`) ||
         raise(`no suggestion container found`)
 
-      const endpoint = options.suggestionsEndpoint || options.completionEndpoint + '/schema'
-      this.fetchSuggestions(view, endpoint)
+      const endpoint = this.#dom.getAttribute('endpoint')
+      if (endpoint) {
+        this.fetchSuggestions(view, endpoint)
+      }
     }
 
     fetchSuggestions(view: EditorView, endpoint: string) {
