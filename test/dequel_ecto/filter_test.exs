@@ -96,6 +96,16 @@ defmodule Dequel.Adapter.EctoTest do
     assert ~ALL<name:$do> == [frodo]
   end
 
+  test "one_of with 3+ values uses IN" do
+    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
+    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
+    _other = item_fixture(%{"name" => "gandalf", "description" => "wizard"})
+
+    result = ~ALL<name:one_of(frodo, bilbo, samwise)>
+    assert Enum.sort_by(result, & &1.name) == Enum.sort_by([frodo, bilbo, samwise], & &1.name)
+  end
+
   describe "relationship filtering with query/3" do
     test "filters by single-level association field" do
       tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})

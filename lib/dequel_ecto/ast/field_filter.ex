@@ -177,6 +177,8 @@ defmodule Dequel.Adapter.Ecto.Filter do
   end
 
   # Legacy where/1 API for backward compatibility
+  def where(""), do: dynamic(true)
+
   def where(input) when is_binary(input) do
     input
     |> Dequel.Parser.parse!()
@@ -184,6 +186,10 @@ defmodule Dequel.Adapter.Ecto.Filter do
   end
 
   def where([]), do: dynamic(true)
+
+  def where({:in, [], [field, values]}) do
+    dynamic([schema], field(schema, ^field) in ^values)
+  end
 
   def where({:==, [], [field, value]}) do
     dynamic([schema], field(schema, ^field) == ^value)
