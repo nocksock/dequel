@@ -247,41 +247,41 @@ describe('insert at end (appendDoc replacement)', () => {
   })
 })
 
-describe('setMatcher actions', () => {
-  const makeSetMatcherAction = (value: string): SuggestionAction => ({
-    type: 'setMatcher',
-    id: 'test-set-matcher',
+describe('setPredicate actions', () => {
+  const makeSetPredicateAction = (value: string): SuggestionAction => ({
+    type: 'setPredicate',
+    id: 'test-set-predicate',
     label: value,
     value,
   })
 
-  test('replaces entire matcher when cursor in value', () => {
-    const result = applyAndGetResult('title:fo|o', makeSetMatcherAction('bar|'))
+  test('replaces entire predicate when cursor in value', () => {
+    const result = applyAndGetResult('title:fo|o', makeSetPredicateAction('bar|'))
     expect(result).toBe('title:bar')
   })
 
-  test('replaces entire matcher when cursor at end of value', () => {
-    const result = applyAndGetResult('title:foo|', makeSetMatcherAction('bar|'))
+  test('replaces entire predicate when cursor at end of value', () => {
+    const result = applyAndGetResult('title:foo|', makeSetPredicateAction('bar|'))
     expect(result).toBe('title:bar')
   })
 
-  test('replaces longer matcher with shorter value', () => {
-    const result = applyAndGetResult('title:foobar|', makeSetMatcherAction('foo|'))
+  test('replaces longer predicate with shorter value', () => {
+    const result = applyAndGetResult('title:foobar|', makeSetPredicateAction('foo|'))
     expect(result).toBe('title:foo')
   })
 
-  test('replaces colon when cursor on colon (no matcher found)', () => {
-    const result = applyAndGetResult('title:|foo', makeSetMatcherAction('bar|'))
+  test('replaces colon when cursor on colon (no predicate found)', () => {
+    const result = applyAndGetResult('title:|foo', makeSetPredicateAction('bar|'))
     expect(result).toBe('title:bar')
   })
 
-  test('replaces colon at empty matcher position', () => {
-    const result = applyAndGetResult('title:|', makeSetMatcherAction('foo|'))
+  test('replaces colon at empty predicate position', () => {
+    const result = applyAndGetResult('title:|', makeSetPredicateAction('foo|'))
     expect(result).toBe('title:foo')
   })
 
   test('replaces with command value', () => {
-    const result = applyAndGetResult('created_at:v|alue', makeSetMatcherAction('after(|)'))
+    const result = applyAndGetResult('created_at:v|alue', makeSetPredicateAction('after(|)'))
     expect(result).toBe('created_at:after()')
   })
 })
@@ -298,7 +298,7 @@ describe('legacy behavior compatibility', () => {
         transform: () => ({
         prefix: '',
         field: 'region',
-        matcher: 'bar',
+        predicate: 'bar',
       }),
     }
 

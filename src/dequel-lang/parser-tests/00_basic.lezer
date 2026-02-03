@@ -6,8 +6,8 @@ type:markets title:EDEKA
 
 QueryList(
   Query(
-    Condition(Field, ":", Matcher(Value(Identifier))),
-    Condition(Field, ":", Matcher(Value(Identifier)))
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Identifier)))
   )
 )
 
@@ -19,8 +19,8 @@ type:markets    title:EDEKA
 
 QueryList(
   Query(
-    Condition(Field, ":", Matcher(Value(Identifier))),
-    Condition(Field, ":", Matcher(Value(Identifier)))
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Identifier)))
   )
 )
 
@@ -32,8 +32,8 @@ type:markets -title:EDEKA
 
 QueryList(
   Query(
-    Condition(Field, ":", Matcher(Value(Identifier))),
-    ExcludeCondition(Field, ":", Matcher(Value(Identifier)))
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    ExcludeCondition(Field, ":", Predicate(Value(Identifier)))
   )
 )
 
@@ -49,11 +49,11 @@ type:markets
 
 QueryList(
   Query(
-    Condition(Field, ":", Matcher(Value(Identifier))),
-    Condition(Field, ":", Matcher(Value(Identifier))),
-    Condition(Field, ":", Matcher(Value(String))),
-    Condition(Field, ":", Matcher(Value(Number))),
-    Condition(Field, ":", Matcher(Regex)),
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(String))),
+    Condition(Field, ":", Predicate(Value(Number))),
+    Condition(Field, ":", Predicate(Regex)),
   )
 )
 

@@ -9,7 +9,7 @@ import { raise } from '../../lib/error'
  * Action type in API responses.
  */
 export type APIAction = {
-  type: 'setMatcher' | 'append' | 'insert'
+  type: 'setPredicate' | 'append' | 'insert'
   value: string
   /** Only for 'insert' type - where to insert */
   position?: 'cursor' | 'end'
@@ -30,9 +30,9 @@ export type APIValue = {
 export type APIFieldConfig = {
   title?: string
   description?: string
-  /** Field type - determines built-in matchers */
+  /** Field type - determines available predicates */
   type?: 'text' | 'keyword' | 'uuid' | 'date'
-  /** Custom values (combined with type-based matchers) */
+  /** Custom values (combined with type-based predicates) */
   values?: APIValue[]
 }
 

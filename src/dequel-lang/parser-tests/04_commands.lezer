@@ -6,7 +6,7 @@ id:oneOf(1,2,3)
 
 QueryList(
   Query(
-    Condition(Field, ":", Matcher(Command(
+    Condition(Field, ":", Predicate(Command(
       Identifier, 
       Argument(Number),
       Argument(Number),
@@ -23,7 +23,7 @@ id:anyFn(something,1,2)
 
 QueryList(
   Query(
-    Condition(Field, ":", Matcher(Command(
+    Condition(Field, ":", Predicate(Command(
       Identifier, 
       Argument(Identifier),
       Argument(Number),

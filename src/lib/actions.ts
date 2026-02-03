@@ -12,7 +12,7 @@ import {
   Transform,
 } from './syntax'
 import { SuggestionSchemaField } from '../editor/suggestions/suggestions'
-import { getMatcherActions, MatcherType } from '../editor/suggestions/matchers'
+import { getPredicateActions, FieldType } from './predicates'
 
 // Types
 
@@ -52,8 +52,8 @@ export interface AppendAction {
   isApplicable?: (ctx: ActionContext) => boolean
 }
 
-export interface SetMatcherAction {
-  type: 'setMatcher'
+export interface SetPredicateAction {
+  type: 'setPredicate'
   id: string
   label: string
   description?: string
@@ -61,7 +61,7 @@ export interface SetMatcherAction {
   isApplicable?: (ctx: ActionContext) => boolean
 }
 
-export type SuggestionAction = TransformAction | InsertAction | AppendAction | SetMatcherAction
+export type SuggestionAction = TransformAction | InsertAction | AppendAction | SetPredicateAction
 
 // Apply functions
 
@@ -132,20 +132,20 @@ export function applyAppendDoc(ctx: ActionContext, value: string): TransactionSp
 }
 
 /**
- * Apply a setMatcher action.
+ * Apply a setPredicate action.
  * The value can contain '|' to indicate cursor position.
  */
-export function applySetMatcher(ctx: ActionContext, value: string): TransactionSpec {
+export function applySetPredicate(ctx: ActionContext, value: string): TransactionSpec {
   if (!ctx.node) return {}
 
-  // Find the Matcher node - either as an ancestor, or as a sibling via parent Condition
-  const matcher = closest('Matcher', ctx.node) || closestCondition(ctx.node)?.getChild('Matcher')
+  // Find the Predicate node - either as an ancestor, or as a sibling via parent Condition
+  const predicate = closest('Predicate', ctx.node) || closestCondition(ctx.node)?.getChild('Predicate')
 
   const cleanValue = value.replace('|', '')
   const cursorOffset = value.indexOf('|')
 
-  // If no Matcher found (empty value after colon), insert at end of condition
-  if (!matcher) {
+  // If no Predicate found (empty value after colon), insert at end of condition
+  if (!predicate) {
     const condition = closestCondition(ctx.node)
     const insertPos = condition?.to ?? ctx.node.to
     return {
@@ -159,11 +159,11 @@ export function applySetMatcher(ctx: ActionContext, value: string): TransactionS
 
   return {
     selection: {
-      anchor: matcher.from + (cursorOffset >= 0 ? cursorOffset : cleanValue.length),
+      anchor: predicate.from + (cursorOffset >= 0 ? cursorOffset : cleanValue.length),
     },
     changes: ctx.state.changes({
-      from: matcher.from,
-      to: matcher.to,
+      from: predicate.from,
+      to: predicate.to,
       insert: cleanValue,
     }),
   }
@@ -184,8 +184,8 @@ export function applyAction(ctx: ActionContext, action: SuggestionAction): Trans
     case 'append':
       return applyAppend(ctx, action.value)
 
-    case 'setMatcher':
-      return applySetMatcher(ctx, action.value)
+    case 'setPredicate':
+      return applySetPredicate(ctx, action.value)
 
     default: {
       // Exhaustive check - if this errors, we're missing a case
@@ -232,15 +232,15 @@ function getFieldValues(ctx: ActionContext): SuggestionAction[] {
   const actions: SuggestionAction[] = []
 
   if (fieldConfig.type) {
-    actions.push(...getMatcherActions(fieldConfig.type as MatcherType))
+    actions.push(...getPredicateActions(fieldConfig.type as FieldType))
   }
 
   if (fieldConfig.values) {
     for (const v of fieldConfig.values) {
       switch (v.action.type) {
-        case 'setMatcher':
+        case 'setPredicate':
           actions.push({
-            type: 'setMatcher',
+            type: 'setPredicate',
             id: `field-value-${v.label}`,
             label: v.label,
             description: v.description,

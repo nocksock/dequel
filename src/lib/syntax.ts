@@ -48,7 +48,7 @@ export const flattenStack = (
 export interface ConditionParts {
   prefix: '' | '-' | '!'
   field: string
-  matcher: string
+  predicate: string
   node: SyntaxNode
 }
 
@@ -81,12 +81,12 @@ export function parseCondition(node: SyntaxNode, doc: Text): ConditionParts {
         : ''
 
   const fieldNode = node.getChild('Field')
-  const matcherNode = node.getChild('Matcher')
+  const predicateNode = node.getChild('Predicate')
 
   return {
     prefix,
     field: fieldNode ? doc.sliceString(fieldNode.from, fieldNode.to) : '',
-    matcher: matcherNode ? doc.sliceString(matcherNode.from, matcherNode.to) : '',
+    predicate: predicateNode ? doc.sliceString(predicateNode.from, predicateNode.to) : '',
     node,
   }
 }
@@ -95,7 +95,7 @@ export function parseCondition(node: SyntaxNode, doc: Text): ConditionParts {
  * Serialize condition parts back to a string.
  */
 export function serializeCondition(parts: Omit<ConditionParts, 'node'>): string {
-  return `${parts.prefix}${parts.field}:${parts.matcher}`
+  return `${parts.prefix}${parts.field}:${parts.predicate}`
 }
 
 // Field context

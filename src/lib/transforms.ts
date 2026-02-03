@@ -23,13 +23,13 @@ export const disable: Transform = (parts) => ({
 })
 
 /**
- * Replace the matcher value.
+ * Replace the predicate value.
  */
-export const setMatcher =
+export const setPredicate =
   (value: string): Transform =>
   (parts) => ({
     ...parts,
-    matcher: value,
+    predicate: value,
   })
 
 /**
@@ -43,12 +43,12 @@ export const setField =
   })
 
 /**
- * Wrap the current matcher in a command call.
+ * Wrap the current predicate in a command call.
  * Example: value → command(value)
  */
 export const wrapInCommand =
   (cmd: string): Transform =>
   (parts) => ({
     ...parts,
-    matcher: `${cmd}(${parts.matcher})`,
+    predicate: `${cmd}(${parts.predicate})`,
   })

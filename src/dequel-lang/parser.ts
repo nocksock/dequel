@@ -16,11 +16,11 @@ Query {
 }
 
 anyCondition { Condition | ExcludeCondition | IgnoredCondition }
-Condition { Field ":" Matcher }
-ExcludeCondition { "-" Field ":" Matcher }
-IgnoredCondition { "!" Field ":" Matcher }
+Condition { Field ":" Predicate }
+ExcludeCondition { "-" Field ":" Predicate }
+IgnoredCondition { "!" Field ":" Predicate }
 
-Matcher { Regex | Value | Command  }
+Predicate { Regex | Value | Command  }
 Command { Identifier "(" Argument ("," Argument)* ")" }
 Argument { Identifier | Number | String }
 Value { Identifier | Number | String }
@@ -43,7 +43,7 @@ export const customTag = {
   Condition: Tag.define(t.keyword),
   Field: Tag.define(t.propertyName),
   Command: t.function(t.variableName),
-  Matcher: Tag.define(t.variableName),
+  Predicate: Tag.define(t.variableName),
   Value: Tag.define(t.attributeValue),
   Operator: Tag.define(t.operator),
   Regex: Tag.define(t.regexp),
@@ -63,11 +63,11 @@ export const parserWithMetadata = parser.configure({
       "Condition/:": customTag.Operator,
       "ExcludeCondition/:": customTag.Operator,
       "Condition/Field/...": customTag.Field,
-      "Condition/Matcher/RegexContent!": customTag.RegexContent,
+      "Condition/Predicate/RegexContent!": customTag.RegexContent,
       "Command!": customTag.Command,
       "Separator!": customTag.Operator,
       Regex: customTag.Regex,
-      // "Condition/Matcher/...": condition.Matcher,
+      // "Condition/Predicate/...": condition.Predicate,
       Comment: t.lineComment,
       Field: customTag.Field,
       "Value!": customTag.Value,

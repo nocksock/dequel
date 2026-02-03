@@ -63,51 +63,51 @@ describe('parseCondition', () => {
     const parts = parse('title:foo')
     expect(parts.prefix).toBe('')
     expect(parts.field).toBe('title')
-    expect(parts.matcher).toBe('foo')
+    expect(parts.predicate).toBe('foo')
   })
 
   test('parses excluded condition', () => {
     const parts = parse('-title:foo')
     expect(parts.prefix).toBe('-')
     expect(parts.field).toBe('title')
-    expect(parts.matcher).toBe('foo')
+    expect(parts.predicate).toBe('foo')
   })
 
   test('parses ignored condition', () => {
     const parts = parse('!title:foo')
     expect(parts.prefix).toBe('!')
     expect(parts.field).toBe('title')
-    expect(parts.matcher).toBe('foo')
+    expect(parts.predicate).toBe('foo')
   })
 
   test('parses condition with command matcher', () => {
     const parts = parse('date:after(2024,01)')
     expect(parts.prefix).toBe('')
     expect(parts.field).toBe('date')
-    expect(parts.matcher).toBe('after(2024,01)')
+    expect(parts.predicate).toBe('after(2024,01)')
   })
 
   test('parses condition with regex matcher', () => {
     const parts = parse('name:/^test.*/i')
     expect(parts.prefix).toBe('')
     expect(parts.field).toBe('name')
-    expect(parts.matcher).toBe('/^test.*/i')
+    expect(parts.predicate).toBe('/^test.*/i')
   })
 })
 
 describe('serializeCondition', () => {
   test('serializes regular condition', () => {
-    const result = serializeCondition({ prefix: '', field: 'title', matcher: 'foo' })
+    const result = serializeCondition({ prefix: '', field: 'title', predicate: 'foo' })
     expect(result).toBe('title:foo')
   })
 
   test('serializes excluded condition', () => {
-    const result = serializeCondition({ prefix: '-', field: 'title', matcher: 'foo' })
+    const result = serializeCondition({ prefix: '-', field: 'title', predicate: 'foo' })
     expect(result).toBe('-title:foo')
   })
 
   test('serializes ignored condition', () => {
-    const result = serializeCondition({ prefix: '!', field: 'title', matcher: 'foo' })
+    const result = serializeCondition({ prefix: '!', field: 'title', predicate: 'foo' })
     expect(result).toBe('!title:foo')
   })
 })
