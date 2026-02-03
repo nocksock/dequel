@@ -1,5 +1,4 @@
 import { useState } from 'preact/hooks'
-import { BugIcon } from 'lucide-react'
 import { EditorView } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { SyntaxNode } from '@lezer/common'
@@ -77,7 +76,7 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
       }
 
   return (
-    <div className="card">
+    <div className="card  space-y-3">
       <h2 className="divider text-sm font-semibold text-base-content/70">
         {suggestions?.title || 'Narrow your search'}
       </h2>
@@ -131,15 +130,16 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
         </div>
       )}
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setShowDebug(d => !d)}
-          className={`btn btn-ghost btn-xs btn-square ${showDebug ? 'btn-active' : ''}`}
-          title="Toggle debug info"
-        >
-          <BugIcon size={14} />
-        </button>
+      <div className="flex justify-end items-center gap-2">
+        <label className="label cursor-pointer gap-2">
+          <span className="label-text text-xs text-base-content/50">Debug</span>
+          <input
+            type="checkbox"
+            className="toggle toggle-xs"
+            checked={showDebug}
+            onChange={() => setShowDebug(d => !d)}
+          />
+        </label>
       </div>
 
 
