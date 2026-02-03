@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { describe, test } from "vitest";
 
-const dir = "./src/dequel/parser-tests";
+const dir = "./src/dequel-lang/parser-tests";
 
 for (const file of readdirSync(dir)) {
   const describeCmd = file.startsWith("_") ? describe.skip : describe;
