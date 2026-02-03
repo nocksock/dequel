@@ -1,24 +1,46 @@
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { render } from 'preact'
-import { SyntaxNode } from '@lezer/common'
 import { StateEffect, StateField } from '@codemirror/state'
 import axios from 'axios'
 import { SuggestionView } from '../../components/SuggestionView'
 import { raise } from '../../lib/error'
-import { Optional } from '../../lib/types'
 
-export type SuggestionsAPIResponse = Record<
-  string,
-  {
-    title?: string
-    description?: string
-    values: {
-      action: SuggestionAction
-      description: string
-      label: string
-    }[]
-  }
->
+/**
+ * Action type in API responses.
+ */
+export type APIAction = {
+  type: 'setMatcher' | 'append' | 'insert'
+  value: string
+  /** Only for 'insert' type - where to insert */
+  position?: 'cursor' | 'end'
+}
+
+/**
+ * Value suggestion in API responses.
+ */
+export type APIValue = {
+  label: string
+  description?: string
+  action: APIAction
+}
+
+/**
+ * Field configuration in API responses.
+ */
+export type APIFieldConfig = {
+  title?: string
+  description?: string
+  /** Field type - determines built-in matchers */
+  type?: 'text' | 'keyword' | 'uuid' | 'date'
+  /** Custom values (combined with type-based matchers) */
+  values?: APIValue[]
+}
+
+/**
+ * API response format for suggestions.
+ * Keys are field names or '*' for global suggestions.
+ */
+export type SuggestionsAPIResponse = Record<string, APIFieldConfig>
 
 const SuggestionSchemaEffectType = StateEffect.define<SuggestionsAPIResponse>()
 
@@ -71,15 +93,3 @@ export const Suggestions = ViewPlugin.fromClass(
     provide: v => [SuggestionSchemaField, v],
   }
 )
-
-export type ActionContext = {
-  view: EditorView
-  node: SyntaxNode
-  field: Optional<SyntaxNode>
-  action: SuggestionAction
-}
-
-export type SuggestionAction = {
-  type: 'insert' | 'replaceCondition' | 'append' | 'appendDoc' | 'setMatcher' | 'negateCondition' | 'disableCondition'
-  value: string
-}
