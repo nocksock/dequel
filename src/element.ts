@@ -7,17 +7,14 @@ export class DequelEditorElement extends HTMLElement {
   static formAssociated = true
   static observedAttributes = ['value']
 
-  #value!: string
-  #endpoint: string
+  #value = this.getAttribute('value') || ''
+  #endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
   #internals: ElementInternals
   editor?: DequelEditor
 
   constructor() {
     super()
     this.#internals = this.attachInternals()
-    this.#endpoint =
-      this.getAttribute('endpoint') || 'http://localhost:4000/api/edq'
-    this.#value = this.getAttribute('value') || ''
   }
 
   connectedCallback() {

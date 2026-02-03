@@ -1,7 +1,6 @@
 import { ModuleNode, defineConfig } from 'vite'
-// import react from "@vitejs/plugin-react";
 import preact from '@preact/preset-vite'
-
+import tailwindcss from '@tailwindcss/vite';
 import { Plugin } from 'vite'
 import { resolve } from 'path'
 
@@ -28,7 +27,7 @@ const fullReloadAlways: Plugin = {
 
 export default defineConfig(() => {
   return {
-    plugins: [preact(), fullReloadAlways],
+    plugins: [preact(), fullReloadAlways, tailwindcss()],
     build: {
       target: ['esnext'],
       lib: {
