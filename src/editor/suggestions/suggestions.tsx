@@ -35,6 +35,8 @@ export const SuggestionSchemaField = StateField.define<SuggestionsAPIResponse>({
   },
 })
 
+export const SuggestionSchemaEffect = SuggestionSchemaEffectType
+
 export const Suggestions = ViewPlugin.fromClass(
   class {
     #dom: HTMLElement
@@ -45,8 +47,13 @@ export const Suggestions = ViewPlugin.fromClass(
         document.querySelector(`[for="${view.dom.parentElement?.id}"]`) ||
         raise(`no suggestion container found`)
 
+      const endpoint = options.suggestionsEndpoint || options.completionEndpoint + '/schema'
+      this.fetchSuggestions(view, endpoint)
+    }
+
+    fetchSuggestions(view: EditorView, endpoint: string) {
       axios
-        .get(options.completionEndpoint + '/schema')
+        .get(endpoint)
         .then(({ data }) => {
           view.dispatch({
             effects: SuggestionSchemaEffectType.of(data),

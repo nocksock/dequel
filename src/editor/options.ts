@@ -4,6 +4,8 @@ import { OnUpdateCallbackFn } from './on-update'
 export type DequelEditorOptions = {
   value: string
   completionEndpoint: string
+  autocompletionsEndpoint?: string
+  suggestionsEndpoint?: string
   onUpdate: OnUpdateCallbackFn
   suggestions: boolean
 }

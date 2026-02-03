@@ -1,14 +1,20 @@
-import { DequelEditor } from './editor/index.js'
+import { createDequelEditor } from './editor/index.js'
+import type { DequelEditor } from './editor/index.js'
+import { CompletionSchemaEffect } from './editor/completion.js'
+import { SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
+import axios from 'axios'
 
 const inputEvent = new Event('input')
 
 export class DequelEditorElement extends HTMLElement {
   static formAssociated = true
-  static observedAttributes = ['value']
+  static observedAttributes = ['value', 'autocompletions', 'suggestions']
 
   #value = this.getAttribute('value') || ''
   #endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
+  #autocompletions = this.getAttribute('autocompletions') || ''
+  #suggestions = this.getAttribute('suggestions') || ''
   #internals: ElementInternals
   editor?: DequelEditor
 
@@ -19,10 +25,15 @@ export class DequelEditorElement extends HTMLElement {
 
   connectedCallback() {
     if (this.editor) return;
-    this.editor = new DequelEditor(this, {
+    const suggestionsAttr = this.#suggestions
+    const hasSuggestions = suggestionsAttr !== null && suggestionsAttr !== ''
+
+    this.editor = createDequelEditor(this, {
       value: this.value,
       completionEndpoint: this.#endpoint,
-      suggestions: !!this.getAttribute('suggestions'),
+      autocompletionsEndpoint: this.#autocompletions || undefined,
+      suggestionsEndpoint: hasSuggestions ? suggestionsAttr : undefined,
+      suggestions: hasSuggestions,
       onUpdate: value => {
         this.#value = value
         console.log('DequelEditorElement updated value:', value)
@@ -40,12 +51,47 @@ export class DequelEditorElement extends HTMLElement {
     this.#internals.setFormValue(value)
   }
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+  attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
     switch (name) {
       case 'value': {
         this.value = newValue
+        break
+      }
+      case 'autocompletions': {
+        this.#autocompletions = newValue
+        if (this.editor && newValue) {
+          this.fetchCompletions(newValue)
+        }
+        break
+      }
+      case 'suggestions': {
+        this.#suggestions = newValue
+        if (this.editor && newValue) {
+          this.fetchSuggestions(newValue)
+        }
+        break
       }
     }
+  }
+
+  private fetchCompletions(endpoint: string) {
+    axios.get(endpoint)
+      .then(({ data }) => {
+        this.editor?.dispatch({
+          effects: CompletionSchemaEffect.of(data),
+        })
+      })
+      .catch(console.error)
+  }
+
+  private fetchSuggestions(endpoint: string) {
+    axios.get(endpoint)
+      .then(({ data }) => {
+        this.editor?.dispatch({
+          effects: SuggestionSchemaEffect.of(data),
+        })
+      })
+      .catch(console.error)
   }
 
   get form() {

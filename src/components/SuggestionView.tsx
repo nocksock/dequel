@@ -52,17 +52,16 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
     }
 
   return (
-    <div className="">
-      <h2 className="">
+    <div>
+      <h2 className="text-sm font-semibold mb-2 opacity-70">
         {suggestions?.title || 'Narrow your search'}
       </h2>
-      {suggestions?.description && <p>{suggestions.description}</p>}
+      {suggestions?.description && <p className="text-sm opacity-60 mb-2">{suggestions.description}</p>}
 
-      <ul className="">
+      <ul className="flex flex-col">
         {suggestions?.values?.map(({ description, action, label }) => (
-          <li className='suggestion'>
+          <li className='suggestion' key={label || action.value}>
             <button
-              className=" "
               onClick={createClickHandler(action)}
             >
               <span className="suggestion-label">

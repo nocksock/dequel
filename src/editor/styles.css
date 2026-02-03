@@ -98,3 +98,44 @@ dequel-editor {
     background-color: hsl(0 0 0 / 0.3);
   }
 }
+
+dequel-suggestions {
+  .suggestion {
+    display: block;
+  }
+
+  .suggestion button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--color-base-200, hsl(0 0% 96%));
+    }
+  }
+
+  .suggestion-label {
+    font-weight: 500;
+    color: var(--color-primary, hsl(220 90% 56%));
+    font-family: ui-monospace, monospace;
+  }
+
+  .suggestion-type {
+    font-size: 0.875rem;
+    color: var(--color-base-content, hsl(0 0% 40%));
+    opacity: 0.7;
+    margin-top: 0.125rem;
+  }
+
+  .dequel-suggestions-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-base-content, hsl(0 0% 50%));
+    opacity: 0.7;
+  }
+}
