@@ -28,6 +28,7 @@ export class DequelEditorElement extends HTMLElement {
       suggestions: !!this.getAttribute('suggestions'),
       onUpdate: value => {
         this.#value = value
+        console.log('DequelEditorElement updated value:', value)
         this.dispatchEvent(inputEvent)
       },
     })
