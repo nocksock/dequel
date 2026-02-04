@@ -3,12 +3,13 @@ import type { DequelEditor } from './editor/index.js'
 import { CompletionSchemaEffect } from './editor/completion.js'
 import { SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
+import { detectLocale, loadTranslations } from './lib/i18n.js'
 import axios from 'axios'
 
 
 export class DequelEditorElement extends HTMLElement {
   static formAssociated = true
-  static observedAttributes = ['value', 'autocompletions', 'suggestions']
+  static observedAttributes = ['value', 'autocompletions', 'suggestions', 'locale']
 
   #value = ''
   #endpoint?: string
@@ -27,6 +28,14 @@ export class DequelEditorElement extends HTMLElement {
     this.#value = this.getAttribute('value') || ''
     this.#endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
     this.#autocompletions = this.getAttribute('autocompletions') || ''
+
+    // Initialize i18n with locale detection
+    const locale = detectLocale(this.getAttribute('locale'))
+    if (locale !== 'en') {
+      import(`./locales/${locale}.json`)
+        .then((mod) => loadTranslations(mod.default, locale))
+        .catch(() => console.warn(`[dequel-editor] No translations for locale: ${locale}`))
+    }
 
     // Check if there's a suggestions container for this editor
     const hasSuggestions = !!document.querySelector(`[for="${this.id}"]`)
@@ -68,6 +77,15 @@ export class DequelEditorElement extends HTMLElement {
       case 'suggestions': {
         if (this.editor && newValue) {
           this.fetchSuggestions(newValue)
+        }
+        break
+      }
+      case 'locale': {
+        const locale = detectLocale(newValue)
+        if (locale !== 'en') {
+          import(`./locales/${locale}.json`)
+            .then((mod) => loadTranslations(mod.default, locale))
+            .catch(() => console.warn(`[dequel-editor] No translations for locale: ${locale}`))
         }
         break
       }

@@ -7,6 +7,7 @@ import { SuggestionSchemaField } from '../editor/suggestions/suggestions'
 import { getActions, applyAction, ActionContext, SuggestionAction } from '../lib/actions'
 import { closestCondition } from '../lib/syntax'
 import { renderState } from '../lib/debug'
+import { gettext } from '../lib/i18n'
 
 export type SuggestionViewProps = {
   view: EditorView
@@ -45,7 +46,7 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
     return (
       <p className="flex items-center gap-2 text-base-content/70">
         <span className="loading loading-spinner loading-sm" />
-        Loading suggestions...
+        {gettext('Loading suggestions...')}
       </p>
     )
   }
@@ -74,7 +75,7 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
   return (
     <div className="card space-y-3">
       <h2 className="divider text-sm font-semibold text-base-content/70">
-        {schemaForField?.title || 'Narrow your search'}
+        {schemaForField?.title || gettext('Narrow your search')}
       </h2>
 
       {schemaForField?.description && (
@@ -101,7 +102,7 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
 
       {modifiers.length > 0 && (
         <div className="mt-4">
-          <h3 className="divider text-xs text-base-content/50">Condition modifiers</h3>
+          <h3 className="divider text-xs text-base-content/50">{gettext('Condition modifiers')}</h3>
           <div className="flex gap-2">
             {modifiers.map((action) => {
               const isActive =
@@ -126,7 +127,7 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
 
       <div className="flex justify-end items-center gap-2">
         <label className="label cursor-pointer gap-2">
-          <span className="label-text text-xs text-base-content/50">Debug</span>
+          <span className="label-text text-xs text-base-content/50">{gettext('Debug')}</span>
           <input
             type="checkbox"
             className="toggle toggle-xs"

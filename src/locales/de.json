@@ -1,0 +1,20 @@
+{
+  "Loading suggestions...": "Vorschlaege werden geladen...",
+  "Narrow your search": "Suche eingrenzen",
+  "Condition modifiers": "Bedingungsmodifikatoren",
+  "Debug": "Debug",
+  "Exact match": "Exakte Uebereinstimmung",
+  "Contains the given text": "Enthaelt den angegebenen Text",
+  "Starts with the given text": "Beginnt mit dem angegebenen Text",
+  "Ends with the given text": "Endet mit dem angegebenen Text",
+  "Match one of these values": "Entspricht einem dieser Werte",
+  "After this date": "Nach diesem Datum",
+  "Before this date": "Vor diesem Datum",
+  "Between two dates": "Zwischen zwei Daten",
+  "Remove negation": "Negation entfernen",
+  "Exclude from results": "Von Ergebnissen ausschliessen",
+  "Enable condition": "Bedingung aktivieren",
+  "Disable condition": "Bedingung deaktivieren",
+  "Add another condition": "Weitere Bedingung hinzufuegen",
+  "Syntax error": "Syntaxfehler"
+}

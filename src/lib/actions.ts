@@ -14,6 +14,7 @@ import {
 } from './syntax'
 import { SuggestionSchemaField } from '../editor/suggestions/suggestions'
 import { getPredicateActions, FieldType } from './predicates'
+import { gettext } from './i18n'
 
 // Types
 
@@ -258,14 +259,14 @@ function buildConditionModifiers(ctx: ActionContext): SuggestionAction[] {
       type: 'transform',
       id: 'negate',
       label: '-',
-      description: isExcluded ? 'Remove negation' : 'Exclude from results',
+      description: isExcluded ? gettext('Remove negation') : gettext('Exclude from results'),
       transform: negate,
     },
     {
       type: 'transform',
       id: 'disable',
       label: '!',
-      description: isIgnored ? 'Enable condition' : 'Disable condition',
+      description: isIgnored ? gettext('Enable condition') : gettext('Disable condition'),
       transform: disable,
     },
   ]
@@ -332,7 +333,7 @@ function buildFieldActions(ctx: ActionContext): SuggestionAction[] {
         type: 'insert',
         id: 'new-condition',
         label: '+ new condition',
-        description: 'Add another condition',
+        description: gettext('Add another condition'),
         insert: () => ' ',
         position: 'end',
       })

@@ -1,6 +1,7 @@
 import { syntaxTree } from "@codemirror/language";
 import { Diagnostic } from "@codemirror/lint";
 import { EditorView } from "@codemirror/view";
+import { gettext } from "../lib/i18n";
 
 // currently we're not using this, but keeping it around for when we implement
 // linting features (which we'll eventually do)
@@ -15,7 +16,7 @@ export function lintExample(view: EditorView): readonly Diagnostic[] {
           from,
           to,
           severity: "error",
-          message: "Syntax error",
+          message: gettext("Syntax error"),
         });
       }
     },
