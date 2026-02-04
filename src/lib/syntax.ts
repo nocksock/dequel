@@ -1,7 +1,7 @@
 import { syntaxTree } from '@codemirror/language'
 import { NodeIterator, SyntaxNode, Tree } from '@lezer/common'
 import { StateField, Text } from '@codemirror/state'
-import { ANY_CONDITION } from '../dequel-lang/parser'
+import { ANY_CONDITION, parser } from '../dequel-lang/parser'
 
 // These are helper functions to work with the syntax tree of code parsed by
 // Lezer in CodeMirror.
@@ -192,4 +192,28 @@ export const getFieldContextWithTree = (
   }
 
   return null
+}
+
+// Cursor parsing utilities
+
+/**
+ * Parse a cursor-marked input string.
+ * Returns the input without the cursor marker and the cursor position.
+ */
+export const parseCursorInput = (inputWithCursor: string) => {
+  const cursorPos = inputWithCursor.indexOf('|')
+  const input = inputWithCursor.replace('|', '')
+  return { input, cursorPos: cursorPos === -1 ? 0 : cursorPos }
+}
+
+/**
+ * Get the syntax node at a position.
+ * If cursorPos is omitted, parses cursor position from `|` marker in input.
+ */
+export const getNodeAt = (input: string, cursorPos?: number) => {
+  const { input: text, cursorPos: pos } = cursorPos !== undefined
+    ? { input, cursorPos }
+    : parseCursorInput(input)
+  const tree = parser.parse(text)
+  return { node: tree.resolveInner(pos, -1), tree, input: text, cursorPos: pos }
 }

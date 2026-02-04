@@ -1,11 +1,5 @@
-import {
-  indentNodeProp,
-  foldNodeProp,
-  foldInside,
-  LRLanguage,
-} from "@codemirror/language";
 import { buildParser } from "@lezer/generator";
-import { Tag, styleTags, tags as t } from "@lezer/highlight";
+import { Tag, tags as t } from "@lezer/highlight";
 
 export const parser = buildParser(`
 @top QueryList { Query }
@@ -56,34 +50,3 @@ export const ANY_CONDITION = [
   "Condition",
 ];
 export const anyCondition = (name: string) => ANY_CONDITION.includes(name);
-
-export const parserWithMetadata = parser.configure({
-  props: [
-    styleTags({
-      "Condition/:": customTag.Operator,
-      "ExcludeCondition/:": customTag.Operator,
-      "Condition/Field/...": customTag.Field,
-      "Condition/Predicate/RegexContent!": customTag.RegexContent,
-      "Command!": customTag.Command,
-      "Separator!": customTag.Operator,
-      Regex: customTag.Regex,
-      // "Condition/Predicate/...": condition.Predicate,
-      Comment: t.lineComment,
-      Field: customTag.Field,
-      "Value!": customTag.Value,
-    }),
-    indentNodeProp.add({
-      Query: (context) => context.column(context.node.from) + context.unit,
-    }),
-    foldNodeProp.add({
-      Query: foldInside,
-    }),
-  ],
-});
-
-export const dequelParser = LRLanguage.define({
-  parser: parserWithMetadata,
-  languageData: {
-    // commentTokens: { line: "" },
-  },
-});

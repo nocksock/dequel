@@ -3,7 +3,7 @@ import { CompletionContext, Completion } from "@codemirror/autocomplete";
 import { StateEffect, StateField } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import axios from "axios";
-import { dequelParser } from "../dequel-lang/parser";
+import { dequelParser } from "../dequel-lang/language";
 import { DequelEditorOptions } from "./options";
 import { closest } from "../lib/syntax";
 

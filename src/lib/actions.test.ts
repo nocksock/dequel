@@ -1,20 +1,15 @@
 import { describe, test, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { parser } from '../dequel-lang/parser'
 import { applyAction, ActionContext, SuggestionAction } from './actions'
-import { closestCondition } from './syntax'
+import { closestCondition, getNodeAt } from './syntax'
 import { negate, disable } from './transforms'
 
 /**
  * Helper to build an ActionContext from a cursor-marked input string.
  */
 const buildContext = (inputWithCursor: string): { ctx: ActionContext; input: string; cursorPos: number } => {
-  const cursorPos = inputWithCursor.indexOf('|')
-  const input = inputWithCursor.replace('|', '')
-
-  const tree = parser.parse(input)
-  const node = tree.resolveInner(cursorPos, -1)
+  const { node, input, cursorPos } = getNodeAt(inputWithCursor)
 
   const state = EditorState.create({
     doc: input,

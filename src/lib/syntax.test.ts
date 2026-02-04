@@ -1,51 +1,45 @@
 import { describe, test, expect } from 'vitest'
 import { Text } from '@codemirror/state'
 import { parser } from '../dequel-lang/parser'
-import { closestCondition, parseCondition, serializeCondition, getFieldContextWithTree, extractCommandArgs } from './syntax'
+import { closestCondition, parseCondition, serializeCondition, getFieldContextWithTree, extractCommandArgs, getNodeAt } from './syntax'
 
 describe('closestCondition', () => {
-  const getNodeAt = (input: string, cursorPos: number) => {
-    const tree = parser.parse(input)
-    return tree.resolveInner(cursorPos, -1)
-  }
-
   test('returns condition when node is a Condition', () => {
-    const node = getNodeAt('title:foo', 3) // on 'le' in title
+    const { node } = getNodeAt('tit|le:foo')
     const condition = closestCondition(node)
     expect(condition?.name).toBe('Condition')
   })
 
   test('returns condition when node is an ExcludeCondition', () => {
-    const node = getNodeAt('-title:foo', 4) // on 'le' in title
+    const { node } = getNodeAt('-tit|le:foo')
     const condition = closestCondition(node)
     expect(condition?.name).toBe('ExcludeCondition')
   })
 
   test('returns condition when node is an IgnoredCondition', () => {
-    const node = getNodeAt('!title:foo', 4) // on 'le' in title
+    const { node } = getNodeAt('!tit|le:foo')
     const condition = closestCondition(node)
     expect(condition?.name).toBe('IgnoredCondition')
   })
 
   test('returns condition when inside matcher', () => {
-    const node = getNodeAt('title:foo', 7) // on 'o' in foo
+    const { node } = getNodeAt('title:fo|o')
     const condition = closestCondition(node)
     expect(condition?.name).toBe('Condition')
   })
 
   test('returns null when not in a condition', () => {
-    const node = getNodeAt('', 0)
+    const { node } = getNodeAt('|')
     const condition = closestCondition(node)
     expect(condition).toBeNull()
   })
 
   test('finds correct condition in multi-condition query', () => {
-    const node = getNodeAt('title:foo region_id:bar', 18) // on 'a' in bar
+    const { node, input } = getNodeAt('title:foo region_id:b|ar')
     const condition = closestCondition(node)
     expect(condition?.name).toBe('Condition')
     // Verify it's the second condition by checking the field
     const field = condition?.getChild('Field')
-    const input = 'title:foo region_id:bar'
     expect(input.slice(field!.from, field!.to)).toBe('region_id')
   })
 })
@@ -144,14 +138,9 @@ describe('round-trip parse/serialize', () => {
 })
 
 describe('getFieldContext', () => {
-  // Use | to denote cursor position
   const getFieldName = (inputWithCursor: string) => {
-    const pos = inputWithCursor.indexOf('|')
-    const input = inputWithCursor.replace('|', '')
-
-    const tree = parser.parse(input)
-    const node = tree.resolveInner(pos, -1)
-    const field = getFieldContextWithTree(tree, pos, node)
+    const { node, tree, input, cursorPos } = getNodeAt(inputWithCursor)
+    const field = getFieldContextWithTree(tree, cursorPos, node)
     return field ? input.slice(field.from, field.to) : null
   }
 
