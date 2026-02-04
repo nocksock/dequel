@@ -14,18 +14,22 @@ defmodule Dequel.Adapter.Ecto.Fixtures do
   end
 
   def item_fixture(attrs \\ %{}) do
+    {author_attrs, attrs} = Map.pop(attrs, :author)
+
+    attrs =
+      if author_attrs do
+        author = author_fixture(author_attrs)
+        Map.put(attrs, :author_id, author.id)
+      else
+        attrs
+      end
+
     {:ok, item} =
-      attrs
-      |> Enum.into(%{"description" => "some description", "name" => "some name"})
+      %{description: "some description", name: "some name"}
+      |> Map.merge(attrs)
       |> create_item()
 
     item
-  end
-
-  def item_with_author(item_attrs, author) do
-    item_attrs
-    |> Map.put("author_id", author.id)
-    |> item_fixture()
   end
 
   defp create_item(attrs) do

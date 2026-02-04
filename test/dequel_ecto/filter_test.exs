@@ -17,104 +17,75 @@ defmodule Dequel.Adapter.EctoTest do
     Repo.all(q)
   end
 
-  test "base" do
-    item = item_fixture(%{"name" => "some name"})
-    _ = item_fixture(%{"name" => "some other name"})
+  describe "basic filtering" do
+    setup do
+      frodo = item_fixture(%{name: "frodo", description: "baggins"})
+      bilbo = item_fixture(%{name: "bilbo", description: "baggins"})
+      samwise = item_fixture(%{name: "samwise", description: "gamgee"})
 
-    assert ~ONE<name: "some name"> == item
-  end
+      %{frodo: frodo, bilbo: bilbo, samwise: samwise}
+    end
 
-  test "binary and" do
-    item = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    _ = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+    test "equality", %{frodo: frodo} do
+      assert ~ONE<name:frodo> == frodo
+    end
 
-    assert ~ALL<
+    test "binary and", %{frodo: frodo} do
+      assert ~ALL<name:frodo description:baggins> == [frodo]
+    end
 
-      name: frodo
-      description: baggins
+    test "binary or", %{frodo: frodo, bilbo: bilbo} do
+      assert ~ALL<name:frodo or name:bilbo> == [frodo, bilbo]
+    end
 
-    > == [item]
-  end
+    test "binary operations", %{frodo: frodo, samwise: samwise} do
+      _ = item_fixture(%{name: "frodo", description: "x"})
 
-  test "binary or" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
+      assert ~ALL<name:contains(frodo, sam) (description:*g)> == [frodo, samwise]
+    end
 
-    assert ~ALL<
+    test "not operator", %{bilbo: bilbo, samwise: samwise} do
+      assert ~ALL<!name:frodo> == [bilbo, samwise]
+    end
 
-      name: frodo or name: bilbo
+    test "one_of predicate with multiple values", %{frodo: frodo, bilbo: bilbo} do
+      assert ~ALL<name:one_of(frodo, bilbo)> == [frodo, bilbo]
+    end
 
-    > == [frodo, bilbo]
-  end
+    test "bracket shorthand with multiple values", %{frodo: frodo, bilbo: bilbo} do
+      assert ~ALL<name:[frodo, bilbo]> == [frodo, bilbo]
+    end
 
-  test "binary operations" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
-    _ = item_fixture(%{"name" => "frodo", "description" => "x"})
+    test "string predicates", %{frodo: frodo} do
+      _other = item_fixture(%{name: "bilfroxdox", description: "baggins"})
 
-    assert ~ALL<
+      assert ~ALL<name:*od> == [frodo]
+      assert ~ALL<name:^fro> == [frodo]
+      assert ~ALL<name:$do> == [frodo]
+    end
 
-      name:contains(frodo, sam) (
-        description:*g
-      )
+    test "one_of with 3+ values uses IN", %{frodo: frodo, bilbo: bilbo, samwise: samwise} do
+      _other = item_fixture(%{name: "gandalf", description: "wizard"})
 
-    > == [frodo, samwise]
-  end
-
-  test "not operator" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
-
-    assert ~ALL<!name:frodo> == [bilbo, samwise]
-  end
-
-  test "one_of predicate with multiple values" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    _samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
-
-    assert ~ALL<name:one_of(frodo, bilbo)> == [frodo, bilbo]
-  end
-
-  test "bracket shorthand with multiple values" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    _samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
-
-    assert ~ALL<name:[frodo, bilbo]> == [frodo, bilbo]
-  end
-
-  test "string predicates" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    _bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    _other = item_fixture(%{"name" => "bilfroxdox", "description" => "baggins"})
-
-    assert ~ALL<name:*od> == [frodo]
-    assert ~ALL<name:^fro> == [frodo]
-    assert ~ALL<name:$do> == [frodo]
-  end
-
-  test "one_of with 3+ values uses IN" do
-    frodo = item_fixture(%{"name" => "frodo", "description" => "baggins"})
-    bilbo = item_fixture(%{"name" => "bilbo", "description" => "baggins"})
-    samwise = item_fixture(%{"name" => "samwise", "description" => "gamgee"})
-    _other = item_fixture(%{"name" => "gandalf", "description" => "wizard"})
-
-    result = ~ALL<name:one_of(frodo, bilbo, samwise)>
-    assert Enum.sort_by(result, & &1.name) == Enum.sort_by([frodo, bilbo, samwise], & &1.name)
+      result = ~ALL<name:one_of(frodo, bilbo, samwise)>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([frodo, bilbo, samwise], & &1.name)
+    end
   end
 
   describe "relationship filtering with query/3" do
-    test "filters by single-level association field" do
+    setup do
       tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
       herbert = author_fixture(%{name: "Herbert", bio: "American author"})
 
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+      lotr = item_fixture(%{name: "LOTR", description: "fantasy", author_id: tolkien.id})
+      dune = item_fixture(%{name: "Dune", description: "scifi", author_id: herbert.id})
 
-      result = from(i in ItemSchema)
+      %{tolkien: tolkien, herbert: herbert, lotr: lotr, dune: dune}
+    end
+
+    test "filters by single-level association field", %{lotr: lotr} do
+      result =
+        from(i in ItemSchema)
         |> Filter.query("author.name:Tolkien")
         |> Repo.all()
 
@@ -122,13 +93,7 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == lotr.id
     end
 
-    test "filters by association field with contains predicate" do
-      tolkien = author_fixture(%{name: "J.R.R. Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Frank Herbert", bio: "American author"})
-
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-
+    test "filters by association field with contains predicate", %{lotr: lotr} do
       result =
         from(i in ItemSchema)
         |> Filter.query("author.name:*Tolkien")
@@ -138,13 +103,8 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == lotr.id
     end
 
-    test "combines association and local field filters" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy epic"}, tolkien)
-
-      _hobbit =
-        item_with_author(%{"name" => "Hobbit", "description" => "fantasy adventure"}, tolkien)
+    test "combines association and local field filters", %{tolkien: tolkien, lotr: lotr} do
+      _hobbit = item_fixture(%{name: "Hobbit", description: "fantasy adventure", author_id: tolkien.id})
 
       result =
         from(i in ItemSchema)
@@ -155,14 +115,9 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == lotr.id
     end
 
-    test "filters with OR on association fields" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+    test "filters with OR on association fields", %{lotr: lotr, dune: dune} do
       asimov = author_fixture(%{name: "Asimov", bio: "Russian-American author"})
-
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-      _foundation = item_with_author(%{"name" => "Foundation", "description" => "scifi"}, asimov)
+      _foundation = item_fixture(%{name: "Foundation", description: "scifi", author_id: asimov.id})
 
       result =
         from(i in ItemSchema)
@@ -174,13 +129,7 @@ defmodule Dequel.Adapter.EctoTest do
       assert Enum.map(result, & &1.id) |> Enum.sort() == Enum.sort([lotr.id, dune.id])
     end
 
-    test "filters with negation on association field" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
-
-      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-
+    test "filters with negation on association field", %{dune: dune} do
       result =
         from(i in ItemSchema)
         |> Filter.query("!author.name:Tolkien")
@@ -190,13 +139,7 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == dune.id
     end
 
-    test "reuses joins for same association" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
-
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-
+    test "reuses joins for same association", %{lotr: lotr} do
       # Both conditions use author - should only create one join
       result =
         from(i in ItemSchema)
@@ -211,14 +154,19 @@ defmodule Dequel.Adapter.EctoTest do
   describe "block syntax for has_many relations" do
     alias Dequel.Adapter.Ecto.AuthorSchema
 
-    test "block syntax - finds authors with matching item" do
+    setup do
       tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
       herbert = author_fixture(%{name: "Herbert", bio: "American author"})
-      _no_books = author_fixture(%{name: "NoBooks", bio: "No books yet"})
 
-      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _hobbit = item_with_author(%{"name" => "Hobbit", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+      lotr = item_fixture(%{name: "LOTR", description: "fantasy", author_id: tolkien.id})
+      dune = item_fixture(%{name: "Dune", description: "scifi", author_id: herbert.id})
+
+      %{tolkien: tolkien, herbert: herbert, lotr: lotr, dune: dune}
+    end
+
+    test "block syntax - finds authors with matching item", %{tolkien: tolkien} do
+      _no_books = author_fixture(%{name: "NoBooks", bio: "No books yet"})
+      _hobbit = item_fixture(%{name: "Hobbit", description: "fantasy", author_id: tolkien.id})
 
       result =
         from(a in AuthorSchema)
@@ -229,13 +177,8 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == tolkien.id
     end
 
-    test "block syntax with contains predicate" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
-
-      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _hobbit = item_with_author(%{"name" => "Hobbit", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+    test "block syntax with contains predicate", %{tolkien: tolkien} do
+      _hobbit = item_fixture(%{name: "Hobbit", description: "fantasy", author_id: tolkien.id})
 
       result =
         from(a in AuthorSchema)
@@ -246,13 +189,7 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == tolkien.id
     end
 
-    test "block syntax with multiple conditions inside block" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
-
-      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-
+    test "block syntax with multiple conditions inside block", %{tolkien: tolkien} do
       result =
         from(a in AuthorSchema)
         |> Filter.query("items { name:LOTR description:*fantasy }", schema: AuthorSchema)
@@ -262,13 +199,7 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == tolkien.id
     end
 
-    test "block syntax with negation inside block" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
-
-      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-
+    test "block syntax with negation inside block", %{herbert: herbert} do
       # Finds authors whose items do NOT have name "LOTR" (but still have some items)
       result =
         from(a in AuthorSchema)
@@ -279,12 +210,9 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == herbert.id
     end
 
-    test "block syntax combined with local field filter" do
-      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+    test "block syntax combined with local field filter", %{tolkien: tolkien} do
       lewis = author_fixture(%{name: "Lewis", bio: "British author"})
-
-      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _narnia = item_with_author(%{"name" => "Narnia", "description" => "fantasy"}, lewis)
+      _narnia = item_fixture(%{name: "Narnia", description: "fantasy", author_id: lewis.id})
 
       result =
         from(a in AuthorSchema)
@@ -297,13 +225,17 @@ defmodule Dequel.Adapter.EctoTest do
   end
 
   describe "block syntax for belongs_to relations" do
-    test "block syntax - filters items by author" do
+    setup do
       tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
       herbert = author_fixture(%{name: "Herbert", bio: "American author"})
 
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+      lotr = item_fixture(%{name: "LOTR", description: "fantasy", author_id: tolkien.id})
+      dune = item_fixture(%{name: "Dune", description: "scifi", author_id: herbert.id})
 
+      %{tolkien: tolkien, herbert: herbert, lotr: lotr, dune: dune}
+    end
+
+    test "block syntax - filters items by author", %{lotr: lotr} do
       result =
         from(i in ItemSchema)
         |> Filter.query("author { name:Tolkien }", schema: ItemSchema)
@@ -313,13 +245,7 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == lotr.id
     end
 
-    test "block syntax with contains predicate on belongs_to" do
-      tolkien = author_fixture(%{name: "J.R.R. Tolkien", bio: "British author"})
-      herbert = author_fixture(%{name: "Frank Herbert", bio: "American author"})
-
-      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
-      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
-
+    test "block syntax with contains predicate on belongs_to", %{lotr: lotr} do
       result =
         from(i in ItemSchema)
         |> Filter.query("author { name:*Tolkien }", schema: ItemSchema)

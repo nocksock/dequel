@@ -5,7 +5,6 @@ defmodule Dequel.Semantic.AnalyzerTest do
 
   doctest Dequel.Semantic.Analyzer
 
-  # Mock resolver function for testing (new map format)
   defp mock_resolver do
     fn field ->
       case field do
