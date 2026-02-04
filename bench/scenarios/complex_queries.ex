@@ -17,26 +17,26 @@ defmodule Bench.Scenarios.ComplexQueries do
 
   defp multi_or_search do
     base = from(b in Book)
-    query = Filter.query(~s(title:*journey or title:*adventure or title:*mystery), base)
+    query = Filter.query(base, ~s(title:*journey or title:*adventure or title:*mystery))
     Repo.all(query)
   end
 
   defp multi_relation_filter do
     base = from(b in Book)
-    query = Filter.query(~s(author.country:USA bookstore.location:Manhattan), base, schema: Book)
+    query = Filter.query(base, ~s(author.country:USA bookstore.location:Manhattan), schema: Book)
     Repo.all(query)
   end
 
   defp block_with_local_filter do
     base = from(a in Author)
-    query = Filter.query(~s(country:USA books { genre:fiction }), base, schema: Author)
+    query = Filter.query(base, ~s(country:USA books { genre:fiction }), schema: Author)
     Repo.all(query)
   end
 
   defp deeply_nested do
     base = from(a in Author)
     # Simplified: use book field + local author filter instead of nested relation in block
-    query = Filter.query(~s(country:USA books { title:*Journey }), base, schema: Author)
+    query = Filter.query(base, ~s(country:USA books { title:*Journey }), schema: Author)
     Repo.all(query)
   end
 end

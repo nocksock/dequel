@@ -9,6 +9,11 @@ defmodule Dequel.Adapter.Ecto.ItemSchema do
     field(:parent, :string)
 
     belongs_to(:author, Dequel.Adapter.Ecto.AuthorSchema)
+
+    many_to_many(:tags, Dequel.Adapter.Ecto.TagSchema,
+      join_through: "items_tags",
+      join_keys: [item_id: :id, tag_id: :id]
+    )
   end
 
   @doc false

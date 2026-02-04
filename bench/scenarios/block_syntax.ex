@@ -17,26 +17,26 @@ defmodule Bench.Scenarios.BlockSyntax do
 
   defp author_with_book_title do
     base = from(a in Author)
-    query = Filter.query(~s(books { title:*Journey }), base, schema: Author)
+    query = Filter.query(base, ~s(books { title:*Journey }), schema: Author)
     Repo.all(query)
   end
 
   defp author_with_book_genre do
     base = from(a in Author)
-    query = Filter.query(~s(books { genre:fiction }), base, schema: Author)
+    query = Filter.query(base, ~s(books { genre:fiction }), schema: Author)
     Repo.all(query)
   end
 
   defp bookstore_with_book_by_author do
     base = from(b in Bookstore)
     # Simplified: filter by book genre instead of nested author relation
-    query = Filter.query(~s(books { genre:thriller }), base, schema: Bookstore)
+    query = Filter.query(base, ~s(books { genre:thriller }), schema: Bookstore)
     Repo.all(query)
   end
 
   defp author_with_book_multiple_conditions do
     base = from(a in Author)
-    query = Filter.query(~s(books { title:*Journey genre:fiction }), base, schema: Author)
+    query = Filter.query(base, ~s(books { title:*Journey genre:fiction }), schema: Author)
     Repo.all(query)
   end
 end

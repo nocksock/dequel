@@ -18,31 +18,31 @@ defmodule Bench.Scenarios.LogicalOperators do
 
   defp implicit_and do
     base = from(b in Book)
-    query = Filter.query(~s(genre:fiction title:*Journey), base)
+    query = Filter.query(base, ~s(genre:fiction title:*Journey))
     Repo.all(query)
   end
 
   defp explicit_or do
     base = from(b in Book)
-    query = Filter.query(~s(genre:fiction or genre:mystery), base)
+    query = Filter.query(base, ~s(genre:fiction or genre:mystery))
     Repo.all(query)
   end
 
   defp negation do
     base = from(b in Book)
-    query = Filter.query(~s(!genre:fiction), base)
+    query = Filter.query(base, ~s(!genre:fiction))
     Repo.all(query)
   end
 
   defp complex_boolean do
     base = from(b in Book)
-    query = Filter.query(~s|(genre:fiction or genre:mystery) title:^"The"|, base)
+    query = Filter.query(base, ~s|(genre:fiction or genre:mystery) title:^"The"|)
     Repo.all(query)
   end
 
   defp one_of_predicate do
     base = from(b in Book)
-    query = Filter.query(~s|genre:[fiction, mystery, thriller]|, base)
+    query = Filter.query(base, ~s|genre:[fiction, mystery, thriller]|)
     Repo.all(query)
   end
 end

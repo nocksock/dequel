@@ -17,25 +17,25 @@ defmodule Bench.Scenarios.SimpleEquality do
 
   defp book_title_equality do
     base = from(b in Book)
-    query = Filter.query(~s(title:"The Journey 1"), base)
+    query = Filter.query(base, ~s(title:"The Journey 1"))
     Repo.all(query)
   end
 
   defp book_genre_equality do
     base = from(b in Book)
-    query = Filter.query(~s(genre:fiction), base)
+    query = Filter.query(base, ~s(genre:fiction))
     Repo.all(query)
   end
 
   defp author_country_equality do
     base = from(a in Author)
-    query = Filter.query(~s(country:USA), base)
+    query = Filter.query(base, ~s(country:USA))
     Repo.all(query)
   end
 
   defp bookstore_location_equality do
     base = from(b in Bookstore)
-    query = Filter.query(~s(location:Manhattan), base)
+    query = Filter.query(base, ~s(location:Manhattan))
     Repo.all(query)
   end
 end

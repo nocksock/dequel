@@ -258,4 +258,73 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == lotr.id
     end
   end
+
+  describe "block syntax for many_to_many relations" do
+    setup do
+      fantasy = tag_fixture(%{name: "fantasy"})
+      scifi = tag_fixture(%{name: "scifi"})
+      classic = tag_fixture(%{name: "classic"})
+
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      lotr = item_fixture(%{name: "LOTR", description: "ring story", author_id: tolkien.id})
+      dune = item_fixture(%{name: "Dune", description: "spice story"})
+
+      add_tag_to_item(lotr, fantasy)
+      add_tag_to_item(lotr, classic)
+      add_tag_to_item(dune, scifi)
+      add_tag_to_item(dune, classic)
+
+      %{lotr: lotr, dune: dune, fantasy: fantasy, scifi: scifi, classic: classic}
+    end
+
+    test "block syntax - filters items by tag name (many_to_many)", %{lotr: lotr} do
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("tags { name:fantasy }", schema: ItemSchema)
+        |> Repo.all()
+
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
+    end
+
+    test "block syntax - OR on many_to_many tag conditions", %{lotr: lotr, dune: dune} do
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("tags { name:fantasy } or tags { name:scifi }", schema: ItemSchema)
+        |> Repo.all()
+        |> Enum.sort_by(& &1.name)
+
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) |> Enum.sort() == Enum.sort([lotr.id, dune.id])
+    end
+
+    test "block syntax - contains predicate on many_to_many", %{lotr: lotr, dune: dune} do
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("tags { name:*classic }", schema: ItemSchema)
+        |> Repo.all()
+        |> Enum.sort_by(& &1.name)
+
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) |> Enum.sort() == Enum.sort([lotr.id, dune.id])
+    end
+
+    test "many_to_many propagates query prefix to join table subquery" do
+      # Build query with a prefix - don't execute since SQLite doesn't support schemas
+      # Note: `from(..., prefix: ...)` sets the prefix on from.prefix, not query.prefix
+      base = from(i in ItemSchema, prefix: "test_schema")
+
+      # Verify the base query has the prefix (stored in from.prefix when using from option)
+      assert base.from.prefix == "test_schema"
+
+      query = Filter.query(base, "tags { name:fantasy }", schema: ItemSchema)
+
+      # Extract the subquery from the WHERE clause
+      # Structure: wheres: [%{subqueries: [%Ecto.SubQuery{query: ...}]}]
+      [%{subqueries: [%Ecto.SubQuery{query: subquery}]}] = query.wheres
+
+      # The subquery should have the prefix set (via put_query_prefix, so on query.prefix)
+      assert subquery.prefix == "test_schema"
+    end
+  end
 end

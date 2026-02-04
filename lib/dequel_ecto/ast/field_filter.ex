@@ -61,7 +61,9 @@ defmodule Dequel.Adapter.Ecto.Filter do
   def query(base_query, input, opts \\ []) when is_binary(input) do
     ast = Dequel.Parser.parse!(input)
     schema = Keyword.get(opts, :schema)
-    {dynamic_expr, ctx} = filter(ast, Context.new(schema))
+    # Extract prefix from base query for subqueries (e.g., many_to_many join tables)
+    prefix = get_query_prefix(base_query)
+    {dynamic_expr, ctx} = filter(ast, Context.new(schema, prefix))
 
     # Ensure the base query has the :q alias for join references
     base_query
@@ -75,6 +77,12 @@ defmodule Dequel.Adapter.Ecto.Filter do
   defp ensure_base_alias(query) do
     from(q in query, as: :q)
   end
+
+  # Extract prefix from an Ecto.Query if present
+  # Checks both query.prefix (set via put_query_prefix) and query.from.prefix (set via from option)
+  defp get_query_prefix(%Ecto.Query{prefix: prefix}) when not is_nil(prefix), do: prefix
+  defp get_query_prefix(%Ecto.Query{from: %{prefix: prefix}}) when not is_nil(prefix), do: prefix
+  defp get_query_prefix(_), do: nil
 
   @doc """
   Build filter with join tracking. Returns {dynamic, context}.
@@ -158,7 +166,7 @@ defmodule Dequel.Adapter.Ecto.Filter do
     {dynamic(not (^d)), ctx}
   end
 
-  # EXISTS - has_many relations (block syntax)
+  # EXISTS - has_many/many_to_many relations (block syntax)
   # Generates: EXISTS (SELECT 1 FROM related WHERE fk = parent.id AND inner_conditions)
   defp build_filter({:exists, _meta, [relation, inner]}, ctx) when is_atom(relation) do
     # Get association info from schema
@@ -167,17 +175,9 @@ defmodule Dequel.Adapter.Ecto.Filter do
     if schema do
       assoc = schema.__schema__(:association, relation)
       related_schema = assoc.related
-      owner_key = assoc.owner_key
-      related_key = assoc.related_key
 
-      # Build inner filter with fresh context for the subquery
-      inner_ctx = Context.new(related_schema)
-      {inner_dynamic, _inner_ctx} = build_filter(inner, inner_ctx)
-
-      # Build EXISTS subquery using parent_as to reference the outer query
-      # The subquery correlates via the foreign key relationship
-      subquery_dynamic =
-        build_exists_dynamic(related_schema, related_key, owner_key, inner_dynamic)
+      # Build EXISTS subquery - approach differs by association type
+      subquery_dynamic = build_exists_for_assoc(assoc, inner, related_schema, ctx)
 
       {subquery_dynamic, ctx}
     else
@@ -211,8 +211,14 @@ defmodule Dequel.Adapter.Ecto.Filter do
     {build_embedded_dynamic(field, inner, cardinality), ctx}
   end
 
-  # Helper to build EXISTS dynamic - works around macro expansion issues
-  defp build_exists_dynamic(related_schema, related_key, owner_key, inner_dynamic) do
+  # Build EXISTS for has_many/belongs_to associations (have related_key)
+  defp build_exists_for_assoc(%{related_key: related_key} = assoc, inner_ast, related_schema, ctx) do
+    owner_key = assoc.owner_key
+
+    # Build inner filter with fresh context for the subquery
+    inner_ctx = Context.new(related_schema, ctx.prefix)
+    {inner_dynamic, _inner_ctx} = build_filter(inner_ast, inner_ctx)
+
     # Build the subquery that references the parent via parent_as(:q)
     subq =
       related_schema
@@ -220,6 +226,55 @@ defmodule Dequel.Adapter.Ecto.Filter do
       |> where([r], ^inner_dynamic)
 
     dynamic([q], exists(subq))
+  end
+
+  # Build EXISTS for many_to_many associations (have join_keys and join_through)
+  defp build_exists_for_assoc(
+         %{join_keys: join_keys, join_through: join_through},
+         inner_ast,
+         related_schema,
+         ctx
+       ) do
+    # join_keys format: [{owner_fk, owner_pk}, {related_fk, related_pk}]
+    [{owner_fk, owner_pk}, {related_fk, related_pk}] = join_keys
+
+    # Build inner filter with named binding :r to match the JOIN alias
+    inner_ctx = Context.new(related_schema, ctx.prefix)
+    {inner_dynamic, _inner_ctx} = build_filter_with_binding(inner_ast, inner_ctx, :r)
+
+    # Get prefix from context (query) or fall back to schema prefix
+    prefix = ctx.prefix || get_schema_prefix(ctx.schema)
+
+    # Build EXISTS subquery joining through the join table to the related table
+    # SQL: EXISTS (SELECT 1 FROM join_table jt
+    #              JOIN related r ON r.pk = jt.related_fk
+    #              WHERE jt.owner_fk = parent.owner_pk AND inner_conditions)
+    subq =
+      from(jt in join_through,
+        as: :jt,
+        join: r in ^related_schema,
+        as: :r,
+        on: field(r, ^related_pk) == field(jt, ^related_fk),
+        where: field(jt, ^owner_fk) == field(parent_as(:q), ^owner_pk),
+        where: ^inner_dynamic,
+        select: 1
+      )
+
+    # Apply prefix to subquery if present
+    subq = if prefix, do: Ecto.Query.put_query_prefix(subq, prefix), else: subq
+
+    dynamic([q], exists(subq))
+  end
+
+  # Get schema prefix if defined
+  defp get_schema_prefix(nil), do: nil
+
+  defp get_schema_prefix(schema) do
+    if function_exported?(schema, :__schema__, 1) do
+      schema.__schema__(:prefix)
+    else
+      nil
+    end
   end
 
   # Build dynamic with named binding for relationship fields

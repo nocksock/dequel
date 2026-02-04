@@ -3,7 +3,7 @@ defmodule Dequel.Adapter.Ecto.Fixtures do
   Test fixtures for Ecto adapter tests.
   """
 
-  alias Dequel.Adapter.Ecto.{Repo, ItemSchema, AuthorSchema}
+  alias Dequel.Adapter.Ecto.{Repo, ItemSchema, AuthorSchema, TagSchema}
 
   def author_fixture(attrs \\ %{}) do
     attrs = Enum.into(attrs, %{name: "Test Author", bio: "Test bio"})
@@ -36,5 +36,18 @@ defmodule Dequel.Adapter.Ecto.Fixtures do
     %ItemSchema{}
     |> ItemSchema.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def tag_fixture(attrs \\ %{}) do
+    attrs = Enum.into(attrs, %{name: "Test Tag"})
+
+    %TagSchema{}
+    |> TagSchema.changeset(attrs)
+    |> Repo.insert!()
+  end
+
+  def add_tag_to_item(item, tag) do
+    Repo.insert_all("items_tags", [%{item_id: item.id, tag_id: tag.id}])
+    item
   end
 end

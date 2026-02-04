@@ -18,31 +18,31 @@ defmodule Bench.Scenarios.StringMatching do
 
   defp book_title_contains do
     base = from(b in Book)
-    query = Filter.query(~s(title:*Journey), base)
+    query = Filter.query(base, ~s(title:*Journey))
     Repo.all(query)
   end
 
   defp book_title_starts_with do
     base = from(b in Book)
-    query = Filter.query(~s(title:^"The"), base)
+    query = Filter.query(base, ~s(title:^"The"))
     Repo.all(query)
   end
 
   defp book_title_ends_with do
     base = from(b in Book)
-    query = Filter.query(~s(title:$"1"), base)
+    query = Filter.query(base, ~s(title:$"1"))
     Repo.all(query)
   end
 
   defp author_bio_contains do
     base = from(a in Author)
-    query = Filter.query(~s(bio:*fiction), base)
+    query = Filter.query(base, ~s(bio:*fiction))
     Repo.all(query)
   end
 
   defp combined_string_predicates do
     base = from(b in Book)
-    query = Filter.query(~s(title:^"The" title:*Journey), base)
+    query = Filter.query(base, ~s(title:^"The" title:*Journey))
     Repo.all(query)
   end
 end

@@ -18,31 +18,31 @@ defmodule Bench.Scenarios.Relationship do
 
   defp book_by_author_name do
     base = from(b in Book)
-    query = Filter.query(~s(author.name:*Smith), base, schema: Book)
+    query = Filter.query(base, ~s(author.name:*Smith), schema: Book)
     Repo.all(query)
   end
 
   defp book_by_author_country do
     base = from(b in Book)
-    query = Filter.query(~s(author.country:USA), base, schema: Book)
+    query = Filter.query(base, ~s(author.country:USA), schema: Book)
     Repo.all(query)
   end
 
   defp book_by_bookstore_location do
     base = from(b in Book)
-    query = Filter.query(~s(bookstore.location:Manhattan), base, schema: Book)
+    query = Filter.query(base, ~s(bookstore.location:Manhattan), schema: Book)
     Repo.all(query)
   end
 
   defp review_by_book_title do
     base = from(r in Review)
-    query = Filter.query(~s(book.title:*Journey), base, schema: Review)
+    query = Filter.query(base, ~s(book.title:*Journey), schema: Review)
     Repo.all(query)
   end
 
   defp review_by_book_author_name do
     base = from(r in Review)
-    query = Filter.query(~s(book.author.name:*Smith), base, schema: Review)
+    query = Filter.query(base, ~s(book.author.name:*Smith), schema: Review)
     Repo.all(query)
   end
 end

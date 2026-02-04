@@ -7,7 +7,7 @@ defmodule Dequel.Query.Context do
   created once per unique path.
   """
 
-  defstruct [:schema, joins: %{}, preloads: []]
+  defstruct [:schema, :prefix, joins: %{}, preloads: []]
 
   @type join_info :: %{
           assoc: atom(),
@@ -18,6 +18,7 @@ defmodule Dequel.Query.Context do
 
   @type t :: %__MODULE__{
           schema: module() | nil,
+          prefix: String.t() | nil,
           joins: %{[atom()] => join_info()},
           preloads: [[atom()]]
         }
@@ -25,6 +26,10 @@ defmodule Dequel.Query.Context do
   @doc "Creates a new empty context with optional schema for semantic analysis"
   @spec new(module() | nil) :: t()
   def new(schema \\ nil), do: %__MODULE__{schema: schema}
+
+  @doc "Creates a new context with schema and prefix"
+  @spec new(module() | nil, String.t() | nil) :: t()
+  def new(schema, prefix), do: %__MODULE__{schema: schema, prefix: prefix}
 
   @doc """
   Ensures joins exist for a field path, returns {binding, updated_context}.
