@@ -5,23 +5,20 @@ defmodule Dequel.Semantic.AnalyzerTest do
 
   doctest Dequel.Semantic.Analyzer
 
-  defp mock_resolver do
-    fn field ->
-      case field do
-        :items -> %{kind: :has_many, resolver: nil}
-        :author -> %{kind: :belongs_to, resolver: nil}
-        :profile -> %{kind: :has_one, resolver: nil}
-        :address -> %{kind: :embeds_one, resolver: nil}
-        :tags -> %{kind: :embeds_many, resolver: nil}
-        :age -> %{kind: :field, type: :integer}
-        :active -> %{kind: :field, type: :boolean}
-        :price -> %{kind: :field, type: :decimal}
-        :created_at -> %{kind: :field, type: :date}
-        :name -> %{kind: :field, type: :string}
-        _ -> nil
-      end
-    end
-  end
+  @mock_fields %{
+    items: %{kind: :has_many, resolver: nil},
+    author: %{kind: :belongs_to, resolver: nil},
+    profile: %{kind: :has_one, resolver: nil},
+    address: %{kind: :embeds_one, resolver: nil},
+    tags: %{kind: :embeds_many, resolver: nil},
+    age: %{kind: :field, type: :integer},
+    active: %{kind: :field, type: :boolean},
+    price: %{kind: :field, type: :decimal},
+    created_at: %{kind: :field, type: :date},
+    name: %{kind: :field, type: :string}
+  }
+
+  defp mock_resolver, do: &Map.get(@mock_fields, &1)
 
   # Legacy tuple resolver for backward compatibility tests
   defp legacy_resolver do
