@@ -20,18 +20,6 @@ defmodule Dequel.Semantic.AnalyzerTest do
 
   defp mock_resolver, do: &Map.get(@mock_fields, &1)
 
-  # Legacy tuple resolver for backward compatibility tests
-  defp legacy_resolver do
-    fn field ->
-      case field do
-        :items -> {:has_many, nil}
-        :author -> {:belongs_to, nil}
-        :profile -> {:has_one, nil}
-        _ -> nil
-      end
-    end
-  end
-
   describe "analyze/2 without resolver" do
     test "passes through block nodes unchanged when no resolver provided" do
       ast = {:block, [], [:items, {:==, [], [:name, "foo"]}]}
@@ -220,32 +208,6 @@ defmodule Dequel.Semantic.AnalyzerTest do
       assert result ==
                {:exists, [line: 1, column: 5, cardinality: :many],
                 [:items, {:==, [], [:name, "foo"]}]}
-    end
-  end
-
-  describe "backward compatibility with legacy tuple resolver" do
-    test "transforms has_many block to exists with legacy resolver" do
-      ast = {:block, [], [:items, {:==, [], [:name, "foo"]}]}
-
-      result = Analyzer.analyze(ast, legacy_resolver())
-
-      assert result == {:exists, [cardinality: :many], [:items, {:==, [], [:name, "foo"]}]}
-    end
-
-    test "transforms belongs_to block to join with legacy resolver" do
-      ast = {:block, [], [:author, {:==, [], [:name, "Tolkien"]}]}
-
-      result = Analyzer.analyze(ast, legacy_resolver())
-
-      assert result == {:join, [cardinality: :one], [:author, {:==, [], [:name, "Tolkien"]}]}
-    end
-
-    test "transforms has_one block to join with legacy resolver" do
-      ast = {:block, [], [:profile, {:==, [], [:bio, "writer"]}]}
-
-      result = Analyzer.analyze(ast, legacy_resolver())
-
-      assert result == {:join, [cardinality: :one], [:profile, {:==, [], [:bio, "writer"]}]}
     end
   end
 

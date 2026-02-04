@@ -64,7 +64,6 @@ defmodule Dequel.Semantic.Analyzer do
   The resolver should return one of:
   - `%{kind: :has_many | :has_one | :belongs_to | :embeds_one | :embeds_many, resolver: fn}` for relations
   - `%{kind: :field, type: atom}` for typed fields
-  - `{:has_many | :has_one | :belongs_to, nested_resolver}` (legacy tuple format)
   - `nil` for unknown fields
 
   If no resolver is provided, block nodes are left unchanged and no type coercion occurs.
@@ -227,20 +226,12 @@ defmodule Dequel.Semantic.Analyzer do
 
   defp resolve_field(resolver, field) when is_function(resolver, 1) do
     case resolver.(field) do
-      # New map format
       %{kind: kind} = info
       when kind in [:has_many, :has_one, :belongs_to, :embeds_one, :embeds_many] ->
         info
 
       %{kind: :field, type: _type} = info ->
         info
-
-      # Legacy tuple format for backward compatibility
-      {kind, nested_resolver} when kind in [:has_many, :has_one, :belongs_to] ->
-        %{kind: kind, resolver: nested_resolver}
-
-      nil ->
-        nil
 
       _ ->
         nil
@@ -254,10 +245,6 @@ defmodule Dequel.Semantic.Analyzer do
     case resolver.(field) do
       %{kind: :field, type: type} ->
         Coerce.coerce(value, type)
-
-      # Legacy tuple format - no type info available
-      {_kind, _nested} ->
-        value
 
       # Relations or unknown - no coercion
       _ ->
