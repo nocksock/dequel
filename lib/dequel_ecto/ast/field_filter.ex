@@ -57,8 +57,8 @@ defmodule Dequel.Adapter.Ecto.Filter do
     * `:preload` - Preloads to apply to the query
 
   """
-  @spec query(String.t(), Ecto.Query.t(), keyword()) :: Ecto.Query.t()
-  def query(input, base_query, opts \\ []) when is_binary(input) do
+  @spec query(Ecto.Query.t(), String.t(), keyword()) :: Ecto.Query.t()
+  def query(base_query, input, opts \\ []) when is_binary(input) do
     ast = Dequel.Parser.parse!(input)
     schema = Keyword.get(opts, :schema)
     {dynamic_expr, ctx} = filter(ast, Context.new(schema))

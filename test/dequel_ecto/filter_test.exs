@@ -114,12 +114,12 @@ defmodule Dequel.Adapter.EctoTest do
       lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("author.name:Tolkien", base_query)
-      items = Repo.all(result)
+      result = from(i in ItemSchema)
+        |> Filter.query("author.name:Tolkien")
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == lotr.id
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
     end
 
     test "filters by association field with contains predicate" do
@@ -129,12 +129,13 @@ defmodule Dequel.Adapter.EctoTest do
       lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("author.name:*Tolkien", base_query)
-      items = Repo.all(result)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("author.name:*Tolkien")
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == lotr.id
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
     end
 
     test "combines association and local field filters" do
@@ -145,12 +146,13 @@ defmodule Dequel.Adapter.EctoTest do
       _hobbit =
         item_with_author(%{"name" => "Hobbit", "description" => "fantasy adventure"}, tolkien)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("author.name:Tolkien name:LOTR", base_query)
-      items = Repo.all(result)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("author.name:Tolkien name:LOTR")
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == lotr.id
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
     end
 
     test "filters with OR on association fields" do
@@ -162,12 +164,14 @@ defmodule Dequel.Adapter.EctoTest do
       dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
       _foundation = item_with_author(%{"name" => "Foundation", "description" => "scifi"}, asimov)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("author.name:Tolkien or author.name:Herbert", base_query)
-      items = Repo.all(result) |> Enum.sort_by(& &1.name)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("author.name:Tolkien or author.name:Herbert")
+        |> Repo.all()
+        |> Enum.sort_by(& &1.name)
 
-      assert length(items) == 2
-      assert Enum.map(items, & &1.id) |> Enum.sort() == Enum.sort([lotr.id, dune.id])
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) |> Enum.sort() == Enum.sort([lotr.id, dune.id])
     end
 
     test "filters with negation on association field" do
@@ -177,12 +181,13 @@ defmodule Dequel.Adapter.EctoTest do
       _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("!author.name:Tolkien", base_query)
-      items = Repo.all(result)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("!author.name:Tolkien")
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == dune.id
+      assert length(result) == 1
+      assert hd(result).id == dune.id
     end
 
     test "reuses joins for same association" do
@@ -192,13 +197,14 @@ defmodule Dequel.Adapter.EctoTest do
       lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(i in ItemSchema)
       # Both conditions use author - should only create one join
-      result = Filter.query("author.name:Tolkien author.bio:*British", base_query)
-      items = Repo.all(result)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("author.name:Tolkien author.bio:*British")
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == lotr.id
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
     end
   end
 
@@ -214,12 +220,13 @@ defmodule Dequel.Adapter.EctoTest do
       _hobbit = item_with_author(%{"name" => "Hobbit", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(a in AuthorSchema)
-      result = Filter.query("items { name:LOTR }", base_query, schema: AuthorSchema)
-      authors = Repo.all(result)
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items { name:LOTR }", schema: AuthorSchema)
+        |> Repo.all()
 
-      assert length(authors) == 1
-      assert hd(authors).id == tolkien.id
+      assert length(result) == 1
+      assert hd(result).id == tolkien.id
     end
 
     test "block syntax with contains predicate" do
@@ -230,12 +237,13 @@ defmodule Dequel.Adapter.EctoTest do
       _hobbit = item_with_author(%{"name" => "Hobbit", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(a in AuthorSchema)
-      result = Filter.query("items { name:*OTR }", base_query, schema: AuthorSchema)
-      authors = Repo.all(result)
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items { name:*OTR }", schema: AuthorSchema)
+        |> Repo.all()
 
-      assert length(authors) == 1
-      assert hd(authors).id == tolkien.id
+      assert length(result) == 1
+      assert hd(result).id == tolkien.id
     end
 
     test "block syntax with multiple conditions inside block" do
@@ -245,15 +253,13 @@ defmodule Dequel.Adapter.EctoTest do
       _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(a in AuthorSchema)
-
       result =
-        Filter.query("items { name:LOTR description:*fantasy }", base_query, schema: AuthorSchema)
+        from(a in AuthorSchema)
+        |> Filter.query("items { name:LOTR description:*fantasy }", schema: AuthorSchema)
+        |> Repo.all()
 
-      authors = Repo.all(result)
-
-      assert length(authors) == 1
-      assert hd(authors).id == tolkien.id
+      assert length(result) == 1
+      assert hd(result).id == tolkien.id
     end
 
     test "block syntax with negation inside block" do
@@ -264,12 +270,13 @@ defmodule Dequel.Adapter.EctoTest do
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
       # Finds authors whose items do NOT have name "LOTR" (but still have some items)
-      base_query = from(a in AuthorSchema)
-      result = Filter.query("items { !name:LOTR }", base_query, schema: AuthorSchema)
-      authors = Repo.all(result)
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items { !name:LOTR }", schema: AuthorSchema)
+        |> Repo.all()
 
-      assert length(authors) == 1
-      assert hd(authors).id == herbert.id
+      assert length(result) == 1
+      assert hd(result).id == herbert.id
     end
 
     test "block syntax combined with local field filter" do
@@ -279,12 +286,13 @@ defmodule Dequel.Adapter.EctoTest do
       _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _narnia = item_with_author(%{"name" => "Narnia", "description" => "fantasy"}, lewis)
 
-      base_query = from(a in AuthorSchema)
-      result = Filter.query("bio:*British items { name:LOTR }", base_query, schema: AuthorSchema)
-      authors = Repo.all(result)
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("bio:*British items { name:LOTR }", schema: AuthorSchema)
+        |> Repo.all()
 
-      assert length(authors) == 1
-      assert hd(authors).id == tolkien.id
+      assert length(result) == 1
+      assert hd(result).id == tolkien.id
     end
   end
 
@@ -296,12 +304,13 @@ defmodule Dequel.Adapter.EctoTest do
       lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("author { name:Tolkien }", base_query, schema: ItemSchema)
-      items = Repo.all(result)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("author { name:Tolkien }", schema: ItemSchema)
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == lotr.id
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
     end
 
     test "block syntax with contains predicate on belongs_to" do
@@ -311,12 +320,13 @@ defmodule Dequel.Adapter.EctoTest do
       lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
       _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
 
-      base_query = from(i in ItemSchema)
-      result = Filter.query("author { name:*Tolkien }", base_query, schema: ItemSchema)
-      items = Repo.all(result)
+      result =
+        from(i in ItemSchema)
+        |> Filter.query("author { name:*Tolkien }", schema: ItemSchema)
+        |> Repo.all()
 
-      assert length(items) == 1
-      assert hd(items).id == lotr.id
+      assert length(result) == 1
+      assert hd(result).id == lotr.id
     end
   end
 end
