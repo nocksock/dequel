@@ -98,6 +98,23 @@ export function serializeCondition(parts: Omit<ConditionParts, 'node'>): string 
   return `${parts.prefix}${parts.field}:${parts.predicate}`
 }
 
+/**
+ * Extract argument text from a Command node.
+ * Returns the text between the parentheses (excluding them).
+ */
+export function extractCommandArgs(
+  command: SyntaxNode,
+  doc: { sliceString: (from: number, to: number) => string }
+): string | null {
+  const args = command.getChildren('Argument')
+  if (args.length === 0) return null
+
+  // Get text from first arg start to last arg end
+  const firstArg = args[0]
+  const lastArg = args[args.length - 1]
+  return doc.sliceString(firstArg.from, lastArg.to)
+}
+
 // Field context
 
 /**

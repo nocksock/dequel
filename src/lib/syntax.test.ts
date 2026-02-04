@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 import { Text } from '@codemirror/state'
 import { parser } from '../dequel-lang/parser'
-import { closestCondition, parseCondition, serializeCondition, getFieldContextWithTree } from './syntax'
+import { closestCondition, parseCondition, serializeCondition, getFieldContextWithTree, extractCommandArgs } from './syntax'
 
 describe('closestCondition', () => {
   const getNodeAt = (input: string, cursorPos: number) => {
@@ -189,5 +189,40 @@ describe('getFieldContext', () => {
 
   test('returns field with multiple conditions - second condition', () => {
     expect(getFieldName('title:foo region:ba|r')).toBe('region')
+  })
+})
+
+describe('extractCommandArgs', () => {
+  const getArgs = (input: string) => {
+    const tree = parser.parse(input)
+    const condition = tree.topNode.getChild('Query')?.firstChild
+    const command = condition?.getChild('Predicate')?.getChild('Command')
+    if (!command) return null
+    return extractCommandArgs(command, { sliceString: (from, to) => input.slice(from, to) })
+  }
+
+  test('extracts single identifier argument', () => {
+    expect(getArgs('field:contains(foo)')).toBe('foo')
+  })
+
+  test('extracts numeric arguments', () => {
+    expect(getArgs('date:after(2024,01)')).toBe('2024,01')
+  })
+
+  test('extracts string argument', () => {
+    expect(getArgs('field:contains("hello world")')).toBe('"hello world"')
+  })
+
+  test('returns empty string for command with empty parens', () => {
+    // Parser creates an empty Argument node for empty()
+    expect(getArgs('field:empty()')).toBe('')
+  })
+
+  test('returns null for non-command predicate', () => {
+    expect(getArgs('field:value')).toBe(null)
+  })
+
+  test('extracts multiple string arguments', () => {
+    expect(getArgs('field:between("start","end")')).toBe('"start","end"')
   })
 })

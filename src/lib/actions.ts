@@ -8,6 +8,7 @@ import {
   closestCondition,
   closest,
   isWhitespace,
+  extractCommandArgs,
   ConditionParts,
   Transform,
 } from './syntax'
@@ -137,20 +138,6 @@ export function applyAppendDoc(ctx: ActionContext, value: string): TransactionSp
       insert: value,
     }),
   }
-}
-
-/**
- * Extract argument text from a Command node.
- * Returns the text between the parentheses (excluding them).
- */
-function extractCommandArgs(command: SyntaxNode, doc: { sliceString: (from: number, to: number) => string }): string | null {
-  const args = command.getChildren('Argument')
-  if (args.length === 0) return null
-
-  // Get text from first arg start to last arg end
-  const firstArg = args[0]
-  const lastArg = args[args.length - 1]
-  return doc.sliceString(firstArg.from, lastArg.to)
 }
 
 /**
@@ -332,6 +319,23 @@ function getFieldValues(ctx: ActionContext): SuggestionAction[] {
           })
           break
       }
+    }
+  }
+
+  // Add "new condition" action when in a valid condition with a predicate
+  // This allows users to finish the current condition and start a new one
+  if (ctx.field && ctx.field !== '*' && ctx.condition) {
+    const predicate = ctx.condition.getChild('Predicate')
+    // Only show if predicate exists and has content
+    if (predicate && predicate.from < predicate.to) {
+      actions.push({
+        type: 'insert',
+        id: 'new-condition',
+        label: '+ new condition',
+        description: 'Add another condition',
+        insert: () => ' ',
+        position: 'end',
+      })
     }
   }
 
