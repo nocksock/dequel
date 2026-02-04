@@ -29,6 +29,9 @@ defmodule Dequel.MixProject do
   defp elixirc_paths(:test),
     do: ["lib", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
 
+  defp elixirc_paths(:bench),
+    do: ["lib", "bench"]
+
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
@@ -39,7 +42,9 @@ defmodule Dequel.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:telemetry, "~> 1.3"},
       {:ecto_sql, "~> 3.10"},
-      {:ecto_sqlite3, "~> 0.16"}
+      {:ecto_sqlite3, "~> 0.16"},
+      {:benchee, "~> 1.3", only: :bench},
+      {:benchee_json, "~> 1.0", only: :bench}
     ]
   end
 

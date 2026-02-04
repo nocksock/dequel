@@ -40,3 +40,9 @@ devenv.local.yaml
 # pre-commit
 .pre-commit-config.yaml
 .beans.yml
+
+# Benchmark results (JSON files with timestamps)
+/bench/results/
+
+# Benchmark database
+bench.db*
