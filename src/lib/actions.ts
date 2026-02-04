@@ -247,7 +247,7 @@ export function applyAction(ctx: ActionContext, action: SuggestionAction): Trans
 
 // Action providers
 
-function getConditionModifiers(ctx: ActionContext): SuggestionAction[] {
+function buildConditionModifiers(ctx: ActionContext): SuggestionAction[] {
   if (!ctx.condition) return []
 
   const isExcluded = ctx.condition.name === 'ExcludeCondition'
@@ -271,7 +271,7 @@ function getConditionModifiers(ctx: ActionContext): SuggestionAction[] {
   ]
 }
 
-function getFieldValues(ctx: ActionContext): SuggestionAction[] {
+function buildFieldActions(ctx: ActionContext): SuggestionAction[] {
   const schema = ctx.state.field(SuggestionSchemaField)
   if (!schema) return []
 
@@ -346,7 +346,7 @@ function getFieldValues(ctx: ActionContext): SuggestionAction[] {
  * Get all applicable suggestion actions for the current context.
  */
 export function getActions(ctx: ActionContext): SuggestionAction[] {
-  const allActions = [...getFieldValues(ctx), ...getConditionModifiers(ctx)]
+  const allActions = [...buildFieldActions(ctx), ...buildConditionModifiers(ctx)]
 
   return allActions.filter((action) => {
     if (action.type === 'transform') {
