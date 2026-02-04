@@ -3,6 +3,25 @@ defmodule Dequel.Parser do
   Parser for the Dequel query language using NimbleParsec.
 
   Parses query strings into AST tuples like `{:==, [], [:field, "value"]}`.
+
+  ## Atom Safety
+
+  Field names and relation names in queries are converted to atoms using
+  `String.to_existing_atom/1`. This means:
+
+  1. **Schemas must be loaded before parsing** - The atoms for field names must
+     already exist in the atom table. When using Ecto schemas, this happens
+     automatically when the schema module is compiled/loaded.
+
+  2. **Unknown fields will raise** - If a query references a field that doesn't
+     exist as an atom, an `ArgumentError` will be raised. This is intentional
+     to catch typos early rather than silently returning no results.
+
+  3. **No atom table exhaustion** - Since we only convert to existing atoms,
+     malicious queries cannot exhaust the atom table.
+
+  For runtime field validation with better error messages, use the semantic
+  analyzer with a schema resolver which can provide context-aware errors.
   """
 
   import NimbleParsec

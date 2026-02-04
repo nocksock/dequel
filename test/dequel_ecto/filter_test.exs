@@ -104,7 +104,8 @@ defmodule Dequel.Adapter.EctoTest do
     end
 
     test "combines association and local field filters", %{tolkien: tolkien, lotr: lotr} do
-      _hobbit = item_fixture(%{name: "Hobbit", description: "fantasy adventure", author_id: tolkien.id})
+      _hobbit =
+        item_fixture(%{name: "Hobbit", description: "fantasy adventure", author_id: tolkien.id})
 
       result =
         from(i in ItemSchema)
@@ -117,7 +118,9 @@ defmodule Dequel.Adapter.EctoTest do
 
     test "filters with OR on association fields", %{lotr: lotr, dune: dune} do
       asimov = author_fixture(%{name: "Asimov", bio: "Russian-American author"})
-      _foundation = item_fixture(%{name: "Foundation", description: "scifi", author_id: asimov.id})
+
+      _foundation =
+        item_fixture(%{name: "Foundation", description: "scifi", author_id: asimov.id})
 
       result =
         from(i in ItemSchema)

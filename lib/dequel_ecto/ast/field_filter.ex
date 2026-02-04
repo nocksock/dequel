@@ -401,14 +401,4 @@ defmodule Dequel.Adapter.Ecto.Filter do
   def where({op, [], [field, value]}) do
     raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
   end
-
-  def predicates,
-    do: [
-      :startsWith,
-      :contains,
-      :endsWith,
-      :exact,
-      :isEmpty,
-      :oneOf
-    ]
 end

@@ -76,14 +76,14 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
   end
 
   defp get_field_value(record, field) when is_binary(field) do
-    # Note: String.to_existing_atom/1 raises ArgumentError if atom doesn't exist.
-    # This is expected for dynamic field names and indicates the field isn't in the schema.
-    # We treat this as "field not present" for filtering purposes.
-    atom_field = String.to_existing_atom(field)
+    # The parser converts field names to atoms, so string fields here indicate
+    # either programmatic use or an unsupported path. Use :erlang function
+    # directly with catch instead of rescue for control flow.
+    atom_field = :erlang.binary_to_existing_atom(field, :utf8)
     Map.get(record, atom_field)
-  rescue
-    ArgumentError ->
-      # Field name not recognized - treat as nil (no match)
+  catch
+    :error, :badarg ->
+      # Atom doesn't exist - field name not recognized, treat as nil
       nil
   end
 

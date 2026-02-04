@@ -1,6 +1,13 @@
 defmodule Dequel.Parser.Token do
   @moduledoc """
   Token parsers for the Dequel query language (identifiers, strings, operators, etc.).
+
+  ## Atom Conversion
+
+  Field paths are converted to atoms via `to_field_path/1` using
+  `String.to_existing_atom/1`. This requires that field name atoms already
+  exist (typically from compiled Ecto schemas). See `Dequel.Parser` moduledoc
+  for details on atom safety.
   """
 
   import NimbleParsec

@@ -19,20 +19,6 @@ defmodule Dequel.Parser.Helper do
     |> optional(whitespace())
   end
 
-  # Debug helper for parser development - call with |> tap()
-  # Only use during parser debugging, comment out in production
-  def tap(comb),
-    do:
-      comb
-      |> post_traverse(:tap)
-
-  # credo:disable-for-next-line Credo.Check.Warning.IoInspect
-  def tap(rest, buffer, context, _line, _offset) do
-    # Uncomment the line below when debugging parser issues:
-    # IO.inspect({rest, buffer, context, line, offset}, label: "Parser Debug")
-    {rest, buffer, context}
-  end
-
   def unwrap(result) do
     case result do
       {:ok, [root], _rest, _context, _line, _column} ->
