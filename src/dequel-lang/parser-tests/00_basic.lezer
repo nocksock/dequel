@@ -1,4 +1,4 @@
-# simple 
+# simple
 
 type:markets title:EDEKA
 
@@ -11,7 +11,20 @@ QueryList(
   )
 )
 
-# spaces between conditions don't matter 
+# simple with snake_case
+
+type:markets market_id:123
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Number)))
+  )
+)
+
+# spaces between conditions don't matter
 
 type:markets    title:EDEKA
 
@@ -37,12 +50,12 @@ QueryList(
   )
 )
 
-# values 
+# values
 
-type:markets 
-  title:EDEKA 
-  title:"Some string" 
-  id:123 
+type:markets
+  title:EDEKA
+  title:"Some string"
+  id:123
   some.field:/^EDEKA/i
 
 ==>
