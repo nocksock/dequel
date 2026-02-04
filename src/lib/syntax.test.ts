@@ -40,13 +40,13 @@ describe('closestCondition', () => {
   })
 
   test('finds correct condition in multi-condition query', () => {
-    const node = getNodeAt('title:foo region:bar', 15) // on 'a' in bar
+    const node = getNodeAt('title:foo region_id:bar', 18) // on 'a' in bar
     const condition = closestCondition(node)
     expect(condition?.name).toBe('Condition')
     // Verify it's the second condition by checking the field
     const field = condition?.getChild('Field')
-    const input = 'title:foo region:bar'
-    expect(input.slice(field!.from, field!.to)).toBe('region')
+    const input = 'title:foo region_id:bar'
+    expect(input.slice(field!.from, field!.to)).toBe('region_id')
   })
 })
 
@@ -81,9 +81,9 @@ describe('parseCondition', () => {
   })
 
   test('parses condition with command matcher', () => {
-    const parts = parse('date:after(2024,01)')
+    const parts = parse('created_at:after(2024,01)')
     expect(parts.prefix).toBe('')
-    expect(parts.field).toBe('date')
+    expect(parts.field).toBe('created_at')
     expect(parts.predicate).toBe('after(2024,01)')
   })
 
@@ -135,7 +135,7 @@ describe('round-trip parse/serialize', () => {
   })
 
   test('round-trips condition with command', () => {
-    expect(roundTrip('date:after(2024,01)')).toBe('date:after(2024,01)')
+    expect(roundTrip('created_at:after(2024,01)')).toBe('created_at:after(2024,01)')
   })
 
   test('round-trips condition with regex', () => {
@@ -188,7 +188,7 @@ describe('getFieldContext', () => {
   })
 
   test('returns field with multiple conditions - second condition', () => {
-    expect(getFieldName('title:foo region:ba|r')).toBe('region')
+    expect(getFieldName('title:foo region_id:ba|r')).toBe('region_id')
   })
 })
 
@@ -206,7 +206,7 @@ describe('extractCommandArgs', () => {
   })
 
   test('extracts numeric arguments', () => {
-    expect(getArgs('date:after(2024,01)')).toBe('2024,01')
+    expect(getArgs('created_at:after(2024,01)')).toBe('2024,01')
   })
 
   test('extracts string argument', () => {
