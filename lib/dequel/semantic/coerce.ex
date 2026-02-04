@@ -76,12 +76,12 @@ defmodule Dequel.Semantic.Coerce do
       nil
   """
   @spec coerce(term(), atom()) :: term()
+
   def coerce(value, type)
 
   # Already the right type - pass through
-  def coerce(value, _type) when not is_binary(value), do: value
+  def coerce(value, _) when not is_binary(value), do: value
 
-  # Integer
   def coerce(value, :integer) do
     case Integer.parse(value) do
       {int, ""} -> int
@@ -91,7 +91,6 @@ defmodule Dequel.Semantic.Coerce do
 
   def coerce(value, :id), do: coerce(value, :integer)
 
-  # Float
   def coerce(value, :float) do
     case Float.parse(value) do
       {float, ""} -> float
@@ -99,7 +98,6 @@ defmodule Dequel.Semantic.Coerce do
     end
   end
 
-  # Boolean
   def coerce(value, :boolean) do
     case String.downcase(value) do
       "true" -> true
@@ -118,9 +116,7 @@ defmodule Dequel.Semantic.Coerce do
     end
   end
 
-  # Naive DateTime
   def coerce(value, :naive_datetime) do
-    # Try ISO8601 format first, then with T separator replaced
     case NaiveDateTime.from_iso8601(value) do
       {:ok, datetime} -> datetime
       {:error, _} -> value
@@ -129,7 +125,6 @@ defmodule Dequel.Semantic.Coerce do
 
   def coerce(value, :naive_datetime_usec), do: coerce(value, :naive_datetime)
 
-  # UTC DateTime
   def coerce(value, :utc_datetime) do
     case DateTime.from_iso8601(value) do
       {:ok, datetime, _offset} -> datetime
@@ -139,7 +134,6 @@ defmodule Dequel.Semantic.Coerce do
 
   def coerce(value, :utc_datetime_usec), do: coerce(value, :utc_datetime)
 
-  # Decimal
   def coerce(value, :decimal) do
     if Code.ensure_loaded?(Decimal) do
       try do
@@ -153,8 +147,5 @@ defmodule Dequel.Semantic.Coerce do
   end
 
   # String and unknown types - pass through unchanged
-  def coerce(value, :string), do: value
-  def coerce(value, :binary), do: value
-  def coerce(value, nil), do: value
-  def coerce(value, _unknown_type), do: value
+  def coerce(value, _), do: value
 end

@@ -263,7 +263,6 @@ defmodule Dequel.Adapter.Ecto.Filter do
     {dynamic(not (^d)), ctx}
   end
 
-  # Get related schema from association
   defp get_related_schema(nil, _relation), do: nil
 
   defp get_related_schema(schema, relation) do
@@ -393,11 +392,6 @@ defmodule Dequel.Adapter.Ecto.Filter do
     dynamic(not (^where(expression)))
   end
 
-  #
-  # def where(%FieldFilter{args: [], field: field, op: :isEmpty}) do
-  #   dynamic([schema], is_nil(field(schema, ^field)) or field(schema, ^field) == "")
-  # end
-  #
   def where({op, [], [field, value]}) do
     raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
   end

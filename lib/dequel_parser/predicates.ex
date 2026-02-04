@@ -1,39 +1,42 @@
 defmodule Dequel.Parser.Predicates do
   @moduledoc """
-  This module handles the parsing of predicates/comparators/operators.
+  Parses predicates (operators) in field expressions.
 
-  ```
-  title: foobar
-       ^^^^^^^^- this part
+  ## Syntax
 
-  title:contains(foobar)
-       ^^^^^^^^^^^^^^^^- this part
+  Predicates appear after the colon in field expressions:
 
-  ```
+      title:foobar           # equality (implicit)
+      title:*foobar          # contains (shorthand)
+      title:contains(foobar) # contains (explicit)
 
-  Note that the `:` is also part of this. 
-  Conceptually it works similar to Lua's `:`.
-  Meaning, that the part before the colon will be inserted as first arg into the predicate.
-  So the predicate is actually called like `contains(field_name, value[, options])`.
-  `options` is an optional array of additional args.
+  ## Available Predicates
 
-  One crucial deviation from conventional methods is that in the DQL form, the parenthesis may contain a list, which is not a list of parameters.
-  Instead it's combined into an `OR` condition:
+  | Predicate     | Shorthand | Example                    |
+  |---------------|-----------|----------------------------|
+  | `==`          | `:`       | `title:value`              |
+  | `contains`    | `*`       | `title:*value`             |
+  | `starts_with` | `^`       | `title:^value`             |
+  | `ends_with`   | `$`       | `title:$value`             |
+  | `one_of`      | `[...]`   | `title:[a, b, c]`          |
 
-  ```
-  field_name:contains(foo, bar) => contains(field_name, "foo") OR contains(field_name, "bar")
-  ```
+  ## Multi-Value Expansion
 
-  A good way to think about this is that it's somewhat similar to maths: `x(a + b) = xa + xb`
+  Comma-separated values in parentheses expand to OR conditions:
 
-  But predicates actually *can* have parameters; they're just separated by white
-  space: `field_name:contains(frodo i)`. `i` in this case is a flag that denotes "case insensitive". 
+      name:contains(foo, bar)
+      # expands to: name:contains(foo) OR name:contains(bar)
 
-  The type of flags or options that a predicate accepts, is the responsibility of that predicate.
-  The parser allows any number of value-expressions. 
-  So `field_name:contains(frodo a b c d "123" foo bar)` is nonsense, but valid syntax.
-  It will be the linter's job to detect this type of issue.
+  Think of it like the distributive property: `p(a, b) = p(a) OR p(b)`.
 
+  ## Predicate Options
+
+  Options follow the value, separated by whitespace:
+
+      name:contains(frodo i)
+      #                   ^ case-insensitive flag
+
+  The parser accepts any options; validation is handled by the linter.
   """
   import NimbleParsec
   import Dequel.Parser.Helper
