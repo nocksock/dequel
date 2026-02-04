@@ -55,9 +55,9 @@ defmodule Dequel.Adapter.EctoTest do
 
     assert ~ALL<
 
-      name:contains(frodo, sam) {
+      name:contains(frodo, sam) (
         description:*g
-      }
+      )
 
     > == [frodo, samwise]
   end

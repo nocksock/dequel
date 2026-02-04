@@ -56,6 +56,25 @@ defmodule Dequel.Parser.Predicates do
         |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)))
     |> choice()
 
+  # Shorthand prefix inside has(): *value, ^value, $value
+  has_shorthand =
+    @predicates
+    |> Enum.map(fn {op, sym} ->
+      string(sym) |> replace(op)
+    end)
+    |> choice()
+
+  # Parameter for has() - can have optional shorthand prefix
+  defcombinator(
+    :has_parameter,
+    optional(has_shorthand)
+    |> concat(value())
+    |> reduce(:wrap_has_param)
+  )
+
+  def wrap_has_param([value]), do: value
+  def wrap_has_param([op, value]), do: {op, value}
+
   any_shorthand =
     @predicates
     |> Enum.map(fn {op, sym} ->
@@ -100,6 +119,27 @@ defmodule Dequel.Parser.Predicates do
     )
     |> ignore(ascii_char([?)]))
     |> label("predicate"),
+    export_combinator: true
+  )
+
+  # has() function call - collection predicate with special parameter handling
+  defparsec(
+    :has_call,
+    string("has")
+    |> replace(:has)
+    |> ignore(ascii_char([?(]))
+    |> spaced(
+      choice([
+        parsec(:has_parameter)
+        |> repeat(
+          ignore(spaced(string(",")))
+          |> concat(parsec(:has_parameter))
+        ),
+        optional(whitespace())
+      ])
+    )
+    |> ignore(ascii_char([?)]))
+    |> label("has predicate"),
     export_combinator: true
   )
 end

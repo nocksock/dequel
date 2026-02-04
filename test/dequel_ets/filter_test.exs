@@ -77,9 +77,9 @@ defmodule Dequel.Adapter.EtsTest do
     _ = item_fixture(%{"name" => "frodo", "description" => "x"})
 
     result = ~ALL<
-      name:contains(frodo, sam) {
+      name:contains(frodo, sam) (
         description:*g
-      }
+      )
     >
     assert Enum.sort_by(result, & &1.name) == Enum.sort_by([frodo, samwise], & &1.name)
   end

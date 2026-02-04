@@ -91,7 +91,7 @@ defmodule Dequel.ParserTest do
       # {{{
       do:
         assert(
-          ~Q<a:a { b:b }> ==
+          ~Q<a:a ( b:b )> ==
             {:and, [],
              [
                {:==, [], [:a, "a"]},
@@ -134,7 +134,7 @@ defmodule Dequel.ParserTest do
       # {{{
       do:
         assert(
-          ~Q<a:a { b:b { c:c } }> ==
+          ~Q<a:a ( b:b ( c:c ) )> ==
             {:and, [],
              [
                {:==, [], [:a, "a"]},
@@ -219,7 +219,7 @@ defmodule Dequel.ParserTest do
       # {{{
       do:
         assert(
-          ~Q<{ a:a b:b } or c:c> ==
+          ~Q<( a:a b:b ) or c:c> ==
             {:or, [],
              [
                {:and, [],
@@ -492,6 +492,123 @@ defmodule Dequel.ParserTest do
         assert(
           ~Q<-field:"some value"> ==
             {:not, [], {:==, [], [:field, "some value"]}}
+        )
+  end
+
+  describe "has predicate for many-to-many relations" do
+    test "has with equality value",
+      do:
+        assert(
+          ~Q<items.name:has("ring")> ==
+            {:has, [], [[:items, :name], "ring"]}
+        )
+
+    test "has with implicit string value",
+      do:
+        assert(
+          ~Q<items.name:has(ring)> ==
+            {:has, [], [[:items, :name], "ring"]}
+        )
+
+    test "has with contains shorthand",
+      do:
+        assert(
+          ~Q<items.name:has(*"ring")> ==
+            {:has, [], [[:items, :name], {:contains, "ring"}]}
+        )
+
+    test "has with starts_with shorthand",
+      do:
+        assert(
+          ~Q<items.name:has(^"the")> ==
+            {:has, [], [[:items, :name], {:starts_with, "the"}]}
+        )
+
+    test "has with ends_with shorthand",
+      do:
+        assert(
+          ~Q<items.name:has($"ing")> ==
+            {:has, [], [[:items, :name], {:ends_with, "ing"}]}
+        )
+
+    test "has with multiple values expands to OR",
+      do:
+        assert(
+          ~Q<items.name:has("ring", "sting")> ==
+            {:or, [],
+             [
+               {:has, [], [[:items, :name], "ring"]},
+               {:has, [], [[:items, :name], "sting"]}
+             ]}
+        )
+
+    test "has with negation",
+      do:
+        assert(
+          ~Q<!items.name:has("ring")> ==
+            {:not, [], {:has, [], [[:items, :name], "ring"]}}
+        )
+  end
+
+  describe "object block syntax for relation filtering" do
+    test "basic object block",
+      do:
+        assert(
+          ~Q<items { name:foo }> ==
+            {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+        )
+
+    test "object block with quoted value",
+      do:
+        assert(
+          ~Q<items { name:"foo bar" }> ==
+            {:block, [], [:items, {:==, [], [:name, "foo bar"]}]}
+        )
+
+    test "object block with contains predicate",
+      do:
+        assert(
+          ~Q<items { name:*foo }> ==
+            {:block, [], [:items, {:contains, [], [:name, "foo"]}]}
+        )
+
+    test "object block with multiple conditions",
+      do:
+        assert(
+          ~Q<items { name:foo rarity:legendary }> ==
+            {:block, [], [:items, {:and, [], [{:==, [], [:name, "foo"]}, {:==, [], [:rarity, "legendary"]}]}]}
+        )
+
+    test "object block with OR conditions",
+      do:
+        assert(
+          ~Q<items { name:foo || name:bar }> ==
+            {:block, [], [:items, {:or, [], [{:==, [], [:name, "foo"]}, {:==, [], [:name, "bar"]}]}]}
+        )
+
+    test "object block combined with field match",
+      do:
+        assert(
+          ~Q<title:LOTR items { name:ring }> ==
+            {:and, [],
+             [
+               {:==, [], [:title, "LOTR"]},
+               {:block, [], [:items, {:==, [], [:name, "ring"]}]}
+             ]}
+        )
+
+    test "object block negation inside block",
+      do:
+        assert(
+          ~Q<items { !name:ring }> ==
+            {:block, [], [:items, {:not, [], {:==, [], [:name, "ring"]}}]}
+        )
+
+    test "nested object blocks",
+      do:
+        assert(
+          ~Q<author { books { title:*Ring } }> ==
+            {:block, [], [:author, {:block, [], [:books, {:contains, [], [:title, "Ring"]}]}]}
         )
   end
 

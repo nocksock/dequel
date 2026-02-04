@@ -29,13 +29,28 @@ defmodule Dequel.Parser do
     ])
   )
 
+  # Object block for relation filtering: relation { conditions }
+  defparsec(
+    :object_block,
+    identifier()
+    |> ignore(spaced(ascii_char([?{])))
+    |> spaced(parsec(:expression))
+    |> ignore(ascii_char([?}]))
+    |> reduce(:wrap_block)
+  )
+
+  def wrap_block([relation, inner]) do
+    {:block, [], [String.to_existing_atom(relation), inner]}
+  end
+
   defparsec(
     :factor,
     choice([
       parsec(:field_match),
-      ignore(ascii_char([?{]))
+      parsec(:object_block),
+      ignore(ascii_char([?(]))
       |> spaced(parsec(:expression))
-      |> ignore(ascii_char([?}]))
+      |> ignore(ascii_char([?)]))
     ])
   )
 
