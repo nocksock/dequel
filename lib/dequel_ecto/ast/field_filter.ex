@@ -45,15 +45,23 @@ defmodule Dequel.Adapter.Ecto.Filter do
   import Ecto.Query
 
   alias Dequel.Query.Context
+  alias Dequel.Semantic.Analyzer
 
   @doc """
   Build a complete Ecto.Query with joins applied for relationship filtering.
   Returns a query that can be passed to Repo.all/one/etc.
+
+  ## Options
+
+    * `:schema` - Schema module for semantic analysis (enables block syntax like `items { name:foo }`)
+    * `:preload` - Preloads to apply to the query
+
   """
   @spec query(String.t(), Ecto.Query.t(), keyword()) :: Ecto.Query.t()
   def query(input, base_query, opts \\ []) when is_binary(input) do
     ast = Dequel.Parser.parse!(input)
-    {dynamic_expr, ctx} = filter(ast, Context.new())
+    schema = Keyword.get(opts, :schema)
+    {dynamic_expr, ctx} = filter(ast, Context.new(schema))
 
     # Ensure the base query has the :q alias for join references
     base_query
@@ -80,7 +88,16 @@ defmodule Dequel.Adapter.Ecto.Filter do
 
   @spec filter(term(), Context.t()) :: {Ecto.Query.dynamic_expr(), Context.t()}
   def filter(ast, ctx) do
-    build_filter(ast, ctx)
+    # Run semantic analysis if schema is available
+    analyzed_ast =
+      if ctx.schema do
+        resolver = Analyzer.ecto_resolver(ctx.schema)
+        Analyzer.analyze(ast, resolver)
+      else
+        ast
+      end
+
+    build_filter(analyzed_ast, ctx)
   end
 
   # IN clause - simple field
@@ -141,6 +158,70 @@ defmodule Dequel.Adapter.Ecto.Filter do
     {dynamic(not (^d)), ctx}
   end
 
+  # EXISTS - has_many relations (block syntax)
+  # Generates: EXISTS (SELECT 1 FROM related WHERE fk = parent.id AND inner_conditions)
+  defp build_filter({:exists, _meta, [relation, inner]}, ctx) when is_atom(relation) do
+    # Get association info from schema
+    schema = ctx.schema
+
+    if schema do
+      assoc = schema.__schema__(:association, relation)
+      related_schema = assoc.related
+      owner_key = assoc.owner_key
+      related_key = assoc.related_key
+
+      # Build inner filter with fresh context for the subquery
+      inner_ctx = Context.new(related_schema)
+      {inner_dynamic, _inner_ctx} = build_filter(inner, inner_ctx)
+
+      # Build EXISTS subquery using parent_as to reference the outer query
+      # The subquery correlates via the foreign key relationship
+      subquery_dynamic =
+        build_exists_dynamic(related_schema, related_key, owner_key, inner_dynamic)
+
+      {subquery_dynamic, ctx}
+    else
+      raise ArgumentError,
+            "Cannot process :exists node without schema context. " <>
+              "Provide schema via Context.new(schema) or use block syntax with schema option."
+    end
+  end
+
+  # JOIN - belongs_to/has_one relations (block syntax)
+  # Uses LEFT JOIN semantics similar to existing relationship path handling
+  defp build_filter({:join, _meta, [relation, inner]}, ctx) when is_atom(relation) do
+    # Register join for this relation
+    {binding, ctx} = Context.ensure_joins(ctx, [relation, :_placeholder])
+
+    # Replace binding to point to the actual relation, not a field within it
+    # We need to process inner filters with this binding
+    inner_ctx = %{ctx | schema: get_related_schema(ctx.schema, relation)}
+
+    # Build inner filter - it will use the join binding
+    {inner_dynamic, inner_ctx} = build_filter_with_binding(inner, inner_ctx, binding)
+
+    # Merge any new joins from inner
+    {inner_dynamic, %{ctx | joins: inner_ctx.joins}}
+  end
+
+  # EMBEDDED - embeds_one/embeds_many
+  # Uses JSON field access for embedded schemas
+  defp build_filter({:embedded, meta, [field, inner]}, ctx) when is_atom(field) do
+    cardinality = Keyword.get(meta, :cardinality, :one)
+    {build_embedded_dynamic(field, inner, cardinality), ctx}
+  end
+
+  # Helper to build EXISTS dynamic - works around macro expansion issues
+  defp build_exists_dynamic(related_schema, related_key, owner_key, inner_dynamic) do
+    # Build the subquery that references the parent via parent_as(:q)
+    subq =
+      related_schema
+      |> where([r], field(r, ^related_key) == field(parent_as(:q), ^owner_key))
+      |> where([r], ^inner_dynamic)
+
+    dynamic([q], exists(subq))
+  end
+
   # Build dynamic with named binding for relationship fields
   defp build_dynamic(:==, binding, field, value) do
     dynamic([{^binding, x}], field(x, ^field) == ^value)
@@ -157,6 +238,92 @@ defmodule Dequel.Adapter.Ecto.Filter do
 
   defp build_dynamic(:ends_with, binding, field, value) do
     dynamic([{^binding, x}], fragment("? LIKE ?", field(x, ^field), ^"%#{value}"))
+  end
+
+  # Build filter with explicit binding for join relations
+  defp build_filter_with_binding({op, [], [field, value]}, ctx, binding) when is_atom(field) do
+    dynamic_expr = build_dynamic(op, binding, field, value)
+    {dynamic_expr, ctx}
+  end
+
+  defp build_filter_with_binding({:and, [], [lhs, rhs]}, ctx, binding) do
+    {l, ctx} = build_filter_with_binding(lhs, ctx, binding)
+    {r, ctx} = build_filter_with_binding(rhs, ctx, binding)
+    {dynamic(^l and ^r), ctx}
+  end
+
+  defp build_filter_with_binding({:or, [], [lhs, rhs]}, ctx, binding) do
+    {l, ctx} = build_filter_with_binding(lhs, ctx, binding)
+    {r, ctx} = build_filter_with_binding(rhs, ctx, binding)
+    {dynamic(^l or ^r), ctx}
+  end
+
+  defp build_filter_with_binding({:not, [], expr}, ctx, binding) do
+    {d, ctx} = build_filter_with_binding(expr, ctx, binding)
+    {dynamic(not (^d)), ctx}
+  end
+
+  # Get related schema from association
+  defp get_related_schema(nil, _relation), do: nil
+
+  defp get_related_schema(schema, relation) do
+    case schema.__schema__(:association, relation) do
+      nil -> nil
+      assoc -> assoc.related
+    end
+  end
+
+  # Build dynamic for embedded schema fields (JSON access)
+  defp build_embedded_dynamic(embed_field, {:==, [], [field, value]}, _cardinality) do
+    # For PostgreSQL: field->'nested_field' = 'value'
+    # Using jsonb operators
+    field_str = to_string(field)
+    dynamic([q], fragment("?->? = ?", field(q, ^embed_field), ^field_str, ^value))
+  end
+
+  defp build_embedded_dynamic(embed_field, {:contains, [], [field, value]}, _cardinality) do
+    field_str = to_string(field)
+
+    dynamic(
+      [q],
+      fragment("?->>? LIKE ?", field(q, ^embed_field), ^field_str, ^"%#{value}%")
+    )
+  end
+
+  defp build_embedded_dynamic(embed_field, {:starts_with, [], [field, value]}, _cardinality) do
+    field_str = to_string(field)
+    escaped = String.replace(value, "%", "\\%")
+
+    dynamic(
+      [q],
+      fragment("?->>? LIKE ?", field(q, ^embed_field), ^field_str, ^"#{escaped}%")
+    )
+  end
+
+  defp build_embedded_dynamic(embed_field, {:ends_with, [], [field, value]}, _cardinality) do
+    field_str = to_string(field)
+
+    dynamic(
+      [q],
+      fragment("?->>? LIKE ?", field(q, ^embed_field), ^field_str, ^"%#{value}")
+    )
+  end
+
+  defp build_embedded_dynamic(embed_field, {:and, [], [lhs, rhs]}, cardinality) do
+    l = build_embedded_dynamic(embed_field, lhs, cardinality)
+    r = build_embedded_dynamic(embed_field, rhs, cardinality)
+    dynamic(^l and ^r)
+  end
+
+  defp build_embedded_dynamic(embed_field, {:or, [], [lhs, rhs]}, cardinality) do
+    l = build_embedded_dynamic(embed_field, lhs, cardinality)
+    r = build_embedded_dynamic(embed_field, rhs, cardinality)
+    dynamic(^l or ^r)
+  end
+
+  defp build_embedded_dynamic(embed_field, {:not, [], expr}, cardinality) do
+    d = build_embedded_dynamic(embed_field, expr, cardinality)
+    dynamic(not (^d))
   end
 
   # Apply joins in order
@@ -224,10 +391,6 @@ defmodule Dequel.Adapter.Ecto.Filter do
 
   def where({:not, [], expression}) do
     dynamic(not (^where(expression)))
-  end
-
-  def where({:in, [], [field, values]}) do
-    dynamic([schema], field(schema, ^field) in ^values)
   end
 
   #

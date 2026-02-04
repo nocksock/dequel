@@ -40,12 +40,6 @@ defmodule Dequel.Parser.FieldMatch do
       |> parsec(:bracket_list)
       |> reduce(:postfix_bracket),
 
-      # has() collection predicate: field:has(value) or field:has(*value)
-      field_expression()
-      |> ignore(spaced(":"))
-      |> parsec(:has_call)
-      |> reduce(:postfix_has),
-
       # predicate function call: field:contains(a, b)
       field_expression()
       |> ignore(spaced(":"))
@@ -89,15 +83,4 @@ defmodule Dequel.Parser.FieldMatch do
   def wrap_or(a), do: a
 
   def wrap_not([a]), do: {:not, [], a}
-
-  # has() collection predicate: single value → direct, multiple values → wrap in OR
-  def postfix_has([field, :has, value]) do
-    {:has, [], [field, value]}
-  end
-
-  def postfix_has([field, :has | values]) do
-    values
-    |> Enum.map(fn value -> {:has, [], [field, value]} end)
-    |> wrap_or()
-  end
 end

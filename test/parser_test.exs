@@ -495,61 +495,6 @@ defmodule Dequel.ParserTest do
         )
   end
 
-  describe "has predicate for many-to-many relations" do
-    test "has with equality value",
-      do:
-        assert(
-          ~Q<items.name:has("ring")> ==
-            {:has, [], [[:items, :name], "ring"]}
-        )
-
-    test "has with implicit string value",
-      do:
-        assert(
-          ~Q<items.name:has(ring)> ==
-            {:has, [], [[:items, :name], "ring"]}
-        )
-
-    test "has with contains shorthand",
-      do:
-        assert(
-          ~Q<items.name:has(*"ring")> ==
-            {:has, [], [[:items, :name], {:contains, "ring"}]}
-        )
-
-    test "has with starts_with shorthand",
-      do:
-        assert(
-          ~Q<items.name:has(^"the")> ==
-            {:has, [], [[:items, :name], {:starts_with, "the"}]}
-        )
-
-    test "has with ends_with shorthand",
-      do:
-        assert(
-          ~Q<items.name:has($"ing")> ==
-            {:has, [], [[:items, :name], {:ends_with, "ing"}]}
-        )
-
-    test "has with multiple values expands to OR",
-      do:
-        assert(
-          ~Q<items.name:has("ring", "sting")> ==
-            {:or, [],
-             [
-               {:has, [], [[:items, :name], "ring"]},
-               {:has, [], [[:items, :name], "sting"]}
-             ]}
-        )
-
-    test "has with negation",
-      do:
-        assert(
-          ~Q<!items.name:has("ring")> ==
-            {:not, [], {:has, [], [[:items, :name], "ring"]}}
-        )
-  end
-
   describe "object block syntax for relation filtering" do
     test "basic object block",
       do:
@@ -576,14 +521,16 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<items { name:foo rarity:legendary }> ==
-            {:block, [], [:items, {:and, [], [{:==, [], [:name, "foo"]}, {:==, [], [:rarity, "legendary"]}]}]}
+            {:block, [],
+             [:items, {:and, [], [{:==, [], [:name, "foo"]}, {:==, [], [:rarity, "legendary"]}]}]}
         )
 
     test "object block with OR conditions",
       do:
         assert(
           ~Q<items { name:foo || name:bar }> ==
-            {:block, [], [:items, {:or, [], [{:==, [], [:name, "foo"]}, {:==, [], [:name, "bar"]}]}]}
+            {:block, [],
+             [:items, {:or, [], [{:==, [], [:name, "foo"]}, {:==, [], [:name, "bar"]}]}]}
         )
 
     test "object block combined with field match",

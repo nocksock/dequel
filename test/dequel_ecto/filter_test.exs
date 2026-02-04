@@ -201,4 +201,122 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(items).id == lotr.id
     end
   end
+
+  describe "block syntax for has_many relations" do
+    alias Dequel.Adapter.Ecto.AuthorSchema
+
+    test "block syntax - finds authors with matching item" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+      _no_books = author_fixture(%{name: "NoBooks", bio: "No books yet"})
+
+      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _hobbit = item_with_author(%{"name" => "Hobbit", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(a in AuthorSchema)
+      result = Filter.query("items { name:LOTR }", base_query, schema: AuthorSchema)
+      authors = Repo.all(result)
+
+      assert length(authors) == 1
+      assert hd(authors).id == tolkien.id
+    end
+
+    test "block syntax with contains predicate" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _hobbit = item_with_author(%{"name" => "Hobbit", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(a in AuthorSchema)
+      result = Filter.query("items { name:*OTR }", base_query, schema: AuthorSchema)
+      authors = Repo.all(result)
+
+      assert length(authors) == 1
+      assert hd(authors).id == tolkien.id
+    end
+
+    test "block syntax with multiple conditions inside block" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(a in AuthorSchema)
+
+      result =
+        Filter.query("items { name:LOTR description:*fantasy }", base_query, schema: AuthorSchema)
+
+      authors = Repo.all(result)
+
+      assert length(authors) == 1
+      assert hd(authors).id == tolkien.id
+    end
+
+    test "block syntax with negation inside block" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      # Finds authors whose items do NOT have name "LOTR" (but still have some items)
+      base_query = from(a in AuthorSchema)
+      result = Filter.query("items { !name:LOTR }", base_query, schema: AuthorSchema)
+      authors = Repo.all(result)
+
+      assert length(authors) == 1
+      assert hd(authors).id == herbert.id
+    end
+
+    test "block syntax combined with local field filter" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      lewis = author_fixture(%{name: "Lewis", bio: "British author"})
+
+      _lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _narnia = item_with_author(%{"name" => "Narnia", "description" => "fantasy"}, lewis)
+
+      base_query = from(a in AuthorSchema)
+      result = Filter.query("bio:*British items { name:LOTR }", base_query, schema: AuthorSchema)
+      authors = Repo.all(result)
+
+      assert length(authors) == 1
+      assert hd(authors).id == tolkien.id
+    end
+  end
+
+  describe "block syntax for belongs_to relations" do
+    test "block syntax - filters items by author" do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("author { name:Tolkien }", base_query, schema: ItemSchema)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == lotr.id
+    end
+
+    test "block syntax with contains predicate on belongs_to" do
+      tolkien = author_fixture(%{name: "J.R.R. Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Frank Herbert", bio: "American author"})
+
+      lotr = item_with_author(%{"name" => "LOTR", "description" => "fantasy"}, tolkien)
+      _dune = item_with_author(%{"name" => "Dune", "description" => "scifi"}, herbert)
+
+      base_query = from(i in ItemSchema)
+      result = Filter.query("author { name:*Tolkien }", base_query, schema: ItemSchema)
+      items = Repo.all(result)
+
+      assert length(items) == 1
+      assert hd(items).id == lotr.id
+    end
+  end
 end
