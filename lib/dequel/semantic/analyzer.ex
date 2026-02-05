@@ -158,6 +158,19 @@ defmodule Dequel.Semantic.Analyzer do
     {:in, meta, [field, coerced_value]}
   end
 
+  # Path-based comparison operators (e.g., items.name:foo where items is has_many)
+  # Transforms to EXISTS node if first segment is a has_many relation
+  def analyze({op, meta, [path, value]}, resolver)
+      when op in [:==, :!=, :contains, :starts_with, :ends_with] and is_list(path) do
+    analyze_path(op, meta, path, value, resolver)
+  end
+
+  # Path-based :in operator with list values (e.g., items.name:[a, b])
+  def analyze({:in, meta, [path, values]}, resolver)
+      when is_list(path) and is_list(values) do
+    analyze_path(:in, meta, path, values, resolver)
+  end
+
   # Pass through unknown nodes unchanged
   def analyze(other, _resolver), do: other
 
@@ -195,6 +208,45 @@ defmodule Dequel.Semantic.Analyzer do
           nil
       end
     end
+  end
+
+  # Analyzes a path-based expression, transforming to EXISTS if first segment is has_many
+  defp analyze_path(op, meta, [first_segment | rest], value, resolver) do
+    case resolve_field(resolver, first_segment) do
+      %{kind: :has_many, resolver: nested_resolver} ->
+        # Transform to EXISTS node with inner expression using remaining path
+        inner = build_inner_expr(op, rest, value)
+        analyzed_inner = analyze(inner, nested_resolver)
+        {:exists, [cardinality: :many], [first_segment, analyzed_inner]}
+
+      %{kind: kind, resolver: _nested_resolver}
+      when kind in [:has_one, :belongs_to] ->
+        # Keep as path - JOINs are correct for :one cardinality
+        # Note: value coercion for nested paths deferred to adapter
+        {op, meta, [[first_segment | rest], value]}
+
+      %{kind: kind, resolver: _nested_resolver}
+      when kind in [:embeds_many, :embeds_one] ->
+        # Transform to EMBEDDED node
+        inner = build_inner_expr(op, rest, value)
+        cardinality = if kind == :embeds_many, do: :many, else: :one
+        {:embedded, [cardinality: cardinality], [first_segment, inner]}
+
+      nil ->
+        # Unknown relation - leave as-is for adapter to handle
+        {op, meta, [[first_segment | rest], value]}
+    end
+  end
+
+  # Build inner expression from remaining path segments
+  defp build_inner_expr(op, [field], value) when is_atom(field) do
+    # Single remaining segment - simple field expression
+    {op, [], [field, value]}
+  end
+
+  defp build_inner_expr(op, path, value) when is_list(path) do
+    # Multiple remaining segments - nested path (will be handled recursively)
+    {op, [], [path, value]}
   end
 
   # Determine association kind from Ecto association struct

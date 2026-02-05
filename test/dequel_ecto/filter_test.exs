@@ -225,6 +225,19 @@ defmodule Dequel.Adapter.EctoTest do
       assert length(result) == 1
       assert hd(result).id == tolkien.id
     end
+
+    test "block syntax with one_of predicate", %{tolkien: tolkien, herbert: herbert} do
+      _no_books = author_fixture(%{name: "NoBooks", bio: "No books yet"})
+
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items { name:one_of(\"LOTR\", \"Dune\") }", schema: AuthorSchema)
+        |> Repo.all()
+        |> Enum.sort_by(& &1.name)
+
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) |> Enum.sort() == Enum.sort([tolkien.id, herbert.id])
+    end
   end
 
   describe "block syntax for belongs_to relations" do
@@ -325,6 +338,79 @@ defmodule Dequel.Adapter.EctoTest do
 
       # The subquery should have the prefix set (via put_query_prefix, so on query.prefix)
       assert subquery.prefix == "test_schema"
+    end
+  end
+
+  describe "dot notation with has_many relations" do
+    alias Dequel.Adapter.Ecto.AuthorSchema
+
+    setup do
+      tolkien = author_fixture(%{name: "Tolkien", bio: "British author"})
+      herbert = author_fixture(%{name: "Herbert", bio: "American author"})
+      no_books = author_fixture(%{name: "NoBooks", bio: "No books yet"})
+
+      lotr = item_fixture(%{name: "LOTR", description: "fantasy", author_id: tolkien.id})
+      hobbit = item_fixture(%{name: "Hobbit", description: "fantasy", author_id: tolkien.id})
+      dune = item_fixture(%{name: "Dune", description: "scifi", author_id: herbert.id})
+
+      %{tolkien: tolkien, herbert: herbert, no_books: no_books, lotr: lotr, hobbit: hobbit, dune: dune}
+    end
+
+    test "dot notation - finds authors with matching item (uses EXISTS, no duplicates)", %{tolkien: tolkien} do
+      # Tolkien has 2 fantasy items but should appear only once (EXISTS not JOIN)
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items.description:fantasy", schema: AuthorSchema)
+        |> Repo.all()
+
+      assert length(result) == 1
+      assert hd(result).id == tolkien.id
+    end
+
+    test "dot notation with array syntax - finds authors with any matching item", %{tolkien: tolkien, herbert: herbert} do
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items.name:[LOTR, Dune]", schema: AuthorSchema)
+        |> Repo.all()
+        |> Enum.sort_by(& &1.name)
+
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) |> Enum.sort() == Enum.sort([tolkien.id, herbert.id])
+    end
+
+    test "dot notation with contains predicate", %{tolkien: tolkien} do
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items.name:*OTR", schema: AuthorSchema)
+        |> Repo.all()
+
+      assert length(result) == 1
+      assert hd(result).id == tolkien.id
+    end
+
+    test "dot notation excludes authors with no matching items", %{no_books: no_books} do
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("items.name:anything", schema: AuthorSchema)
+        |> Repo.all()
+
+      refute Enum.any?(result, &(&1.id == no_books.id))
+    end
+
+    test "dot notation with negation - finds authors without any matching item", %{herbert: herbert, tolkien: tolkien, no_books: no_books} do
+      # !items.name:LOTR means NOT EXISTS (item with name LOTR)
+      # Tolkien has LOTR, Herbert and NoBooks don't
+      result =
+        from(a in AuthorSchema)
+        |> Filter.query("!items.name:LOTR", schema: AuthorSchema)
+        |> Repo.all()
+
+      # Herbert has Dune but not LOTR, so should match
+      assert Enum.any?(result, &(&1.id == herbert.id))
+      # NoBooks has no items at all, so should match
+      assert Enum.any?(result, &(&1.id == no_books.id))
+      # Tolkien has LOTR, so should NOT match
+      refute Enum.any?(result, &(&1.id == tolkien.id))
     end
   end
 end
