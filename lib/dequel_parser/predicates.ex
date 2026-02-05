@@ -59,6 +59,15 @@ defmodule Dequel.Parser.Predicates do
         |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)))
     |> choice()
 
+  # Shorthand symbols without colon (for use after :!)
+  shorthand_only =
+    @predicates
+    |> Enum.map(fn {op, sym} ->
+      string(sym) |> replace(op)
+    end)
+    |> choice()
+
+  # Shorthand with colon prefix
   any_shorthand =
     @predicates
     |> Enum.map(fn {op, sym} ->
@@ -72,6 +81,13 @@ defmodule Dequel.Parser.Predicates do
     any_shorthand
     |> Enum.concat([colon() |> replace(:==)])
     |> choice()
+  )
+
+  # Parses shorthand operator without colon: *, ^, $
+  # Returns the operator atom or nil for plain equality
+  defcombinator(
+    :shorthand_op,
+    choice([shorthand_only, empty() |> replace(:==)])
   )
 
   def to_options([value | options]) when is_list(options) do

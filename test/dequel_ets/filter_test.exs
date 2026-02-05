@@ -71,8 +71,33 @@ defmodule Dequel.Adapter.EtsTest do
       assert Enum.sort_by(result, & &1.name) == Enum.sort_by([frodo, samwise], & &1.name)
     end
 
-    test "not operator", %{bilbo: bilbo, samwise: samwise} do
-      result = ~ALL<!name:frodo>
+    test "not operator with prefix", %{bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<-name:frodo>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([bilbo, samwise], & &1.name)
+    end
+
+    test "value-level negation with !", %{bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<name:!frodo>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([bilbo, samwise], & &1.name)
+    end
+
+    test "negated contains with !*", %{bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<name:!*od>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([bilbo, samwise], & &1.name)
+    end
+
+    test "negated starts_with with !^", %{bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<name:!^fro>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([bilbo, samwise], & &1.name)
+    end
+
+    test "negated ends_with with !$", %{bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<name:!$do>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([bilbo, samwise], & &1.name)
+    end
+
+    test "negated predicate function with !contains", %{bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<name:!contains(od)>
       assert Enum.sort_by(result, & &1.name) == Enum.sort_by([bilbo, samwise], & &1.name)
     end
 
@@ -163,7 +188,7 @@ defmodule Dequel.Adapter.EtsTest do
         %{id: 2, name: "Dune", author: %{name: "Herbert"}}
       ]
 
-      ast = Dequel.Parser.parse!("!author.name:Tolkien")
+      ast = Dequel.Parser.parse!("-author.name:Tolkien")
       result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
 
       assert length(result) == 1

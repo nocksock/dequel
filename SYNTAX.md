@@ -69,11 +69,36 @@ city:["New York", London]
 
 ## Negation
 
+Dequel has two distinct negation mechanisms:
+
+### Prefix Exclusion (`-` prefix)
+Set subtraction - excludes matching records from results:
 ```
-!field:value                       # NOT field = value
--field:value                       # Same (minus prefix)
-!field:contains(value)             # NOT contains
-!field:one_of(a, b)                # NOT IN
+-field:value                       # Exclude records where field = value
+-field:contains(value)             # Exclude records that contain value
+-field:one_of(a, b)                # Exclude records where field IN (a, b)
+```
+
+### Value-Level Negation (`!` after colon)
+Inequality filter - keeps records where field does NOT match:
+```
+field:!value                       # field != value (inequality)
+field:!*value                      # NOT contains (shorthand)
+field:!^value                      # NOT starts_with (shorthand)
+field:!$value                      # NOT ends_with (shorthand)
+field:!contains(value)             # NOT contains (function)
+field:!starts_with(value)          # NOT starts_with (function)
+field:!ends_with(value)            # NOT ends_with (function)
+```
+
+**Multiple values with negation expand to AND (neither a nor b):**
+```
+field:!contains(a, b)              # NOT contains(a) AND NOT contains(b)
+```
+
+**Double negation is allowed:**
+```
+-field:!value                      # NOT (field != value)
 ```
 
 ## Logical Operators
@@ -116,7 +141,8 @@ a:1 ( b:2 || c:3 )                 # a AND (b OR c)
 author.name:Tolkien                # Filter by related field
 author.address.city:Shire          # Multi-level path
 author.name:*frodo                 # With predicate
-!author.name:frodo                 # Negated
+-author.name:frodo                 # Prefix exclusion (set subtraction)
+author.name:!frodo                 # Value-level negation (inequality)
 ```
 
 ### Block Syntax (Semantic Relations)
@@ -138,7 +164,8 @@ Multiple conditions inside block:
 ```
 items { name:foo rarity:legendary }           # AND
 items { name:foo || name:bar }                # OR
-items { !name:ring }                          # Negation inside block
+items { -name:ring }                          # Prefix exclusion inside block
+items { name:!ring }                          # Value-level inequality inside block
 ```
 
 Combined with local fields:
@@ -180,13 +207,17 @@ The parser produces AST tuples: `{operator, metadata, args}`
 {:starts_with, [], [:field, "value"]}
 {:ends_with, [], [:field, "value"]}
 
+# Value-level negation (wraps in :not)
+{:not, [], {:==, [], [:field, "value"]}}       # field:!value
+{:not, [], {:contains, [], [:field, "value"]}} # field:!*value or field:!contains(value)
+
 # IN clause
 {:in, [], [:field, ["a", "b", "c"]]}
 
 # Logical operators
 {:and, [], [left, right]}
 {:or, [], [left, right]}
-{:not, [], expr}
+{:not, [], expr}                          # Prefix exclusion (-field:value)
 
 # Relationship paths
 {:==, [], [[:author, :name], "value"]}
@@ -234,8 +265,11 @@ from(a in AuthorSchema)
 | `field:^value`            | Starts with                                  |
 | `field:$value`            | Ends with                                    |
 | `field:[a, b, c]`         | IN (one_of)                                  |
-| `!field:value`            | NOT                                          |
-| `-field:value`            | NOT (alternate)                              |
+| `-field:value`            | Exclude (set subtraction)                    |
+| `field:!value`            | Inequality (field != value)                  |
+| `field:!*value`           | NOT contains                                 |
+| `field:!^value`           | NOT starts with                              |
+| `field:!$value`           | NOT ends with                                |
 | `a:1 b:2`                 | AND (implicit)                               |
 | `a:1 && b:2`              | AND (explicit)                               |
 | `a:1 \|\| b:2`            | OR                                           |

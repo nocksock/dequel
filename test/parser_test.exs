@@ -66,10 +66,10 @@ defmodule Dequel.ParserTest do
           {:contains, [], [:field, "value with spaces"]}
       )
 
-  test "invert expression with ! prefix",
+  test "invert expression with - prefix",
     do:
       assert(
-        ~Q<!field:value> ==
+        ~Q<-field:value> ==
           {:not, [], {:==, [], [:field, "value"]}}
       )
 
@@ -431,7 +431,7 @@ defmodule Dequel.ParserTest do
     test "dotted field with negation",
       do:
         assert(
-          ~Q<!author.name:frodo> ==
+          ~Q<-author.name:frodo> ==
             {:not, [], {:==, [], [[:author, :name], "frodo"]}}
         )
 
@@ -495,6 +495,96 @@ defmodule Dequel.ParserTest do
         )
   end
 
+  describe "value-level negation (field:!value syntax)" do
+    test "basic negated equality",
+      do:
+        assert(
+          ~Q<field:!value> ==
+            {:not, [], {:==, [], [:field, "value"]}}
+        )
+
+    test "negated equality with quoted value",
+      do:
+        assert(
+          ~Q<field:!"some value"> ==
+            {:not, [], {:==, [], [:field, "some value"]}}
+        )
+
+    test "negated contains shorthand",
+      do:
+        assert(
+          ~Q<field:!*value> ==
+            {:not, [], {:contains, [], [:field, "value"]}}
+        )
+
+    test "negated starts_with shorthand",
+      do:
+        assert(
+          ~Q<field:!^value> ==
+            {:not, [], {:starts_with, [], [:field, "value"]}}
+        )
+
+    test "negated ends_with shorthand",
+      do:
+        assert(
+          ~Q<field:!$value> ==
+            {:not, [], {:ends_with, [], [:field, "value"]}}
+        )
+
+    test "negated predicate function call",
+      do:
+        assert(
+          ~Q<field:!contains(value)> ==
+            {:not, [], {:contains, [], [:field, "value"]}}
+        )
+
+    test "negated starts_with function call",
+      do:
+        assert(
+          ~Q<field:!starts_with(value)> ==
+            {:not, [], {:starts_with, [], [:field, "value"]}}
+        )
+
+    test "negated ends_with function call",
+      do:
+        assert(
+          ~Q<field:!ends_with(value)> ==
+            {:not, [], {:ends_with, [], [:field, "value"]}}
+        )
+
+    test "multiple values expand to AND (neither a nor b)",
+      do:
+        assert(
+          ~Q<field:!contains(a, b)> ==
+            {:and, [],
+             [
+               {:not, [], {:contains, [], [:field, "a"]}},
+               {:not, [], {:contains, [], [:field, "b"]}}
+             ]}
+        )
+
+    test "negated equality with dotted field path",
+      do:
+        assert(
+          ~Q<author.name:!frodo> ==
+            {:not, [], {:==, [], [[:author, :name], "frodo"]}}
+        )
+
+    test "negated contains with dotted field path",
+      do:
+        assert(
+          ~Q<author.name:!*ring> ==
+            {:not, [], {:contains, [], [[:author, :name], "ring"]}}
+        )
+
+    test "double negation is allowed (user's responsibility)",
+      do:
+        assert(
+          ~Q<-field:!value> ==
+            {:not, [], {:not, [], {:==, [], [:field, "value"]}}}
+        )
+  end
+
   describe "object block syntax for relation filtering" do
     test "basic object block",
       do:
@@ -547,7 +637,7 @@ defmodule Dequel.ParserTest do
     test "object block negation inside block",
       do:
         assert(
-          ~Q<items { !name:ring }> ==
+          ~Q<items { -name:ring }> ==
             {:block, [], [:items, {:not, [], {:==, [], [:name, "ring"]}}]}
         )
 

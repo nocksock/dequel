@@ -44,8 +44,31 @@ defmodule Dequel.Adapter.EctoTest do
       assert ~ALL<name:contains(frodo, sam) (description:*g)> == [frodo, samwise]
     end
 
-    test "not operator", %{bilbo: bilbo, samwise: samwise} do
-      assert ~ALL<!name:frodo> == [bilbo, samwise]
+    test "not operator with prefix", %{bilbo: bilbo, samwise: samwise} do
+      assert ~ALL<-name:frodo> == [bilbo, samwise]
+    end
+
+    test "value-level negation with !", %{bilbo: bilbo, samwise: samwise} do
+      assert ~ALL<name:!frodo> == [bilbo, samwise]
+    end
+
+    test "negated contains with !*", %{bilbo: bilbo, samwise: samwise} do
+      # frodo contains "od", bilbo and samwise don't
+      assert ~ALL<name:!*od> == [bilbo, samwise]
+    end
+
+    test "negated starts_with with !^", %{bilbo: bilbo, samwise: samwise} do
+      # frodo starts with "fro", bilbo and samwise don't
+      assert ~ALL<name:!^fro> == [bilbo, samwise]
+    end
+
+    test "negated ends_with with !$", %{bilbo: bilbo, samwise: samwise} do
+      # frodo ends with "do", bilbo and samwise don't
+      assert ~ALL<name:!$do> == [bilbo, samwise]
+    end
+
+    test "negated predicate function with !contains", %{bilbo: bilbo, samwise: samwise} do
+      assert ~ALL<name:!contains(od)> == [bilbo, samwise]
     end
 
     test "one_of predicate with multiple values", %{frodo: frodo, bilbo: bilbo} do
@@ -135,7 +158,7 @@ defmodule Dequel.Adapter.EctoTest do
     test "filters with negation on association field", %{dune: dune} do
       result =
         from(i in ItemSchema)
-        |> Filter.query("!author.name:Tolkien")
+        |> Filter.query("-author.name:Tolkien")
         |> Repo.all()
 
       assert length(result) == 1
@@ -206,7 +229,7 @@ defmodule Dequel.Adapter.EctoTest do
       # Finds authors whose items do NOT have name "LOTR" (but still have some items)
       result =
         from(a in AuthorSchema)
-        |> Filter.query("items { !name:LOTR }", schema: AuthorSchema)
+        |> Filter.query("items { -name:LOTR }", schema: AuthorSchema)
         |> Repo.all()
 
       assert length(result) == 1
@@ -414,11 +437,11 @@ defmodule Dequel.Adapter.EctoTest do
       tolkien: tolkien,
       no_books: no_books
     } do
-      # !items.name:LOTR means NOT EXISTS (item with name LOTR)
+      # -items.name:LOTR means NOT EXISTS (item with name LOTR)
       # Tolkien has LOTR, Herbert and NoBooks don't
       result =
         from(a in AuthorSchema)
-        |> Filter.query("!items.name:LOTR", schema: AuthorSchema)
+        |> Filter.query("-items.name:LOTR", schema: AuthorSchema)
         |> Repo.all()
 
       # Herbert has Dune but not LOTR, so should match
