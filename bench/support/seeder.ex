@@ -6,6 +6,8 @@ defmodule Bench.Seeder do
   - :small  - 100 books, 20 authors, 5 bookstores
   - :medium - 1000 books, 200 authors, 50 bookstores
   - :large  - 10000 books, 2000 authors, 500 bookstores
+
+  Uses Faker for realistic data generation. Pass a seed for reproducibility.
   """
 
   alias Bench.Repo
@@ -18,16 +20,16 @@ defmodule Bench.Seeder do
   }
 
   @genres ~w(fiction non-fiction mystery thriller romance sci-fi fantasy biography history children)
-  @countries ~w(USA UK Canada Australia Germany France Japan Brazil India Spain)
-  @cities ~w(Manhattan Brooklyn Chicago Seattle Portland Austin Miami Denver Boston Philadelphia)
+  @services ["cafe", "events", "rare books", "children's corner", "reading room"]
+  @default_seed 42
 
-  @first_names ~w(James Mary John Patricia Robert Jennifer Michael Linda William Elizabeth David Barbara Richard Susan)
-  @last_names ~w(Smith Johnson Williams Brown Jones Garcia Miller Davis Rodriguez Martinez Anderson Taylor Thomas)
+  def seed(size \\ :small, seed \\ nil) do
+    actual_seed = seed || @default_seed
+    :rand.seed(:exsss, {actual_seed, actual_seed, actual_seed})
 
-  def seed(size \\ :small) do
     config = Map.fetch!(@sizes, size)
 
-    IO.puts("Seeding #{size} dataset...")
+    IO.puts("Seeding #{size} dataset (seed: #{actual_seed})...")
 
     clear_data()
 
@@ -46,6 +48,7 @@ defmodule Bench.Seeder do
     IO.puts("Seeding complete!")
 
     %{
+      seed: actual_seed,
       authors: length(authors),
       bookstores: length(bookstores),
       books: length(books),
@@ -63,18 +66,18 @@ defmodule Bench.Seeder do
   defp seed_authors(count) do
     1..count
     |> Enum.map(fn _ ->
-      first = Enum.random(@first_names)
-      last = Enum.random(@last_names)
+      first = Faker.Person.first_name()
+      last = Faker.Person.last_name()
 
       %Author{}
       |> Author.changeset(%{
         name: "#{first} #{last}",
-        bio: "#{first} #{last} is a renowned author of #{Enum.random(@genres)} books.",
+        bio: Faker.Lorem.paragraph(),
         birth_date: random_date(1940, 1995),
-        country: Enum.random(@countries),
+        country: Faker.Address.country(),
         details: %{
-          "website" => "https://#{String.downcase(first)}#{String.downcase(last)}.com",
-          "agent_name" => "#{Enum.random(@first_names)} Literary Agency",
+          "website" => Faker.Internet.url(),
+          "agent_name" => "#{Faker.Person.first_name()} Literary Agency",
           "awards_count" => :rand.uniform(10)
         }
       })
@@ -85,13 +88,13 @@ defmodule Bench.Seeder do
   defp seed_bookstores(count) do
     1..count
     |> Enum.map(fn i ->
-      city = Enum.random(@cities)
+      city = Faker.Address.city()
 
       %Bookstore{}
       |> Bookstore.changeset(%{
         name: "#{city} Books #{i}",
         location: city,
-        services: Enum.take_random(["cafe", "events", "rare books", "children's corner", "reading room"], :rand.uniform(3)),
+        services: Enum.take_random(@services, :rand.uniform(3)),
         rating: Decimal.new("#{3 + :rand.uniform(20) / 10}"),
         founded_at: random_date(1980, 2020)
       })
@@ -100,12 +103,9 @@ defmodule Bench.Seeder do
   end
 
   defp seed_books(count, authors, bookstores) do
-    title_words = ["The", "A", "Dark", "Light", "Lost", "Found", "Last", "First", "Secret", "Hidden"]
-    nouns = ["Journey", "Mystery", "Adventure", "Dream", "Legend", "Story", "Tale", "Chronicle", "Saga", "Epic"]
-
     1..count
     |> Enum.map(fn i ->
-      title = "#{Enum.random(title_words)} #{Enum.random(nouns)} #{rem(i, 100)}"
+      title = "#{Faker.Lorem.sentence(2..4)} #{rem(i, 100)}"
 
       %Book{}
       |> Book.changeset(%{
@@ -123,18 +123,15 @@ defmodule Bench.Seeder do
   end
 
   defp seed_reviews(books, reviews_per_book) do
-    adjectives = ["amazing", "great", "good", "okay", "disappointing"]
-    comments = ["Highly recommend!", "Worth reading.", "Could be better.", "A classic!", "Not my favorite."]
-
     reviews =
       books
       |> Enum.flat_map(fn book ->
         1..reviews_per_book
         |> Enum.map(fn _ ->
           %{
-            content: "This book is #{Enum.random(adjectives)}. #{Enum.random(comments)}",
+            content: Faker.Lorem.sentence(),
             rating: :rand.uniform(5),
-            reviewer_name: "#{Enum.random(@first_names)} #{String.first(Enum.random(@last_names))}.",
+            reviewer_name: "#{Faker.Person.first_name()} #{String.first(Faker.Person.last_name())}.",
             created_at: NaiveDateTime.utc_now() |> NaiveDateTime.add(-:rand.uniform(365 * 24 * 60 * 60), :second) |> NaiveDateTime.truncate(:second),
             book_id: book.id,
             bookstore_id: book.bookstore_id

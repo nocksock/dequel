@@ -44,7 +44,8 @@ defmodule Dequel.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:ecto_sqlite3, "~> 0.16"},
       {:benchee, "~> 1.3", only: :bench},
-      {:benchee_json, "~> 1.0", only: :bench}
+      {:benchee_json, "~> 1.0", only: :bench},
+      {:faker, "~> 0.18", only: :bench}
     ]
   end
 
