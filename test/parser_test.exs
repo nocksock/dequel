@@ -676,4 +676,27 @@ defmodule Dequel.ParserTest do
   #   test "sum(a b) > 10"
   #   test "sum(a b, c d) > 10"
   # end
+
+  describe "comparison operators" do
+    test "greater than",
+      do: assert(~Q[age:>18] == {:>, [], [:age, "18"]})
+
+    test "less than",
+      do: assert(~Q[age:<18] == {:<, [], [:age, "18"]})
+
+    test "greater than or equal",
+      do: assert(~Q[age:>=18] == {:>=, [], [:age, "18"]})
+
+    test "less than or equal",
+      do: assert(~Q[age:<=18] == {:<=, [], [:age, "18"]})
+
+    test "comparison with decimal",
+      do: assert(~Q[price:>19.99] == {:>, [], [:price, "19.99"]})
+
+    test "comparison with negative number",
+      do: assert(~Q[temp:>-10] == {:>, [], [:temp, "-10"]})
+
+    test "negated comparison",
+      do: assert(~Q[age:!>18] == {:not, [], {:>, [], [:age, "18"]}})
+  end
 end

@@ -67,6 +67,20 @@ defmodule Dequel.Parser.Predicates do
     end)
     |> choice()
 
+  # Comparison operators - must try >= and <= before > and <
+  comparison_operator =
+    choice([
+      string(">=") |> replace(:>=),
+      string("<=") |> replace(:<=),
+      string(">") |> replace(:>),
+      string("<") |> replace(:<)
+    ])
+
+  defcombinator(
+    :comparison_op,
+    comparison_operator
+  )
+
   # Shorthand with colon prefix
   any_shorthand =
     @predicates

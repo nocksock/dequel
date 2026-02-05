@@ -18,6 +18,13 @@ defmodule Dequel.Parser.Token do
   def flag, do: ascii_char([?a..?z, ?A..?Z, ?_])
   def number_int, do: integer(min: 1) |> post_traverse(:num_to_string)
 
+  def numeric_literal do
+    optional(string("-"))
+    |> concat(ascii_string([?0..?9], min: 1))
+    |> optional(string(".") |> concat(ascii_string([?0..?9], min: 1)))
+    |> reduce({Enum, :join, [""]})
+  end
+
   def num_to_string(rest, args, context, _, _) do
     {rest, args |> Enum.map(&to_string/1), context}
   end
