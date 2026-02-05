@@ -699,4 +699,24 @@ defmodule Dequel.ParserTest do
     test "negated comparison",
       do: assert(~Q[age:!>18] == {:not, [], {:>, [], [:age, "18"]}})
   end
+
+  describe "range syntax" do
+    test "double-dot range",
+      do: assert(~Q[price:10..50] == {:between, [], [:price, "10", "50"]})
+
+    test "between predicate",
+      do: assert(~Q[price:between(10 50)] == {:between, [], [:price, "10", "50"]})
+
+    test "range with decimals",
+      do: assert(~Q[rate:0.5..1.5] == {:between, [], [:rate, "0.5", "1.5"]})
+
+    test "range with negative numbers",
+      do: assert(~Q[temp:-10..30] == {:between, [], [:temp, "-10", "30"]})
+
+    test "negated range",
+      do: assert(~Q[price:!10..50] == {:not, [], {:between, [], [:price, "10", "50"]}})
+
+    test "negated between predicate",
+      do: assert(~Q[price:!between(10 50)] == {:not, [], {:between, [], [:price, "10", "50"]}})
+  end
 end

@@ -51,11 +51,16 @@ defmodule Dequel.Parser.Predicates do
   # one_of expands to equality checks - shorthand is bracket syntax handled in FieldMatch
   @equality_predicates [:one_of]
 
+  # Predicates that take space-separated numeric arguments
+  @numeric_predicates [:between]
+
   any_predicate =
     ((@predicates
       |> Map.keys()
       |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)) ++
        (@equality_predicates
+        |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)) ++
+       (@numeric_predicates
         |> Enum.map(fn op -> string(to_string(op)) |> replace(op) end)))
     |> choice()
 
@@ -79,6 +84,29 @@ defmodule Dequel.Parser.Predicates do
   defcombinator(
     :comparison_op,
     comparison_operator
+  )
+
+  defparsec(
+    :between_call,
+    string("between")
+    |> replace(:between)
+    |> ignore(ascii_char([?(]))
+    |> optional(whitespace())
+    |> concat(numeric_literal())
+    |> ignore(whitespace())
+    |> concat(numeric_literal())
+    |> ignore(optional(whitespace()))
+    |> ignore(ascii_char([?)]))
+    |> label("between predicate"),
+    export_combinator: true
+  )
+
+  defcombinator(
+    :range_literal,
+    numeric_literal()
+    |> ignore(string(".."))
+    |> concat(numeric_literal())
+    |> tag(:between)
   )
 
   # Shorthand with colon prefix

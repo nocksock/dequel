@@ -53,6 +53,32 @@ defmodule Dequel.Parser.FieldMatch do
       |> parsec(:function_call)
       |> reduce(:postfix_inject),
 
+      # negated range: field:!10..50
+      field_expression()
+      |> ignore(spaced(":"))
+      |> ignore(string("!"))
+      |> parsec(:range_literal)
+      |> reduce(:postfix_range_negated),
+
+      # range literal: field:10..50
+      field_expression()
+      |> ignore(spaced(":"))
+      |> parsec(:range_literal)
+      |> reduce(:postfix_range),
+
+      # negated between: field:!between(10 50)
+      field_expression()
+      |> ignore(spaced(":"))
+      |> ignore(string("!"))
+      |> parsec(:between_call)
+      |> reduce(:postfix_between_negated),
+
+      # between predicate: field:between(10 50)
+      field_expression()
+      |> ignore(spaced(":"))
+      |> parsec(:between_call)
+      |> reduce(:postfix_between),
+
       # negated value expression: field:!value or field:!*value
       # Parses ! then recursively parses shorthand + value
       field_expression()
@@ -138,5 +164,21 @@ defmodule Dequel.Parser.FieldMatch do
       [value | options] -> {:not, [], {op, [], [field, value, options]}}
     end)
     |> wrap_and
+  end
+
+  def postfix_range([field, {:between, [start_val, end_val]}]) do
+    {:between, [], [field, start_val, end_val]}
+  end
+
+  def postfix_range_negated([field, {:between, [start_val, end_val]}]) do
+    {:not, [], {:between, [], [field, start_val, end_val]}}
+  end
+
+  def postfix_between([field, :between, start_val, end_val]) do
+    {:between, [], [field, start_val, end_val]}
+  end
+
+  def postfix_between_negated([field, :between, start_val, end_val]) do
+    {:not, [], {:between, [], [field, start_val, end_val]}}
   end
 end
