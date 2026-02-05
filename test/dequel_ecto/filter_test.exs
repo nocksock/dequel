@@ -353,10 +353,19 @@ defmodule Dequel.Adapter.EctoTest do
       hobbit = item_fixture(%{name: "Hobbit", description: "fantasy", author_id: tolkien.id})
       dune = item_fixture(%{name: "Dune", description: "scifi", author_id: herbert.id})
 
-      %{tolkien: tolkien, herbert: herbert, no_books: no_books, lotr: lotr, hobbit: hobbit, dune: dune}
+      %{
+        tolkien: tolkien,
+        herbert: herbert,
+        no_books: no_books,
+        lotr: lotr,
+        hobbit: hobbit,
+        dune: dune
+      }
     end
 
-    test "dot notation - finds authors with matching item (uses EXISTS, no duplicates)", %{tolkien: tolkien} do
+    test "dot notation - finds authors with matching item (uses EXISTS, no duplicates)", %{
+      tolkien: tolkien
+    } do
       # Tolkien has 2 fantasy items but should appear only once (EXISTS not JOIN)
       result =
         from(a in AuthorSchema)
@@ -367,7 +376,10 @@ defmodule Dequel.Adapter.EctoTest do
       assert hd(result).id == tolkien.id
     end
 
-    test "dot notation with array syntax - finds authors with any matching item", %{tolkien: tolkien, herbert: herbert} do
+    test "dot notation with array syntax - finds authors with any matching item", %{
+      tolkien: tolkien,
+      herbert: herbert
+    } do
       result =
         from(a in AuthorSchema)
         |> Filter.query("items.name:[LOTR, Dune]", schema: AuthorSchema)
@@ -397,7 +409,11 @@ defmodule Dequel.Adapter.EctoTest do
       refute Enum.any?(result, &(&1.id == no_books.id))
     end
 
-    test "dot notation with negation - finds authors without any matching item", %{herbert: herbert, tolkien: tolkien, no_books: no_books} do
+    test "dot notation with negation - finds authors without any matching item", %{
+      herbert: herbert,
+      tolkien: tolkien,
+      no_books: no_books
+    } do
       # !items.name:LOTR means NOT EXISTS (item with name LOTR)
       # Tolkien has LOTR, Herbert and NoBooks don't
       result =
