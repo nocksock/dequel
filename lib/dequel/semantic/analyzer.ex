@@ -99,6 +99,18 @@ defmodule Dequel.Semantic.Analyzer do
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:==, [], [:active, true]}
 
+  Comparison operators are coerced based on field type:
+
+      iex> ast = {:>, [], [:age, "18"]}
+      iex> resolver = fn :age -> %{kind: :field, type: :integer}; _ -> nil end
+      iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
+      {:>, [], [:age, 18]}
+
+      iex> ast = {:between, [], [:price, "10", "50"]}
+      iex> resolver = fn :price -> %{kind: :field, type: :integer}; _ -> nil end
+      iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
+      {:between, [], [:price, 10, 50]}
+
   Without a resolver, AST passes through unchanged:
 
       iex> Dequel.Semantic.Analyzer.analyze({:==, [], [:name, "foo"]}, nil)
@@ -139,7 +151,8 @@ defmodule Dequel.Semantic.Analyzer do
 
   # Comparison operators - coerce values based on field type
   def analyze({op, meta, [field, value]}, resolver)
-      when op in [:==, :!=, :contains, :starts_with, :ends_with] and is_atom(field) do
+      when op in [:==, :!=, :contains, :starts_with, :ends_with, :>, :<, :>=, :<=] and
+             is_atom(field) do
     coerced_value = coerce_value(resolver, field, value)
     {op, meta, [field, coerced_value]}
   end
@@ -156,6 +169,14 @@ defmodule Dequel.Semantic.Analyzer do
       when is_atom(field) do
     coerced_value = coerce_value(resolver, field, value)
     {:in, meta, [field, coerced_value]}
+  end
+
+  # :between operator with two values
+  def analyze({:between, meta, [field, start_val, end_val]}, resolver)
+      when is_atom(field) do
+    coerced_start = coerce_value(resolver, field, start_val)
+    coerced_end = coerce_value(resolver, field, end_val)
+    {:between, meta, [field, coerced_start, coerced_end]}
   end
 
   # Path-based comparison operators (e.g., items.name:foo where items is has_many)
