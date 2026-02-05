@@ -1,57 +1,127 @@
-# Dequel 
+# Dequel
 
 Dequel (DQL, Data Query Language) is a human-friendly query language that feels familiar to anyone who has used search filters on sites like GitHub, Discord, or Gmail.
 
 ```dequel
-# Find blog posts about Elixir from 2024
-tags:*"elixir" created:>(2024-01-01)
+# Find posts containing "elixir" in tags
+tags:*elixir
 
 # Find high-priority tasks assigned to Sarah
-priority:"high" assignee:"sarah" status:!="completed"
+priority:high assignee:sarah !status:completed
 
-# Complex filtering using AND/OR logic
-(category:"frontend" || category:"design") status:"pending"
+# Multiple values with OR expansion
+category:[frontend, design] status:pending
+
+# Relationship filtering
+author.name:Tolkien items { rarity:legendary }
 ```
 
 ## Features
 
 - Simple `field:value` filtering that users already know from search interfaces
-- Support for quoted strings, numeric comparisons, and date ranges
-- String matching with contains (*), starts_with (^), and ends_with ($)
-- Logical operators (AND/OR) with grouping 
-- Extensible through adapters 
-- Ecto and ETS adapter included
+- String matching: contains (`*`), starts_with (`^`), ends_with (`$`)
+- `one_of`/IN predicates with bracket shorthand: `field:[a, b, c]`
+- Negation with `!` or `-` prefix
+- Logical operators (AND/OR) with grouping
+- Relationship filtering via dot notation and block syntax
+- Type coercion with schema support (integers, dates, booleans, etc.)
+- Ecto and ETS adapters included
+
+See [SYNTAX.md](./SYNTAX.md) for the complete syntax reference.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `dequel` to your list of dependencies in `mix.exs`:
+Add `dequel` to your dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:dequel, "~> 0.0.1"}
+    {:dequel, "~> 0.4.0"}
   ]
 end
 ```
 
-## Getting Started
+Then run:
+
+```bash
+mix deps.get
+```
+
+## Usage
+
+### Basic Filtering with Ecto
+
+```elixir
+import Ecto.Query
+alias Dequel.Adapter.Ecto.Filter
+
+# Simple field filtering
+from(p in Post)
+|> Filter.query("status:published tags:*elixir")
+|> Repo.all()
+
+# Relationship paths (auto-joins)
+from(p in Post)
+|> Filter.query("author.name:Tolkien")
+|> Repo.all()
+
+# Block syntax for has_many/belongs_to (requires schema)
+from(a in Author)
+|> Filter.query("items { rarity:legendary }", schema: Author)
+|> Repo.all()
+```
+
+### Composing with Ecto Queries
+
+Use `Dequel.where/1` to get a dynamic expression you can compose:
+
+```elixir
+import Ecto.Query
+
+user_input = "title:*ring category:[fantasy, adventure]"
+
+from(c in Content)
+|> where(^Dequel.where(user_input))
+|> where([c], c.status == "published")
+|> where([c], c.user_id == ^current_user.id)
+|> Repo.all()
+```
+
+### Parsing Queries
 
 ```elixir
 # Parse a query string into an AST
-{:ok, ast} = Dequel.parse("status:active priority:>2")
+ast = Dequel.Parser.parse!("status:active name:*frodo")
+# => {:and, [], [{:==, [], [:status, "active"]}, {:contains, [], [:name, "frodo"]}]}
+```
 
-# Use with Ecto
-query = Post |> Dequel.Ecto.filter("tags:*elixir created:>(2024-01-01)")
-posts = Repo.all(query)
+## Quick Reference
 
-# Compatible with Ecto's composition API:
-user_input = "title:contains(css, html)"
+| Syntax                        | Meaning                             |
+| ----------------------------- | ----------------------------------- |
+| `field:value`                 | Equality                            |
+| `field:"some value"`          | Equality (quoted)                   |
+| `field:contains(value)`       | Contains                            |
+| `field:*value`                | Contains (shorthand)                |
+| `field:starts_with(value)`    | Starts with                         |
+| `field:^value`                | Starts with (shorthand)             |
+| `field:$value`                | Ends with (shorthand)               |
+| `field:ends_with(value)`      | Ends with                           |
+| `field:one_of(a, b, c)`       | IN                                  |
+| `field:[a, b, c]`             | IN (shorthand)                      |
+| `!field:value`                | NOT                                 |
+| `-field:value`                | NOT (alternate)                     |
+| `a:1 b:2`                     | AND (implicit)                      |
+| `a:1 or b:2`                  | OR (keyword)                        |
+| `( expr )`                    | Grouping                            |
+| `rel.field:value`             | Relationship path                   |
+| `rel { field_a:1 field_b:2 }` | Block syntax (has_many/belongs_to)  |
 
-from(Content, where: ^Dequel.where(user_input))
-|> where(:status, "published") # include only published content
-|> where(:user_id, ^current_user.id) # limit to what a user is allowed to see
-|> Repo.all()
+Spaces after `:` are allowed. So this works too:
+
+```
+last_name: Baggins
+first_name: contains(o)
 ```
 
 ## Why Dequel?
@@ -60,8 +130,8 @@ Dequel provides a query interface that's powerful enough for developers but appr
 
 - Adding flexible search/filter interfaces to web applications
 - Building dynamic content collections
-- Creating data-driven features without exposing SQL complexity
-- Provide domain-specific search predicates
+- Creating data-driven features without exposing SQL
+- Providing domain-specific search predicates
 
 ## License
 
