@@ -364,6 +364,35 @@ defmodule Dequel.Adapter.EctoTest do
     end
   end
 
+  describe "comparison operators" do
+    setup do
+      low = item_fixture(%{name: "low", description: "test", quantity: 5})
+      mid = item_fixture(%{name: "mid", description: "test", quantity: 15})
+      high = item_fixture(%{name: "high", description: "test", quantity: 25})
+      %{low: low, mid: mid, high: high}
+    end
+
+    test "greater than", %{mid: mid, high: high} do
+      assert ~ALL(quantity:>10) == [mid, high]
+    end
+
+    test "less than", %{low: low} do
+      assert ~ALL(quantity:<10) == [low]
+    end
+
+    test "greater than or equal", %{mid: mid, high: high} do
+      assert ~ALL(quantity:>=15) == [mid, high]
+    end
+
+    test "less than or equal", %{low: low, mid: mid} do
+      assert ~ALL(quantity:<=15) == [low, mid]
+    end
+
+    test "negated greater than", %{low: low} do
+      assert ~ALL(quantity:!>10) == [low]
+    end
+  end
+
   describe "dot notation with has_many relations" do
     alias Dequel.Adapter.Ecto.AuthorSchema
 

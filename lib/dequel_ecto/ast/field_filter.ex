@@ -299,6 +299,22 @@ defmodule Dequel.Adapter.Ecto.Filter do
     dynamic([{^binding, x}], field(x, ^field) in ^values)
   end
 
+  defp build_dynamic(:>, binding, field, value) do
+    dynamic([{^binding, x}], field(x, ^field) > ^value)
+  end
+
+  defp build_dynamic(:<, binding, field, value) do
+    dynamic([{^binding, x}], field(x, ^field) < ^value)
+  end
+
+  defp build_dynamic(:>=, binding, field, value) do
+    dynamic([{^binding, x}], field(x, ^field) >= ^value)
+  end
+
+  defp build_dynamic(:<=, binding, field, value) do
+    dynamic([{^binding, x}], field(x, ^field) <= ^value)
+  end
+
   # Build filter with explicit binding for join relations
   defp build_filter_with_binding({op, [], [field, value]}, ctx, binding) when is_atom(field) do
     dynamic_expr = build_dynamic(op, binding, field, value)
@@ -445,6 +461,22 @@ defmodule Dequel.Adapter.Ecto.Filter do
 
   def where({:contains, [], [field, value]}) do
     dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}%"))
+  end
+
+  def where({:>, [], [field, value]}) do
+    dynamic([schema], field(schema, ^field) > ^value)
+  end
+
+  def where({:<, [], [field, value]}) do
+    dynamic([schema], field(schema, ^field) < ^value)
+  end
+
+  def where({:>=, [], [field, value]}) do
+    dynamic([schema], field(schema, ^field) >= ^value)
+  end
+
+  def where({:<=, [], [field, value]}) do
+    dynamic([schema], field(schema, ^field) <= ^value)
   end
 
   def where({:not, [], expression}) do

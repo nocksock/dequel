@@ -7,6 +7,8 @@ defmodule Dequel.Adapter.Ecto.ItemSchema do
     field(:name, :string)
     field(:description, :string)
     field(:parent, :string)
+    field(:quantity, :integer)
+    field(:price, :decimal)
 
     belongs_to(:author, Dequel.Adapter.Ecto.AuthorSchema)
 
@@ -19,7 +21,7 @@ defmodule Dequel.Adapter.Ecto.ItemSchema do
   @doc false
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:name, :description, :author_id])
+    |> cast(attrs, [:name, :description, :author_id, :quantity, :price])
     |> validate_required([:name, :description])
   end
 end
