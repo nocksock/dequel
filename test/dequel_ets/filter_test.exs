@@ -229,4 +229,33 @@ defmodule Dequel.Adapter.EtsTest do
       assert length(result) == 2
     end
   end
+
+  describe "range queries" do
+    setup do
+      records = [
+        %{id: 1, name: "low", quantity: 5},
+        %{id: 2, name: "mid", quantity: 15},
+        %{id: 3, name: "high", quantity: 25}
+      ]
+
+      %{records: records}
+    end
+
+    test "between range", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:5..20", records)
+      assert length(result) == 2
+      assert Enum.all?(result, fn r -> r.quantity >= 5 and r.quantity <= 20 end)
+    end
+
+    test "between predicate", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:between(5 20)", records)
+      assert length(result) == 2
+    end
+
+    test "negated range", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:!5..20", records)
+      assert length(result) == 1
+      assert hd(result).quantity == 25
+    end
+  end
 end

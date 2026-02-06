@@ -75,6 +75,13 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
     end)
   end
 
+  def filter({:between, [], [field, start_val, end_val]}, records) do
+    Enum.filter(records, fn record ->
+      field_value = get_field_value(record, field)
+      in_range?(field_value, start_val, end_val)
+    end)
+  end
+
   def filter({:not, [], expression}, records) do
     filtered_records = filter(expression, records)
     records -- filtered_records
@@ -141,6 +148,21 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
           _ -> :error
         end
     end
+  end
+
+  defp in_range?(nil, _start, _end), do: false
+
+  defp in_range?(field_value, start_val, end_val) when is_number(field_value) do
+    with {:ok, start_num} <- parse_number(start_val),
+         {:ok, end_num} <- parse_number(end_val) do
+      field_value >= start_num and field_value <= end_num
+    else
+      _ -> false
+    end
+  end
+
+  defp in_range?(field_value, start_val, end_val) do
+    field_value >= start_val and field_value <= end_val
   end
 
   # Public function to filter a single record (for testing)
