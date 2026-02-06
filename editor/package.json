@@ -1,19 +1,45 @@
 {
   "name": "dequel-editor",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.4.0",
+  "description": "CodeMirror-based editor for Dequel query language",
   "type": "module",
+  "main": "./dist/dequel-editor.js",
+  "module": "./dist/dequel-editor.js",
+  "exports": {
+    ".": "./dist/dequel-editor.js",
+    "./lang": {
+      "import": "./dist/dequel-lang.js",
+      "types": "./dist/dequel-lang.d.ts"
+    },
+    "./style.css": "./dist/style.css"
+  },
   "files": [
-    "/dist/element.js",
-    "/dist/style.css"
+    "dist/"
   ],
-  "module": "./dist/element.js",
+  "keywords": [
+    "codemirror",
+    "editor",
+    "query-language",
+    "dequel",
+    "phoenix",
+    "elixir"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nocksock/dequel.git",
+    "directory": "editor"
+  },
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "pnpm i18n:build && tsc && vite build",
+    "build": "pnpm i18n:build && pnpm build:full && pnpm build:lang",
+    "build:full": "BUILD_MODE=full vite build",
+    "build:lang": "BUILD_MODE=lang vite build",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",
+    "prepublishOnly": "pnpm build",
     "i18n:build": "tsx scripts/po2json.ts"
   },
   "dependencies": {
@@ -63,5 +89,17 @@
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vitest": "^1.6.1"
+  },
+  "peerDependencies": {
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@codemirror/state": {
+      "optional": true
+    },
+    "@codemirror/view": {
+      "optional": true
+    }
   }
 }

@@ -25,16 +25,39 @@ const fullReloadAlways: Plugin = {
   },
 }
 
+// Build mode: 'full' for bundled web component, 'lang' for language plugin only
+const buildMode = process.env.BUILD_MODE || 'full'
+
 export default defineConfig(() => {
+  const isLangOnly = buildMode === 'lang'
+
   return {
     plugins: [preact(), fullReloadAlways, tailwindcss()],
     build: {
       target: ['esnext'],
-      lib: {
-        entry: resolve(__dirname, './src/main.tsx'),
-        name: 'DequelEditor',
-        fileName: 'element',
-      },
+      emptyOutDir: !isLangOnly, // Don't clear dist when building lang (second pass)
+      lib: isLangOnly
+        ? {
+            entry: resolve(__dirname, './src/dequel-lang/index.ts'),
+            name: 'DequelLang',
+            fileName: 'dequel-lang',
+            formats: ['es'],
+          }
+        : {
+            entry: resolve(__dirname, './src/element.ts'),
+            name: 'DequelEditor',
+            fileName: 'dequel-editor',
+            formats: ['es'],
+          },
+      rollupOptions: isLangOnly
+        ? {
+            // Externalize CodeMirror deps for lang-only build
+            external: [
+              /^@codemirror\/.*/,
+              /^@lezer\/.*/,
+            ],
+          }
+        : {},
     },
     server: {
       proxy: {
