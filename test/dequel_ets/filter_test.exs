@@ -195,4 +195,38 @@ defmodule Dequel.Adapter.EtsTest do
       assert hd(result).name == "Dune"
     end
   end
+
+  describe "comparison operators" do
+    setup do
+      records = [
+        %{id: 1, name: "low", quantity: 5},
+        %{id: 2, name: "mid", quantity: 15},
+        %{id: 3, name: "high", quantity: 25}
+      ]
+
+      %{records: records}
+    end
+
+    test "greater than", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:>10", records)
+      assert length(result) == 2
+      assert Enum.all?(result, fn r -> r.quantity > 10 end)
+    end
+
+    test "less than", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:<10", records)
+      assert length(result) == 1
+      assert hd(result).quantity == 5
+    end
+
+    test "greater than or equal", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:>=15", records)
+      assert length(result) == 2
+    end
+
+    test "less than or equal", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:<=15", records)
+      assert length(result) == 2
+    end
+  end
 end

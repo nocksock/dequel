@@ -47,6 +47,34 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
     end)
   end
 
+  def filter({:>, [], [field, value]}, records) do
+    Enum.filter(records, fn record ->
+      field_value = get_field_value(record, field)
+      compare_values(field_value, value, &Kernel.>/2)
+    end)
+  end
+
+  def filter({:<, [], [field, value]}, records) do
+    Enum.filter(records, fn record ->
+      field_value = get_field_value(record, field)
+      compare_values(field_value, value, &Kernel.</2)
+    end)
+  end
+
+  def filter({:>=, [], [field, value]}, records) do
+    Enum.filter(records, fn record ->
+      field_value = get_field_value(record, field)
+      compare_values(field_value, value, &Kernel.>=/2)
+    end)
+  end
+
+  def filter({:<=, [], [field, value]}, records) do
+    Enum.filter(records, fn record ->
+      field_value = get_field_value(record, field)
+      compare_values(field_value, value, &Kernel.<=/2)
+    end)
+  end
+
   def filter({:not, [], expression}, records) do
     filtered_records = filter(expression, records)
     records -- filtered_records
@@ -85,6 +113,34 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
     :error, :badarg ->
       # Atom doesn't exist - field name not recognized, treat as nil
       nil
+  end
+
+  # Helper to compare values, handling type coercion
+  defp compare_values(nil, _value, _op), do: false
+
+  defp compare_values(field_value, value, op) when is_number(field_value) and is_binary(value) do
+    case parse_number(value) do
+      {:ok, num} -> op.(field_value, num)
+      :error -> false
+    end
+  end
+
+  defp compare_values(field_value, value, op), do: op.(field_value, value)
+
+  defp parse_number(str) do
+    cond do
+      String.contains?(str, ".") ->
+        case Float.parse(str) do
+          {num, ""} -> {:ok, num}
+          _ -> :error
+        end
+
+      true ->
+        case Integer.parse(str) do
+          {num, ""} -> {:ok, num}
+          _ -> :error
+        end
+    end
   end
 
   # Public function to filter a single record (for testing)
