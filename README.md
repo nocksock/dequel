@@ -9,6 +9,10 @@ tags:*elixir
 # Find high-priority tasks assigned to Sarah
 priority:high assignee:sarah !status:completed
 
+# Numeric comparisons and ranges
+price:>19.99 quantity:<=100
+age:18..65
+
 # Multiple values with OR expansion
 category:[frontend, design] status:pending
 
@@ -20,6 +24,7 @@ author.name:Tolkien items { rarity:legendary }
 
 - Simple `field:value` filtering that users already know from search interfaces
 - String matching: contains (`*`), starts_with (`^`), ends_with (`$`)
+- Numeric comparisons: `>`, `<`, `>=`, `<=`, and range syntax (`10..50`)
 - `one_of`/IN predicates with bracket shorthand: `field:[a, b, c]`
 - Negation with `!` or `-` prefix
 - Logical operators (AND/OR) with grouping
@@ -109,6 +114,12 @@ ast = Dequel.Parser.parse!("status:active name:*frodo")
 | `field:ends_with(value)`      | Ends with                           |
 | `field:one_of(a, b, c)`       | IN                                  |
 | `field:[a, b, c]`             | IN (shorthand)                      |
+| `field:>18`                   | Greater than                        |
+| `field:<100`                  | Less than                           |
+| `field:>=0`                   | Greater than or equal               |
+| `field:<=99`                  | Less than or equal                  |
+| `field:10..50`                | Between (inclusive range)           |
+| `field:between(10 50)`        | Between (predicate form)            |
 | `!field:value`                | NOT                                 |
 | `-field:value`                | NOT (alternate)                     |
 | `a:1 b:2`                     | AND (implicit)                      |

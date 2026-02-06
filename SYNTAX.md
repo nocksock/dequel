@@ -67,6 +67,49 @@ field:[a, b]                       # Same as one_of(a, b)
 city:["New York", London]
 ```
 
+## Comparison Operators
+
+Numeric comparisons use operator prefixes on values:
+
+| Operator | Meaning              | Example        |
+|----------|----------------------|----------------|
+| `>`      | Greater than         | `age:>18`      |
+| `<`      | Less than            | `age:<18`      |
+| `>=`     | Greater than or equal| `age:>=18`     |
+| `<=`     | Less than or equal   | `age:<=18`     |
+
+### Negative Numbers
+
+```
+temperature:>-10     # greater than -10
+balance:-100..50     # range with negative start
+```
+
+### Decimals
+
+```
+price:>19.99
+rate:>=0.5
+```
+
+## Range Queries
+
+Two equivalent syntaxes for inclusive ranges:
+
+```
+price:10..50         # double-dot notation
+price:between(10 50) # named predicate (space-separated)
+```
+
+Both mean: `10 <= price <= 50`
+
+### Negation
+
+```
+age:!>18             # NOT greater than 18
+price:!10..50        # NOT between 10 and 50
+```
+
 ## Negation
 
 Dequel has two distinct negation mechanisms:
@@ -270,6 +313,12 @@ from(a in AuthorSchema)
 | `field:!*value`           | NOT contains                                 |
 | `field:!^value`           | NOT starts with                              |
 | `field:!$value`           | NOT ends with                                |
+| `field:>value`            | Greater than                                 |
+| `field:<value`            | Less than                                    |
+| `field:>=value`           | Greater than or equal                        |
+| `field:<=value`           | Less than or equal                           |
+| `field:10..50`            | Between (inclusive range)                    |
+| `field:between(10 50)`    | Between (predicate form)                     |
 | `a:1 b:2`                 | AND (implicit)                               |
 | `a:1 && b:2`              | AND (explicit)                               |
 | `a:1 \|\| b:2`            | OR                                           |
