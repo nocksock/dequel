@@ -393,6 +393,27 @@ defmodule Dequel.Adapter.EctoTest do
     end
   end
 
+  describe "range queries" do
+    setup do
+      low = item_fixture(%{name: "low", description: "test", quantity: 5})
+      mid = item_fixture(%{name: "mid", description: "test", quantity: 15})
+      high = item_fixture(%{name: "high", description: "test", quantity: 25})
+      %{low: low, mid: mid, high: high}
+    end
+
+    test "between range", %{low: low, mid: mid} do
+      assert ~ALL(quantity:5..20) == [low, mid]
+    end
+
+    test "between predicate", %{low: low, mid: mid} do
+      assert ~ALL[quantity:between(5 20)] == [low, mid]
+    end
+
+    test "negated range", %{high: high} do
+      assert ~ALL(quantity:!5..20) == [high]
+    end
+  end
+
   describe "dot notation with has_many relations" do
     alias Dequel.Adapter.Ecto.AuthorSchema
 

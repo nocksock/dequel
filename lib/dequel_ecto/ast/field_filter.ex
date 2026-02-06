@@ -120,6 +120,19 @@ defmodule Dequel.Adapter.Ecto.Filter do
     {dynamic([{^binding, x}], field(x, ^field_name) in ^values), ctx}
   end
 
+  # Between - simple field
+  defp build_filter({:between, [], [field, start_val, end_val]}, ctx) when is_atom(field) do
+    {where({:between, [], [field, start_val, end_val]}), ctx}
+  end
+
+  # Between - relationship path
+  defp build_filter({:between, [], [path, start_val, end_val]}, ctx) when is_list(path) do
+    {binding, ctx} = Context.ensure_joins(ctx, path)
+    field_name = List.last(path)
+    dynamic_expr = build_dynamic(:between, binding, field_name, {start_val, end_val})
+    {dynamic_expr, ctx}
+  end
+
   # Simple field - use base binding
   defp build_filter({op, [], [field, value]}, ctx) when is_atom(field) do
     {where({op, [], [field, value]}), ctx}
@@ -315,6 +328,10 @@ defmodule Dequel.Adapter.Ecto.Filter do
     dynamic([{^binding, x}], field(x, ^field) <= ^value)
   end
 
+  defp build_dynamic(:between, binding, field, {start_val, end_val}) do
+    dynamic([{^binding, x}], field(x, ^field) >= ^start_val and field(x, ^field) <= ^end_val)
+  end
+
   # Build filter with explicit binding for join relations
   defp build_filter_with_binding({op, [], [field, value]}, ctx, binding) when is_atom(field) do
     dynamic_expr = build_dynamic(op, binding, field, value)
@@ -477,6 +494,10 @@ defmodule Dequel.Adapter.Ecto.Filter do
 
   def where({:<=, [], [field, value]}) do
     dynamic([schema], field(schema, ^field) <= ^value)
+  end
+
+  def where({:between, [], [field, start_val, end_val]}) do
+    dynamic([schema], field(schema, ^field) >= ^start_val and field(schema, ^field) <= ^end_val)
   end
 
   def where({:not, [], expression}) do
