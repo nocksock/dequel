@@ -21,16 +21,14 @@ defmodule Dequel.MixProject do
   end
 
   def application do
-    [
-      extra_applications: [:logger, :runtime_tools]
-    ]
+    [extra_applications: [:logger, :runtime_tools]]
   end
 
   defp elixirc_paths(:test),
     do: ["lib", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
 
   defp elixirc_paths(:bench),
-    do: ["lib", "bench"]
+    do: ["lib", "bench", "shared"]
 
   defp elixirc_paths(_), do: ["lib"]
 
@@ -53,8 +51,10 @@ defmodule Dequel.MixProject do
     [
       description: "friendly query language for user input built on Ecto",
       licenses: ["MIT"],
+      files: ~w(lib priv/static mix.exs README.md),
       links: %{
-        "Github" => "https://github.com/nocksock/dequel"
+        "Github" => "https://github.com/nocksock/dequel",
+        "npm" => "https://www.npmjs.com/package/dequel-editor"
       }
     ]
   end

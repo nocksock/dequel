@@ -46,3 +46,9 @@ devenv.local.yaml
 
 # Benchmark database
 bench.db*
+
+# Built editor assets - NOTE: These are committed for Hex package distribution
+# Run `cd editor && pnpm build` then copy dist/* to priv/static/
+demo.db
+demo.db-shm
+demo.db-wal
