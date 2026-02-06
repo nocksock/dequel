@@ -14,7 +14,7 @@ defmodule Bench.Runner do
       Bench.Runner.run(:medium, [:simple_equality, :string_matching])
   """
 
-  alias Bench.Seeder
+  alias Shared.Seeder
   alias Bench.Output
 
   @scenario_modules %{

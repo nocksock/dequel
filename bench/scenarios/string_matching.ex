@@ -1,8 +1,8 @@
 defmodule Bench.Scenarios.StringMatching do
   @moduledoc "Benchmarks for string matching predicates (contains, starts_with, ends_with)"
 
-  alias Bench.Repo
-  alias Bench.Schemas.{Book, Author}
+  alias Shared.Repo
+  alias Shared.Schemas.{Book, Author}
   alias Dequel.Adapter.Ecto.Filter
   import Ecto.Query
 

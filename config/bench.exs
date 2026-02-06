@@ -1,8 +1,8 @@
 import Config
 
-config :dequel, Bench.Repo,
+config :dequel, Shared.Repo,
   database: "bench.db",
   pool_size: 1,
-  priv: "priv/bench_repo"
+  priv: "priv/shared_repo"
 
 config :logger, level: :warning

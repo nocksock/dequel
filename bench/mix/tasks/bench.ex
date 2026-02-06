@@ -84,7 +84,7 @@ defmodule Mix.Tasks.Bench do
     force = Keyword.get(opts, :force, false)
 
     Mix.Task.run("app.start")
-    {:ok, _} = Bench.Repo.start_link()
+    {:ok, _} = Shared.Repo.start_link()
 
     File.mkdir_p!("bench/results")
 

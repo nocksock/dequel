@@ -1,8 +1,8 @@
 defmodule Bench.Scenarios.Relationship do
   @moduledoc "Benchmarks for relationship path traversal (dot notation)"
 
-  alias Bench.Repo
-  alias Bench.Schemas.{Book, Review}
+  alias Shared.Repo
+  alias Shared.Schemas.{Book, Review}
   alias Dequel.Adapter.Ecto.Filter
   import Ecto.Query
 

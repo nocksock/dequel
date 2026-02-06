@@ -1,8 +1,8 @@
 defmodule Bench.Scenarios.BlockSyntax do
   @moduledoc "Benchmarks for block syntax (EXISTS subqueries)"
 
-  alias Bench.Repo
-  alias Bench.Schemas.{Author, Bookstore}
+  alias Shared.Repo
+  alias Shared.Schemas.{Author, Bookstore}
   alias Dequel.Adapter.Ecto.Filter
   import Ecto.Query
 

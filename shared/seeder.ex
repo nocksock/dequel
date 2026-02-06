@@ -1,6 +1,6 @@
-defmodule Bench.Seeder do
+defmodule Shared.Seeder do
   @moduledoc """
-  Bulk data generation for benchmarks.
+  Bulk data generation for benchmarks and demo.
 
   Generates realistic-looking bookstore data with configurable sizes:
   - :small  - 100 books, 20 authors, 5 bookstores
@@ -10,8 +10,8 @@ defmodule Bench.Seeder do
   Uses Faker for realistic data generation. Pass a seed for reproducibility.
   """
 
-  alias Bench.Repo
-  alias Bench.Schemas.{Author, Book, Bookstore, Review}
+  alias Shared.Repo
+  alias Shared.Schemas.{Author, Book, Bookstore, Review}
 
   @sizes %{
     small: %{books: 100, authors: 20, bookstores: 5, reviews_per_book: 2},

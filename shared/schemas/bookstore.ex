@@ -1,4 +1,4 @@
-defmodule Bench.Schemas.Bookstore do
+defmodule Shared.Schemas.Bookstore do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -9,8 +9,8 @@ defmodule Bench.Schemas.Bookstore do
     field :rating, :decimal
     field :founded_at, :date
 
-    has_many :books, Bench.Schemas.Book
-    has_many :reviews, Bench.Schemas.Review
+    has_many :books, Shared.Schemas.Book
+    has_many :reviews, Shared.Schemas.Review
   end
 
   def changeset(bookstore, attrs) do

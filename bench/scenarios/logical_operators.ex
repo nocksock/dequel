@@ -1,8 +1,8 @@
 defmodule Bench.Scenarios.LogicalOperators do
   @moduledoc "Benchmarks for logical operators (AND, OR, NOT)"
 
-  alias Bench.Repo
-  alias Bench.Schemas.Book
+  alias Shared.Repo
+  alias Shared.Schemas.Book
   alias Dequel.Adapter.Ecto.Filter
   import Ecto.Query
 

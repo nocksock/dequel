@@ -1,4 +1,4 @@
-defmodule Bench.Schemas.Review do
+defmodule Shared.Schemas.Review do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -8,8 +8,8 @@ defmodule Bench.Schemas.Review do
     field :reviewer_name, :string
     field :created_at, :naive_datetime
 
-    belongs_to :book, Bench.Schemas.Book
-    belongs_to :bookstore, Bench.Schemas.Bookstore
+    belongs_to :book, Shared.Schemas.Book
+    belongs_to :bookstore, Shared.Schemas.Bookstore
   end
 
   def changeset(review, attrs) do

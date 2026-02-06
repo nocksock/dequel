@@ -1,4 +1,4 @@
-defmodule Bench.Repo.Migrations.CreateBookstoreTables do
+defmodule Shared.Repo.Migrations.CreateBookstoreTables do
   use Ecto.Migration
 
   def change do

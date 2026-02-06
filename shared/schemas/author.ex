@@ -1,4 +1,4 @@
-defmodule Bench.Schemas.Author do
+defmodule Shared.Schemas.Author do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -9,7 +9,7 @@ defmodule Bench.Schemas.Author do
     field :country, :string
     field :details, :map
 
-    has_many :books, Bench.Schemas.Book
+    has_many :books, Shared.Schemas.Book
   end
 
   def changeset(author, attrs) do

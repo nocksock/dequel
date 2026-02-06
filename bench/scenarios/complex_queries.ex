@@ -1,8 +1,8 @@
 defmodule Bench.Scenarios.ComplexQueries do
   @moduledoc "Benchmarks for complex combined queries"
 
-  alias Bench.Repo
-  alias Bench.Schemas.{Book, Author}
+  alias Shared.Repo
+  alias Shared.Schemas.{Book, Author}
   alias Dequel.Adapter.Ecto.Filter
   import Ecto.Query
 

@@ -1,8 +1,8 @@
 defmodule Bench.Scenarios.SimpleEquality do
   @moduledoc "Benchmarks for simple field equality queries"
 
-  alias Bench.Repo
-  alias Bench.Schemas.{Book, Author, Bookstore}
+  alias Shared.Repo
+  alias Shared.Schemas.{Book, Author, Bookstore}
   alias Dequel.Adapter.Ecto.Filter
   import Ecto.Query
 
