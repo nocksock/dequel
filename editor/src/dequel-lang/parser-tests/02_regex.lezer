@@ -1,0 +1,49 @@
+# exakt
+
+some:/FOOBAR/
+
+==>
+
+QueryList(
+  Query(Condition(Field, ":", Predicate(Regex))),
+)
+
+# with flags
+
+some:/FOOBAR/i
+
+==>
+
+QueryList(
+  Query(Condition(Field, ":", Predicate(Regex))),
+)
+
+# with flags and complex stuff
+
+some:/^[a-z\s ]\w{},*+/i
+
+==>
+
+QueryList(
+  Query(Condition(Field, ":", Predicate(Regex))),
+)
+
+# escaped slash
+
+some:/file\/path/i
+
+==>
+
+QueryList(
+  Query(Condition(Field, ":", Predicate(Regex))),
+)
+
+# escaped slash slash
+
+some:/file\\\/path/i
+
+==>
+
+QueryList(
+  Query(Condition(Field, ":", Predicate(Regex))),
+)

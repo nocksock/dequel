@@ -1,0 +1,81 @@
+# German translations for lang-dequel
+# Copyright (C) 2024 EDEKA
+# This file is distributed under the same license as the lang-dequel package.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/components/SuggestionView.tsx
+msgid "Loading suggestions..."
+msgstr "Vorschlaege werden geladen..."
+
+#: src/components/SuggestionView.tsx
+msgid "Narrow your search"
+msgstr "Suche eingrenzen"
+
+#: src/components/SuggestionView.tsx
+msgid "Condition modifiers"
+msgstr "Bedingungsmodifikatoren"
+
+#: src/components/SuggestionView.tsx
+msgid "Debug"
+msgstr "Debug"
+
+#: src/lib/predicates.ts
+msgid "Exact match"
+msgstr "Exakte Uebereinstimmung"
+
+#: src/lib/predicates.ts
+msgid "Contains the given text"
+msgstr "Enthaelt den angegebenen Text"
+
+#: src/lib/predicates.ts
+msgid "Starts with the given text"
+msgstr "Beginnt mit dem angegebenen Text"
+
+#: src/lib/predicates.ts
+msgid "Ends with the given text"
+msgstr "Endet mit dem angegebenen Text"
+
+#: src/lib/predicates.ts
+msgid "Match one of these values"
+msgstr "Entspricht einem dieser Werte"
+
+#: src/lib/predicates.ts
+msgid "After this date"
+msgstr "Nach diesem Datum"
+
+#: src/lib/predicates.ts
+msgid "Before this date"
+msgstr "Vor diesem Datum"
+
+#: src/lib/predicates.ts
+msgid "Between two dates"
+msgstr "Zwischen zwei Daten"
+
+#: src/lib/actions.ts
+msgid "Remove negation"
+msgstr "Negation entfernen"
+
+#: src/lib/actions.ts
+msgid "Exclude from results"
+msgstr "Von Ergebnissen ausschliessen"
+
+#: src/lib/actions.ts
+msgid "Enable condition"
+msgstr "Bedingung aktivieren"
+
+#: src/lib/actions.ts
+msgid "Disable condition"
+msgstr "Bedingung deaktivieren"
+
+#: src/lib/actions.ts
+msgid "Add another condition"
+msgstr "Weitere Bedingung hinzufuegen"
+
+#: src/dequel-lang/linter.ts
+msgid "Syntax error"
+msgstr "Syntaxfehler"

@@ -1,0 +1,73 @@
+# simple
+
+type:markets title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Identifier)))
+  )
+)
+
+# simple with snake_case
+
+type:markets market_id:123
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Number)))
+  )
+)
+
+# spaces between conditions don't matter
+
+type:markets    title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Identifier)))
+  )
+)
+
+# exclude
+
+type:markets -title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    ExcludeCondition(Field, ":", Predicate(Value(Identifier)))
+  )
+)
+
+# values
+
+type:markets
+  title:EDEKA
+  title:"Some string"
+  id:123
+  some.field:/^EDEKA/i
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(Identifier))),
+    Condition(Field, ":", Predicate(Value(String))),
+    Condition(Field, ":", Predicate(Value(Number))),
+    Condition(Field, ":", Predicate(Regex)),
+  )
+)
+
+
