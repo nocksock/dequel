@@ -47,7 +47,10 @@ export class DequelEditorElement extends HTMLElement {
       suggestions: hasSuggestions,
       onUpdate: value => {
         this.#value = value
-        this.dispatchEvent(new Event('input', { bubbles: true }))
+        this.dispatchEvent(new CustomEvent('input', { bubbles: true, detail: value }))
+      },
+      onSubmit: () => {
+        this.form?.requestSubmit()
       },
     })
   }

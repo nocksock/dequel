@@ -44,7 +44,14 @@ form.addEventListener('submit', async (e) => {
   }
 
   resultDiv.innerHTML = renderList(data)
+  updateQueryParams(collection, query)
 })
+
+const updateQueryParams = (collection: string, query: string) => {
+  const params = new URLSearchParams({ collection, query })
+  const newUrl = `${window.location.pathname}?${params.toString()}`
+  window.history.replaceState({}, '', newUrl)
+}
 
 const renderError = (message: string) =>
   `<div class="alert alert-error">${message}</div>`

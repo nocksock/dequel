@@ -6,6 +6,7 @@ export type DequelEditorOptions = {
   completionEndpoint: string
   autocompletionsEndpoint?: string
   onUpdate: OnUpdateCallbackFn
+  onSubmit?: () => void
   suggestions: boolean
 }
 

@@ -1,4 +1,4 @@
-import { EditorView } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import { OnUpdate } from './on-update'
 import { CurrentNodeField } from './current-node'
 import { basicSetup } from './basic-setup'
@@ -8,6 +8,18 @@ import { CompletionSchemaField, CompletionFetcher } from './completion'
 import { DequelLang } from '../dequel-lang'
 
 export type DequelEditor = EditorView
+
+const submitKeymap = (onSubmit?: () => void) =>
+  onSubmit
+    ? keymap.of([{
+        key: 'Ctrl-Enter',
+        mac: 'Cmd-Enter',
+        run: () => {
+          onSubmit()
+          return true
+        },
+      }])
+    : []
 
 export const createDequelEditor = (parent: HTMLElement, opts: DequelEditorOptions): DequelEditor =>
   new EditorView({
@@ -20,6 +32,7 @@ export const createDequelEditor = (parent: HTMLElement, opts: DequelEditorOption
       opts.autocompletionsEndpoint ? CompletionFetcher : [],
       opts.suggestions ? Suggestions : [],
       OnUpdate(opts.onUpdate),
+      submitKeymap(opts.onSubmit),
     ],
     parent,
     doc: opts.value,
