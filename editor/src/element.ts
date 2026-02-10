@@ -10,6 +10,7 @@ import { DequelLang } from './dequel-lang/language.js'
 import { CurrentNodeField } from './editor/current-node.js'
 import { OnUpdate } from './editor/on-update.js'
 import { DequelEditorOptions } from './editor/options.js'
+import { editorStylesheet } from './editor/styles.js'
 
 const submitKeymap = (onSubmit?: () => void) =>
     onSubmit
@@ -37,6 +38,7 @@ export class DequelEditorElement extends HTMLElement {
         super()
         this.#internals = this.attachInternals()
         this.attachShadow({ mode: 'open' })
+        this.shadowRoot!.adoptedStyleSheets = [editorStylesheet]
     }
 
     get collection() {
