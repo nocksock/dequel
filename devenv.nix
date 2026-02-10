@@ -11,9 +11,22 @@
     pnpm.enable = true;
   };
 
-  packages = [
-    pkgs.elixir-ls
-  ];
+  packages = with pkgs; [
+    elixir-ls
+    ] ++ lib.optionals stdenv.isLinux [
+      # For ExUnit Notifier on Linux.
+      libnotify
+
+      # For file_system on Linux.
+      inotify-tools
+    ] ++ lib.optionals stdenv.isDarwin ([
+      # For ExUnit Notifier on macOS.
+      terminal-notifier
+
+      # For file_system on macOS.
+      darwin.apple_sdk.frameworks.CoreFoundation
+      darwin.apple_sdk.frameworks.CoreServices
+    ]);
 
   # PostgreSQL for Ecto tests
   services.postgres = {
