@@ -69,3 +69,9 @@
 
   <.syntax_help />
 </div>
+
+<script>
+  document.getElementById("collection").addEventListener("change", (event) => {
+    document.getElementById("editor").setAttribute("collection", event.target.value);
+  });
+</script>
