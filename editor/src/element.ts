@@ -1,5 +1,5 @@
 import type { DequelEditor } from './editor/index.js'
-import { CompletionFetcher, CompletionSchemaEffect, CompletionSchemaField } from './editor/completion.js'
+import { SchemaEffect, SchemaField } from './editor/completion.js'
 import { Suggestions, SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
 import { detectLocale, loadTranslations } from './lib/i18n.js'
@@ -26,11 +26,10 @@ const submitKeymap = (onSubmit?: () => void) =>
 
 export class DequelEditorElement extends HTMLElement {
     static formAssociated = true
-    static observedAttributes = ['value', 'autocompletions', 'suggestions', 'locale']
+    static observedAttributes = ['value', 'autocompletions', 'suggestions', 'locale', 'collection']
 
     #value = ''
-    #autocompletions?: string
-    #endpoint?: string
+    #collection!: string
     #internals: ElementInternals
     editor?: DequelEditor
 
@@ -40,49 +39,20 @@ export class DequelEditorElement extends HTMLElement {
         this.attachShadow({ mode: 'open' })
     }
 
-    connectedCallback() {
-        if (this.editor) return;
+    get collection() {
+        return this.getAttribute('collection') || raise('collection attribute is required on dequel-editor')
+    }
 
-        this.#value = this.getAttribute('value') || ''
-        this.#endpoint = this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
-        this.#autocompletions = this.getAttribute('autocompletions') || ''
+    get endpoint() {
+        return this.getAttribute('endpoint') || raise('endpoint is required on dequel-editor')
+    }
 
-        // Initialize i18n with locale detection
-        const locale = detectLocale(this.getAttribute('locale'))
-        if (locale !== 'en') {
-            import(`./locales/${locale}.json`)
-                .then((mod) => loadTranslations(mod.default, locale))
-                .catch(() => console.warn(`[dequel-editor] No translations for locale: ${locale}`))
-        }
+    get currentSchemaEndpoint() {
+        return `${this.endpoint}/${this.collection}/schema`
+    }
 
-        // Check if there's a suggestions container for this editor
-        const hasSuggestions = !!document.querySelector(`[for="${this.id}"]`)
-
-        this.editor = new EditorView({
-            extensions: [
-                basicSetup(),
-                DequelLang(),
-                CurrentNodeField,
-                CompletionSchemaField,
-                DequelEditorOptions.of({
-                    value: this.#value,
-                    endpoint: this.#endpoint,
-                    onUpdate: () => {},
-                    suggestions: hasSuggestions,
-                }),
-                this.#autocompletions ? CompletionFetcher : [],
-                hasSuggestions ? Suggestions : [],
-                OnUpdate(value => {
-                    this.value = value
-                    this.dispatchEvent(new CustomEvent('input', { bubbles: true, detail: value }))
-                }),
-                submitKeymap(() => {
-                    this.form?.requestSubmit()
-                }),
-            ],
-            parent: this.shadowRoot!,
-            doc: this.value,
-        })
+    get currentSuggestionEndpoint() {
+        return `${this.endpoint}/${this.collection}/suggestions`
     }
 
     get value() {
@@ -92,57 +62,6 @@ export class DequelEditorElement extends HTMLElement {
     set value(value) {
         this.#value = value
         this.#internals.setFormValue(value)
-    }
-
-    attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
-        switch (name) {
-            case 'value': {
-                this.value = newValue
-                break
-            }
-            case 'autocompletions': {
-                this.#autocompletions = newValue
-                if (this.editor && newValue) {
-                    this.fetchCompletions(newValue)
-                }
-                break
-            }
-            case 'suggestions': {
-                if (this.editor && newValue) {
-                    this.fetchSuggestions(newValue)
-                }
-                break
-            }
-            case 'locale': {
-                const locale = detectLocale(newValue)
-                if (locale !== 'en') {
-                    import(`./locales/${locale}.json`)
-                        .then((mod) => loadTranslations(mod.default, locale))
-                        .catch(() => console.warn(`[dequel-editor] No translations for locale: ${locale}`))
-                }
-                break
-            }
-        }
-    }
-
-    private fetchCompletions(endpoint: string) {
-        axios.get(endpoint)
-            .then(({ data }) => {
-                this.editor?.dispatch({
-                    effects: CompletionSchemaEffect.of(data),
-                })
-            })
-            .catch(console.error)
-    }
-
-    private fetchSuggestions(endpoint: string) {
-        axios.get(endpoint)
-            .then(({ data }) => {
-                this.editor?.dispatch({
-                    effects: SuggestionSchemaEffect.of(data),
-                })
-            })
-            .catch(console.error)
     }
 
     get form() {
@@ -155,8 +74,94 @@ export class DequelEditorElement extends HTMLElement {
         )
     }
 
-    get type() {
-        return this.localName
+    connectedCallback() {
+        if (this.editor) return;
+
+        this.#value = this.value
+
+        // Initialize i18n with locale detection
+        const locale = detectLocale(this.getAttribute('locale'))
+        if (locale !== 'en') {
+            import(`./locales/${locale}.json`)
+                .then((mod) => loadTranslations(mod.default, locale))
+                .catch(() => console.warn(`[dequel-editor] No translations for locale: ${locale}`))
+        }
+
+        this.editor = new EditorView({
+            extensions: [
+                basicSetup(),
+                DequelLang(),
+                CurrentNodeField,
+                SchemaField,
+                DequelEditorOptions.of({
+                    root: this,
+                    value: this.#value,
+                    endpoint: this.endpoint,
+                    collection: this.#collection,
+                    onUpdate: () => { },
+                }),
+                OnUpdate(newValue => {
+                    this.value = newValue
+                    this.dispatchEvent(new CustomEvent('input', { bubbles: true, detail: newValue }))
+                }),
+                submitKeymap(() => {
+                    this.form?.requestSubmit()
+                }),
+            ],
+            parent: this.shadowRoot!,
+            doc: this.value,
+        })
+    }
+
+    attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
+        switch (name) {
+            case 'value': {
+                this.value = newValue
+                break
+            }
+
+            case 'collection': {
+                this.updateSchema()
+                this.updateSuggestions()
+                break
+            }
+
+            case 'endpoint': {
+                this.updateSchema()
+                this.updateSuggestions()
+                break
+            }
+
+            case 'locale': {
+                const locale = detectLocale(newValue)
+                if (locale !== 'en') {
+                    import(`./locales/${locale}.json`)
+                        .then((mod) => loadTranslations(mod.default, locale))
+                        .catch(() => console.warn(`[dequel-editor] No translations for locale: ${locale}`))
+                }
+                break
+            }
+        }
+    }
+
+    private updateSchema() {
+        axios.get(this.currentSchemaEndpoint)
+            .then(({ data }) => {
+                this.editor?.dispatch({
+                    effects: SchemaEffect.of(data),
+                })
+            })
+            .catch(console.error)
+    }
+
+    private updateSuggestions() {
+        axios.get(this.currentSuggestionEndpoint)
+            .then(({ data }) => {
+                this.editor?.dispatch({
+                    effects: SuggestionSchemaEffect.of(data),
+                })
+            })
+            .catch(console.error)
     }
 }
 

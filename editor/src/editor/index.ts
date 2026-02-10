@@ -2,9 +2,9 @@ import { EditorView, keymap } from '@codemirror/view'
 import { OnUpdate } from './on-update'
 import { CurrentNodeField } from './current-node'
 import { basicSetup } from './basic-setup'
-import { DequelEditorOptions } from './options'
+import { DequelEditorOptions } from './options.js'
 import { Suggestions } from './suggestions/suggestions'
-import { CompletionSchemaField, CompletionFetcher } from './completion'
+import { SchemaField, SchemaFetcher } from './completion.js'
 import { DequelLang } from '../dequel-lang'
 
 export type DequelEditor = EditorView
@@ -28,8 +28,8 @@ export const createDequelEditor = (parent: HTMLElement, opts: DequelEditorOption
       DequelLang(),
       DequelEditorOptions.of(opts),
       CurrentNodeField,
-      CompletionSchemaField,
-      opts.autocompletionsEndpoint ? CompletionFetcher : [],
+      SchemaField,
+      opts.endpoint ? SchemaFetcher : [],
       opts.suggestions ? Suggestions : [],
       OnUpdate(opts.onUpdate),
       submitKeymap(opts.onSubmit),

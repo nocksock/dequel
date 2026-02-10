@@ -18,7 +18,7 @@ import {
   ViewUpdate,
 } from '@codemirror/view'
 import { anyCondition, customTag, parser } from './parser'
-import { DequelAutocomplete } from '../editor/completion'
+import { DequelAutocomplete } from '../editor/completion.js'
 
 // @see ./dequel-lang/linter.ts
 // import { linter } from '@codemirror/lint'

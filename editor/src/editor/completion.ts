@@ -4,7 +4,7 @@ import { StateEffect, StateField } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import axios from "axios";
 import { dequelParser } from "../dequel-lang/language";
-import { DequelEditorOptions } from "./options";
+import { DequelEditorOptions } from "./options.js";
 import { closest } from "../lib/syntax";
 
 export type CompletionField = {
@@ -13,50 +13,24 @@ export type CompletionField = {
   info?: string;
 };
 
-export type CompletionSchema = {
+export type Schema = {
   fields: CompletionField[];
   values?: Record<string, string[]>;
 };
 
-export const CompletionSchemaEffect = StateEffect.define<CompletionSchema>();
+export const SchemaEffect = StateEffect.define<Schema>();
 
-export const CompletionSchemaField = StateField.define<CompletionSchema>({
+export const SchemaField = StateField.define<Schema>({
   create: () => ({ fields: [] }),
   update: (value, tr) => {
     for (const effect of tr.effects) {
-      if (effect.is(CompletionSchemaEffect)) {
+      if (effect.is(SchemaEffect)) {
         return effect.value;
       }
     }
     return value;
   },
 });
-
-export const CompletionFetcher = ViewPlugin.fromClass(
-  class {
-    constructor(view: EditorView) {
-      const options = view.state.facet(DequelEditorOptions)[0];
-      const baseEndpoint = options?.endpoint;
-
-      if (baseEndpoint) {
-        this.fetchSchema(view, `${baseEndpoint}/schema`);
-      }
-    }
-
-    fetchSchema(view: EditorView, endpoint: string) {
-      axios
-        .get(endpoint)
-        .then(({ data }) => {
-          view.dispatch({
-            effects: CompletionSchemaEffect.of(data),
-          });
-        })
-        .catch(console.error);
-    }
-
-    update() {}
-  }
-);
 
 export const DequelAutocomplete = dequelParser.data.of({
   autocomplete: (context: CompletionContext) => {
@@ -69,7 +43,7 @@ export const DequelAutocomplete = dequelParser.data.of({
     const from = tagBefore ? nodeBefore.from + tagBefore.index : context.pos;
 
     // Get dynamic schema from state
-    const schema = context.state.field(CompletionSchemaField, false);
+    const schema = context.state.field(SchemaField, false);
 
     // Check if we're in a value position (after a colon)
     // Node could be ":" or an Identifier inside a Value
