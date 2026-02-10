@@ -7,17 +7,15 @@ const editor = document.getElementById('primary') as HTMLElement & { value: stri
 const resultDiv = document.getElementById('result') as HTMLDivElement
 const collectionSelect = form.querySelector('select[name="collection"]') as HTMLSelectElement
 
-const SCHEMA_BASE_URL = 'http://localhost:4000/api/selections/schema'
-const SUGGESTIONS_BASE_URL = 'http://localhost:4000/api/selections/preview/schema'
+const API_BASE_URL = 'http://localhost:4000/api/selections'
 
-function updateEndpoints(collection: string) {
-  editor.setAttribute('autocompletions', `${SCHEMA_BASE_URL}?collection=${collection}`)
-  editor.setAttribute('suggestions', `${SUGGESTIONS_BASE_URL}?collection=${collection}`)
+function updateEndpoint(collection: string) {
+  editor.setAttribute('endpoint', `${API_BASE_URL}/${collection}`)
 }
 
-// Update endpoints when collection changes
+// Update endpoint when collection changes
 collectionSelect.addEventListener('change', () => {
-  updateEndpoints(collectionSelect.value)
+  updateEndpoint(collectionSelect.value)
 })
 
 form.addEventListener('submit', async (e) => {

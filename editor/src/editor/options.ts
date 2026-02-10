@@ -3,8 +3,8 @@ import { OnUpdateCallbackFn } from './on-update'
 
 export type DequelEditorOptions = {
   value: string
-  completionEndpoint: string
-  autocompletionsEndpoint?: string
+  /** Base endpoint URL for API requests (e.g., "/api/dql") */
+  endpoint?: string
   onUpdate: OnUpdateCallbackFn
   onSubmit?: () => void
   suggestions: boolean

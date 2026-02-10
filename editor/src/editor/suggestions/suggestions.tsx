@@ -4,6 +4,7 @@ import { StateEffect, StateField } from '@codemirror/state'
 import axios from 'axios'
 import { SuggestionView } from '../../components/SuggestionView'
 import { raise } from '../../lib/error'
+import { DequelEditorOptions } from '../options'
 
 /**
  * Action type in API responses.
@@ -63,13 +64,15 @@ export const Suggestions = ViewPlugin.fromClass(
     #dom: HTMLElement
 
     constructor(view: EditorView) {
+      const hostId = (view.dom.getRootNode() as ShadowRoot).host?.id
       this.#dom =
-        document.querySelector(`[for="${view.dom.parentElement?.id}"]`) ||
+        document.querySelector(`[for="${hostId}"]`) ||
         raise(`no suggestion container found`)
 
-      const endpoint = this.#dom.getAttribute('endpoint')
-      if (endpoint) {
-        this.fetchSuggestions(view, endpoint)
+      const options = view.state.facet(DequelEditorOptions)[0]
+      const baseEndpoint = options?.endpoint
+      if (baseEndpoint) {
+        this.fetchSuggestions(view, `${baseEndpoint}/suggestions`)
       }
     }
 

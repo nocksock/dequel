@@ -36,10 +36,10 @@ export const CompletionFetcher = ViewPlugin.fromClass(
   class {
     constructor(view: EditorView) {
       const options = view.state.facet(DequelEditorOptions)[0];
-      const endpoint = options?.autocompletionsEndpoint;
+      const baseEndpoint = options?.endpoint;
 
-      if (endpoint) {
-        this.fetchSchema(view, endpoint);
+      if (baseEndpoint) {
+        this.fetchSchema(view, `${baseEndpoint}/schema`);
       }
     }
 
