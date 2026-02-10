@@ -13,6 +13,8 @@
 
   packages = with pkgs; [
     elixir-ls
+    fd
+    entr
     ] ++ lib.optionals stdenv.isLinux [
       # For ExUnit Notifier on Linux.
       libnotify
@@ -47,13 +49,13 @@
       echo "Installing Elixir dependencies..."
       mix deps.get
 
-      echo "Installing editor dependencies..."
-      cd editor && pnpm install
+      echo "Installing workspace dependencies..."
+      pnpm install
     '';
     before = [ "devenv:enterShell" ];
     status = ''
       # Skip if deps are already installed
-      [ -d deps ] && [ -d editor/node_modules ]
+      [ -d deps ] && [ -d node_modules ]
     '';
   };
 
@@ -140,13 +142,27 @@
   # DEVELOPMENT PROCESSES
   # ===================
 
+  processes.editor = {
+    exec = "pnpm dev:build";
+    cwd = "editor";
+  };
+
   processes.demo = {
     exec = "mix deps.get --quiet && mix ecto.migrate --quiet && mix phx.server";
     cwd = "demo";
   };
 
-  processes.editor = {
-    exec = "pnpm dev";
+  processes.test = {
+    exec = "MIX_ENV=test mix test";
+  };
+
+  processes.test-editor = {
+    exec = "pnpm test";
+    cwd = "editor";
+  };
+
+  processes.test-editor-chrome = {
+    exec = "pnpm test:wtr";
     cwd = "editor";
   };
 }
