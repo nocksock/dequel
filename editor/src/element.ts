@@ -1,5 +1,5 @@
 import type { DequelEditor } from './editor/index.js'
-import { SchemaEffect, SchemaField } from './editor/completion.js'
+import { SchemaCache, SchemaEffect, SchemaField } from './editor/completion.js'
 import { Suggestions, SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
 import { detectLocale, loadTranslations } from './lib/i18n.js'
@@ -33,6 +33,7 @@ export class DequelEditorElement extends HTMLElement {
     #collection!: string
     #internals: ElementInternals
     editor?: DequelEditor
+    schemaCache?: SchemaCache
 
     constructor() {
         super()
@@ -81,6 +82,9 @@ export class DequelEditorElement extends HTMLElement {
 
         this.#value = this.value
 
+        // Initialize schema cache for relationship path resolution
+        this.schemaCache = new SchemaCache(this.endpoint)
+
         // Initialize i18n with locale detection
         const locale = detectLocale(this.getAttribute('locale'))
         if (locale !== 'en') {
@@ -101,6 +105,7 @@ export class DequelEditorElement extends HTMLElement {
                     endpoint: this.endpoint,
                     collection: this.#collection,
                     onUpdate: () => { },
+                    schemaCache: this.schemaCache,
                 }),
                 OnUpdate(newValue => {
                     this.value = newValue
@@ -149,6 +154,8 @@ export class DequelEditorElement extends HTMLElement {
     private updateSchema() {
         axios.get(this.currentSchemaEndpoint)
             .then(({ data }) => {
+                // Prime the cache with the base schema
+                this.schemaCache?.prime(this.collection, data)
                 this.editor?.dispatch({
                     effects: SchemaEffect.of(data),
                 })

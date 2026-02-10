@@ -32,6 +32,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
+    "dev:build": "pnpm i18n:build && pnpm build:full --watch",
     "build": "pnpm i18n:build && pnpm build:full && pnpm build:lang",
     "build:full": "BUILD_MODE=full vite build",
     "build:lang": "BUILD_MODE=lang vite build",

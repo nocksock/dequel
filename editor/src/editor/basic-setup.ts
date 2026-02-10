@@ -3,6 +3,7 @@ import {
   closeBrackets,
   closeBracketsKeymap,
   completionKeymap,
+  startCompletion,
 } from "@codemirror/autocomplete";
 import { history } from "@codemirror/commands";
 import { EditorView, keymap } from "@codemirror/view";
@@ -27,7 +28,18 @@ export const basicSetup = () => [
     ...closeBracketsKeymap,
   ]),
   closeBrackets(),
-  autocompletion(),
+  autocompletion({
+    activateOnTyping: true,
+    activateOnTypingDelay: 0,
+  }),
+  // Trigger completion when '.' is typed (for relationship paths)
+  EditorView.inputHandler.of((view, _from, _to, text) => {
+    if (text === ".") {
+      // Schedule completion after the '.' is inserted
+      setTimeout(() => startCompletion(view), 0);
+    }
+    return false; // Don't prevent default handling
+  }),
   history(),
   indentOnInput(),
   EditorView.lineWrapping,
