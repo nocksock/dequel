@@ -1,0 +1,20 @@
+  <div class="card bg-base-100 shadow-sm border border-base-300">
+    <div class="card-body">
+      <h3 class="card-title text-lg">Query Syntax</h3>
+      <ul class="list-disc list-inside space-y-1 text-sm">
+        <li><code class="bg-base-200 px-1 rounded">genre:fiction</code> - Exact match</li>
+        <li><code class="bg-base-200 px-1 rounded">title:*journey</code> - Contains "journey"</li>
+        <li><code class="bg-base-200 px-1 rounded">title:^"The"</code> - Starts with "The"</li>
+        <li><code class="bg-base-200 px-1 rounded">title:$"end"</code> - Ends with "end"</li>
+        <li>
+          <code class="bg-base-200 px-1 rounded">genre:fiction genre:mystery</code>
+          - AND (both conditions)
+        </li>
+        <li>
+          <code class="bg-base-200 px-1 rounded">genre:fiction or genre:mystery</code>
+          - OR (either condition)
+        </li>
+        <li><code class="bg-base-200 px-1 rounded">-genre:fiction</code> - Exclude (NOT fiction)</li>
+      </ul>
+    </div>
+  </div>

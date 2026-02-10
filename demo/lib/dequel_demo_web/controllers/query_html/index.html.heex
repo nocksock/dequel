@@ -1,0 +1,71 @@
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold mb-2">Dequel Demo</h1>
+  <p class="text-gray-600 mb-6">Query the bookstore database using Dequel syntax.</p>
+
+  <div class="card bg-base-100 shadow-md mb-6">
+    <div class="card-body">
+      <form action="/" method="get">
+        <div class="form-control mb-4">
+          <label class="label" for="collection">
+            <span class="label-text font-medium">Collection</span>
+          </label>
+          <select
+            id="collection"
+            name="collection"
+            class="select select-bordered w-full max-w-xs"
+          >
+            <%= for col <- @collections do %>
+              <option value={col} selected={col == @collection}><%= col %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <div class="form-control mb-4">
+          <label class="label" for="editor">
+            <span class="label-text font-medium">Query</span>
+          </label>
+          <dequel-editor
+            id="editor"
+            name="query"
+            endpoint="/api/dql"
+            collection={@collection}
+            class="w-full min-h-[80px] border border-base-300 rounded-lg p-2 bg-base-100 font-mono"
+          />
+          <dequel-suggestions class="empty:hidden flex flex-col gap-2 text-sm pt-2" for="editor" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          Run Query
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="result" class="mb-6">
+    <%= if @error do %>
+      <div class="alert alert-error">
+        <span><%= @error %></span>
+      </div>
+    <% end %>
+
+    <%= if @results != [] do %>
+      <div class="font-semibold mb-2"><%= length(@results) %> results:</div>
+      <div class="space-y-1">
+        <%= for item <- @results do %>
+          <div class="bg-base-100 border border-base-300 rounded p-3 font-mono text-sm">
+            <%= item.title || item.name || "ID: #{item.id}" %>
+            <span class="text-gray-400">(id: <%= item.id %>)</span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= if @results == [] and is_nil(@error) do %>
+      <div class="alert alert-info">
+        <span>Enter a query above and click Run Query.</span>
+      </div>
+    <% end %>
+  </div>
+
+  <.syntax_help />
+</div>

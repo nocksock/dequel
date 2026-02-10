@@ -17,14 +17,15 @@ defmodule DequelDemoWeb.Router do
   scope "/", DequelDemoWeb do
     pipe_through :browser
 
-    live "/", QueryLive
+    get "/", QueryController, :index
   end
 
-  # API endpoints for editor autocompletions
-  scope "/api", DequelDemoWeb do
+  # API endpoints for editor
+  scope "/api/dql", DequelDemoWeb do
     pipe_through :api
 
-    get "/schema", ApiController, :schema
+    get "/:collection/schema", ApiController, :schema
+    get "/:collection/suggestions", ApiController, :suggestions
   end
 
   # Enable LiveDashboard in development

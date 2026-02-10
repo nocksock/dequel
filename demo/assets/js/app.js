@@ -20,33 +20,16 @@
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 
-// Import the dequel-editor web component
-import "../vendor/dequel-editor.js"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/dequel_demo"
 import topbar from "../vendor/topbar"
 
-// DequelEditor hook for integrating the dequel-editor web component
-const DequelEditor = {
-  mounted() {
-    const editor = this.el;
-
-    // Push query changes to LiveView
-    editor.addEventListener('input', () => {
-      this.pushEvent('query_changed', { query: editor.value || '' });
-    });
-  },
-  updated() {
-    // Schema updates are handled via the autocompletions attribute
-    // which the web component watches
-  }
-};
+import "../../../editor/src/element.ts"
 
 const Hooks = {
-  ...colocatedHooks,
-  DequelEditor
+  ...colocatedHooks
 };
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

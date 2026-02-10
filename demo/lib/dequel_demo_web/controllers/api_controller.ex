@@ -1,22 +1,33 @@
 defmodule DequelDemoWeb.ApiController do
   @moduledoc """
-  JSON API controller for editor autocompletions.
+  JSON API controller for editor autocompletions and suggestions.
   """
 
   use DequelDemoWeb, :controller
 
   alias DequelDemo.Bookstore
 
-  def schema(conn, params) do
-    collection = params["collection"] || "books"
-    schema = Bookstore.get_schema(collection)
+  def schema(conn, %{"collection" => collection}) do
+    case Bookstore.get_schema(collection) do
+      {:error, message} ->
+        conn
+        |> put_status(400)
+        |> json(%{error: message})
 
-    if schema == [] and collection not in Bookstore.collections() do
-      conn
-      |> put_status(400)
-      |> json(%{error: "Unknown collection: #{collection}"})
-    else
-      json(conn, schema)
+      schema ->
+        json(conn, schema)
+    end
+  end
+
+  def suggestions(conn, %{"collection" => collection}) do
+    case Bookstore.get_suggestions(collection) do
+      {:error, message} ->
+        conn
+        |> put_status(400)
+        |> json(%{error: message})
+
+      suggestions ->
+        json(conn, suggestions)
     end
   end
 end

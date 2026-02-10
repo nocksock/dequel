@@ -15,37 +15,45 @@ defmodule DequelDemo.Bookstore do
     "reviews" => Review
   }
 
+  # Schema definitions for each collection
+  # Format: fields list with optional values for enum fields
   @schemas %{
-    "books" => [
-      %{name: "title", type: "string", description: "Book title"},
-      %{name: "isbn", type: "string", description: "ISBN identifier"},
-      %{name: "price", type: "decimal", description: "Book price"},
-      %{name: "published_at", type: "date", description: "Publication date"},
-      %{name: "page_count", type: "integer", description: "Number of pages"},
-      %{
-        name: "genre",
-        type: "string",
-        description: "Book genre",
-        values: Book.genres()
+    "books" => %{
+      fields: [
+        %{label: "title", type: "string", info: "Book title"},
+        %{label: "isbn", type: "string", info: "ISBN identifier"},
+        %{label: "price", type: "number", info: "Book price"},
+        %{label: "published_at", type: "string", info: "Publication date"},
+        %{label: "page_count", type: "number", info: "Number of pages"},
+        %{label: "genre", type: "keyword", info: "Book genre"}
+      ],
+      values: %{
+        "genre" => Book.genres()
       }
-    ],
-    "authors" => [
-      %{name: "name", type: "string", description: "Author name"},
-      %{name: "bio", type: "string", description: "Author biography"},
-      %{name: "birth_date", type: "date", description: "Birth date"},
-      %{name: "country", type: "string", description: "Country of origin"}
-    ],
-    "bookstores" => [
-      %{name: "name", type: "string", description: "Store name"},
-      %{name: "location", type: "string", description: "Store location"},
-      %{name: "rating", type: "decimal", description: "Store rating"},
-      %{name: "founded_at", type: "date", description: "Date founded"}
-    ],
-    "reviews" => [
-      %{name: "content", type: "string", description: "Review content"},
-      %{name: "rating", type: "integer", description: "Star rating (1-5)"},
-      %{name: "reviewer_name", type: "string", description: "Reviewer name"}
-    ]
+    },
+    "authors" => %{
+      fields: [
+        %{label: "name", type: "string", info: "Author name"},
+        %{label: "bio", type: "string", info: "Author biography"},
+        %{label: "birth_date", type: "string", info: "Birth date"},
+        %{label: "country", type: "string", info: "Country of origin"}
+      ]
+    },
+    "bookstores" => %{
+      fields: [
+        %{label: "name", type: "string", info: "Store name"},
+        %{label: "location", type: "string", info: "Store location"},
+        %{label: "rating", type: "number", info: "Store rating"},
+        %{label: "founded_at", type: "string", info: "Date founded"}
+      ]
+    },
+    "reviews" => %{
+      fields: [
+        %{label: "content", type: "string", info: "Review content"},
+        %{label: "rating", type: "number", info: "Star rating (1-5)"},
+        %{label: "reviewer_name", type: "string", info: "Reviewer name"}
+      ]
+    }
   }
 
   @doc """
@@ -55,9 +63,116 @@ defmodule DequelDemo.Bookstore do
 
   @doc """
   Returns the schema (field definitions) for a collection.
+  Returns `{:error, message}` for unknown collections.
   """
   def get_schema(collection) do
-    Map.get(@schemas, collection, [])
+    case Map.fetch(@schemas, collection) do
+      {:ok, schema} -> schema
+      :error -> {:error, "Unknown collection: #{collection}"}
+    end
+  end
+
+  @doc """
+  Returns suggestions configuration for a collection.
+  Keys are field names matched to cursor context.
+  "*" is the fallback when cursor is not in a recognized field.
+  """
+  def get_suggestions("books") do
+    %{
+      "*" => %{
+        title: "Filter books",
+        values: [
+          %{label: "title:", action: %{type: "append", value: "title:"}, description: "Filter by title"},
+          %{label: "genre:", action: %{type: "append", value: "genre:"}, description: "Filter by genre"},
+          %{label: "isbn:", action: %{type: "append", value: "isbn:"}, description: "Filter by ISBN"}
+        ]
+      },
+      "title" => %{
+        title: "Filter by title",
+        description: "Text matching on book titles",
+        type: "text"
+      },
+      "genre" => %{
+        title: "Filter by genre",
+        type: "keyword",
+        values:
+          Enum.map(Book.genres(), fn genre ->
+            %{label: genre, action: %{type: "setPredicate", value: "\"#{genre}\""}, description: "Books in #{genre}"}
+          end)
+      },
+      "isbn" => %{
+        title: "Filter by ISBN",
+        type: "text"
+      }
+    }
+  end
+
+  def get_suggestions("authors") do
+    %{
+      "*" => %{
+        title: "Filter authors",
+        values: [
+          %{label: "name:", action: %{type: "append", value: "name:"}, description: "Filter by name"},
+          %{label: "country:", action: %{type: "append", value: "country:"}, description: "Filter by country"}
+        ]
+      },
+      "name" => %{
+        title: "Filter by name",
+        type: "text"
+      },
+      "country" => %{
+        title: "Filter by country",
+        type: "text"
+      }
+    }
+  end
+
+  def get_suggestions("bookstores") do
+    %{
+      "*" => %{
+        title: "Filter bookstores",
+        values: [
+          %{label: "name:", action: %{type: "append", value: "name:"}, description: "Filter by name"},
+          %{label: "location:", action: %{type: "append", value: "location:"}, description: "Filter by location"}
+        ]
+      },
+      "name" => %{
+        title: "Filter by name",
+        type: "text"
+      },
+      "location" => %{
+        title: "Filter by location",
+        type: "text"
+      }
+    }
+  end
+
+  def get_suggestions("reviews") do
+    %{
+      "*" => %{
+        title: "Filter reviews",
+        values: [
+          %{label: "reviewer_name:", action: %{type: "append", value: "reviewer_name:"}, description: "Filter by reviewer"},
+          %{label: "rating:", action: %{type: "append", value: "rating:"}, description: "Filter by rating"}
+        ]
+      },
+      "reviewer_name" => %{
+        title: "Filter by reviewer name",
+        type: "text"
+      },
+      "rating" => %{
+        title: "Filter by rating",
+        type: "keyword",
+        values:
+          Enum.map(1..5, fn r ->
+            %{label: "#{r}", action: %{type: "setPredicate", value: "#{r}"}, description: "#{r}-star reviews"}
+          end)
+      }
+    }
+  end
+
+  def get_suggestions(_collection) do
+    {:error, "Unknown collection"}
   end
 
   @doc """
