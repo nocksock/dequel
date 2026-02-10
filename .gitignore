@@ -52,3 +52,5 @@ bench.db*
 demo.db
 demo.db-shm
 demo.db-wal
+priv/static/style.css
+node_modules
