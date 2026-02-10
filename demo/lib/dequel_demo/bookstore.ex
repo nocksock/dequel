@@ -25,7 +25,10 @@ defmodule DequelDemo.Bookstore do
         %{label: "price", type: "number", info: "Book price"},
         %{label: "published_at", type: "string", info: "Publication date"},
         %{label: "page_count", type: "number", info: "Number of pages"},
-        %{label: "genre", type: "keyword", info: "Book genre"}
+        %{label: "genre", type: "keyword", info: "Book genre"},
+        %{label: "author", type: "relationship", target: "authors", info: "Book author"},
+        %{label: "bookstore", type: "relationship", target: "bookstores", info: "Store selling this book"},
+        %{label: "reviews", type: "relationship", target: "reviews", cardinality: "many", info: "Book reviews"}
       ],
       values: %{
         "genre" => Book.genres()
@@ -36,7 +39,8 @@ defmodule DequelDemo.Bookstore do
         %{label: "name", type: "string", info: "Author name"},
         %{label: "bio", type: "string", info: "Author biography"},
         %{label: "birth_date", type: "string", info: "Birth date"},
-        %{label: "country", type: "string", info: "Country of origin"}
+        %{label: "country", type: "string", info: "Country of origin"},
+        %{label: "books", type: "relationship", target: "books", cardinality: "many", info: "Books by this author"}
       ]
     },
     "bookstores" => %{
@@ -44,14 +48,16 @@ defmodule DequelDemo.Bookstore do
         %{label: "name", type: "string", info: "Store name"},
         %{label: "location", type: "string", info: "Store location"},
         %{label: "rating", type: "number", info: "Store rating"},
-        %{label: "founded_at", type: "string", info: "Date founded"}
+        %{label: "founded_at", type: "string", info: "Date founded"},
+        %{label: "books", type: "relationship", target: "books", cardinality: "many", info: "Books in this store"}
       ]
     },
     "reviews" => %{
       fields: [
         %{label: "content", type: "string", info: "Review content"},
         %{label: "rating", type: "number", info: "Star rating (1-5)"},
-        %{label: "reviewer_name", type: "string", info: "Reviewer name"}
+        %{label: "reviewer_name", type: "string", info: "Reviewer name"},
+        %{label: "book", type: "relationship", target: "books", info: "Reviewed book"}
       ]
     }
   }
