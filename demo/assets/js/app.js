@@ -26,7 +26,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/dequel_demo"
 import topbar from "../vendor/topbar"
 
-import "../../../editor/src/element.ts"
+import "dequel-editor"
 
 const Hooks = {
   ...colocatedHooks

@@ -1,0 +1,11 @@
+{
+  "name": "dequel-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter dequel-editor dev",
+    "build": "pnpm --filter dequel-editor build",
+    "test": "pnpm --filter dequel-editor test",
+    "lint": "pnpm --filter dequel-editor lint"
+  }
+}
