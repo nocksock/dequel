@@ -24,16 +24,6 @@ export const hasParent = (name: string, node: SyntaxNode) =>
 // Predicate to check if a character is whitespace.
 export const isWhitespace = (char: string) => char.trim() === ''
 
-export const CurrentNodeField = StateField.define<SyntaxNode | null>({
-  create: () => null,
-  update: (_value, { state }) => {
-    const { anchor } = state.selection.main
-    const tree = syntaxTree(state)
-    const curNode = tree.resolve(anchor, -1)
-    return curNode.node
-  },
-})
-
 // Flattens a NodeIterator into an array of node names.
 // Can be useful to get the hierarchy of nodes from a given node up to the root,
 // like a path representation of the syntax tree.
