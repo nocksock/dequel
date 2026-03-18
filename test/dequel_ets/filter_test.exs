@@ -55,6 +55,11 @@ defmodule Dequel.Adapter.EtsTest do
       assert ~ONE<name:frodo> == frodo
     end
 
+    test "empty query returns all", %{frodo: frodo, bilbo: bilbo, samwise: samwise} do
+      result = ~ALL<>
+      assert Enum.sort_by(result, & &1.name) == Enum.sort_by([frodo, bilbo, samwise], & &1.name)
+    end
+
     test "binary and", %{frodo: frodo} do
       assert ~ALL<name:frodo description:baggins> == [frodo]
     end
@@ -110,91 +115,8 @@ defmodule Dequel.Adapter.EtsTest do
     end
   end
 
-  describe "nested field paths (relationship filtering)" do
-    # These tests use raw maps with nested structure instead of the Item struct
-    # to test the ETS adapter's ability to handle nested data
-
-    test "filters by single-level nested field" do
-      records = [
-        %{id: 1, name: "LOTR", author: %{name: "Tolkien"}},
-        %{id: 2, name: "Dune", author: %{name: "Herbert"}}
-      ]
-
-      ast = Dequel.Parser.parse!("author.name:Tolkien")
-      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
-
-      assert length(result) == 1
-      assert hd(result).name == "LOTR"
-    end
-
-    test "filters by deeply nested field" do
-      records = [
-        %{id: 1, name: "LOTR", author: %{name: "Tolkien", address: %{city: "Oxford"}}},
-        %{id: 2, name: "Dune", author: %{name: "Herbert", address: %{city: "Seattle"}}}
-      ]
-
-      ast = Dequel.Parser.parse!("author.address.city:Oxford")
-      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
-
-      assert length(result) == 1
-      assert hd(result).name == "LOTR"
-    end
-
-    test "filters nested field with contains predicate" do
-      records = [
-        %{id: 1, name: "LOTR", author: %{name: "J.R.R. Tolkien"}},
-        %{id: 2, name: "Dune", author: %{name: "Frank Herbert"}}
-      ]
-
-      ast = Dequel.Parser.parse!("author.name:*Tolkien")
-      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
-
-      assert length(result) == 1
-      assert hd(result).name == "LOTR"
-    end
-
-    test "handles missing nested path gracefully" do
-      records = [
-        %{id: 1, name: "LOTR", author: %{name: "Tolkien"}},
-        # No author
-        %{id: 2, name: "Dune"}
-      ]
-
-      ast = Dequel.Parser.parse!("author.name:Tolkien")
-      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
-
-      assert length(result) == 1
-      assert hd(result).name == "LOTR"
-    end
-
-    test "combines nested and simple fields" do
-      records = [
-        %{id: 1, name: "LOTR", genre: "fantasy", author: %{name: "Tolkien"}},
-        %{id: 2, name: "Dune", genre: "scifi", author: %{name: "Herbert"}},
-        %{id: 3, name: "Hobbit", genre: "fantasy", author: %{name: "Tolkien"}}
-      ]
-
-      ast = Dequel.Parser.parse!("author.name:Tolkien genre:fantasy")
-      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
-
-      assert length(result) == 2
-      names = Enum.map(result, & &1.name) |> Enum.sort()
-      assert names == ["Hobbit", "LOTR"]
-    end
-
-    test "nested field with negation" do
-      records = [
-        %{id: 1, name: "LOTR", author: %{name: "Tolkien"}},
-        %{id: 2, name: "Dune", author: %{name: "Herbert"}}
-      ]
-
-      ast = Dequel.Parser.parse!("-author.name:Tolkien")
-      result = Dequel.Adapter.Ets.FilterImpl.filter(ast, records)
-
-      assert length(result) == 1
-      assert hd(result).name == "Dune"
-    end
-  end
+  # Note: ETS adapter does not support relationship filtering (nested field paths).
+  # Use the Ecto adapter for relationship queries.
 
   describe "comparison operators" do
     setup do
@@ -227,6 +149,54 @@ defmodule Dequel.Adapter.EtsTest do
     test "less than or equal", %{records: records} do
       result = Dequel.Adapter.Ets.FilterImpl.filter("quantity:<=15", records)
       assert length(result) == 2
+    end
+  end
+
+  describe "date comparison" do
+    setup do
+      records = [
+        %{id: 1, name: "old", published_at: ~D[2020-01-15]},
+        %{id: 2, name: "mid", published_at: ~D[2023-06-01]},
+        %{id: 3, name: "new", published_at: ~D[2025-03-20]}
+      ]
+
+      %{records: records}
+    end
+
+    test "date greater than", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("published_at:>2023-01-01", records)
+      assert length(result) == 2
+      assert Enum.all?(result, fn r -> Date.compare(r.published_at, ~D[2023-01-01]) == :gt end)
+    end
+
+    test "date less than", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("published_at:<2023-01-01", records)
+      assert length(result) == 1
+      assert hd(result).name == "old"
+    end
+
+    test "date greater than or equal", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("published_at:>=2023-06-01", records)
+      assert length(result) == 2
+    end
+
+    test "date range", %{records: records} do
+      result =
+        Dequel.Adapter.Ets.FilterImpl.filter("published_at:2020-01-01..2023-12-31", records)
+
+      assert length(result) == 2
+      assert Enum.all?(result, fn r -> r.name in ["old", "mid"] end)
+    end
+
+    test "date YYYY-MM in comparison", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("published_at:>=2023-06", records)
+      assert length(result) == 2
+    end
+
+    test "negated date comparison", %{records: records} do
+      result = Dequel.Adapter.Ets.FilterImpl.filter("published_at:!>2023-01-01", records)
+      assert length(result) == 1
+      assert hd(result).name == "old"
     end
   end
 

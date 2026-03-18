@@ -1,15 +1,17 @@
-import { useState } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import { EditorView } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { CurrentNodeField } from '../editor/current-node'
 import { getFieldContextWithTree } from '../lib/syntax'
 import { SuggestionSchemaField } from '../editor/suggestions/suggestions'
+import { SchemaField, Schema, FieldDefinition, resolvePathSchema } from '../editor/completion'
+import { DequelEditorOptions } from '../editor/options'
 import { getActions, applyAction, ActionContext, SuggestionAction } from '../lib/actions'
 import { closestCondition } from '../lib/syntax'
 import { renderState } from '../lib/debug'
 import { gettext } from '../lib/i18n'
 
-export type SuggestionViewProps = {
+type SuggestionViewProps = {
   view: EditorView
 }
 
@@ -33,10 +35,97 @@ function buildActionContext(view: EditorView): ActionContext | null {
   }
 }
 
+function appendFieldToQuery(view: EditorView, fieldName: string, isRelationship: boolean, currentPath: string) {
+  const { state } = view
+  const doc = state.doc
+  const content = doc.toString()
+
+  // If we have a current path (e.g., "author."), append to it
+  // Otherwise start fresh
+  const suffix = isRelationship ? '.' : ':'
+
+  if (currentPath) {
+    // We're continuing a relationship path - just append the field name
+    const pos = doc.length
+    const insertion = fieldName + suffix
+    view.dispatch({
+      changes: { from: pos, insert: insertion },
+      selection: { anchor: pos + insertion.length },
+    })
+  } else {
+    // Starting fresh
+    const needsSpace = content.length > 0 && !content.endsWith(' ') && !content.endsWith('.')
+    const insertion = (needsSpace ? ' ' : '') + fieldName + suffix
+    const pos = doc.length
+    view.dispatch({
+      changes: { from: pos, insert: insertion },
+      selection: { anchor: pos + insertion.length },
+    })
+  }
+  view.focus()
+}
+
+function setFieldPredicate(view: EditorView, fieldName: string, value: string, currentPath: string) {
+  const { state } = view
+  const doc = state.doc
+  const content = doc.toString()
+
+  const fullField = currentPath ? currentPath + fieldName : fieldName
+
+  if (currentPath) {
+    // Continuing a path - just append field:value
+    const pos = doc.length
+    const insertion = fieldName + ':' + value
+    view.dispatch({
+      changes: { from: pos, insert: insertion },
+      selection: { anchor: pos + insertion.length },
+    })
+  } else {
+    const needsSpace = content.length > 0 && !content.endsWith(' ')
+    const insertion = (needsSpace ? ' ' : '') + fullField + ':' + value
+    const pos = doc.length
+    view.dispatch({
+      changes: { from: pos, insert: insertion },
+      selection: { anchor: pos + insertion.length },
+    })
+  }
+  view.focus()
+}
+
+// Extract relationship path from current query position
+function getCurrentRelationshipPath(state: EditorView['state']): string {
+  const content = state.doc.toString()
+  // Match a trailing relationship path like "author." or "author.publisher."
+  const match = content.match(/(\w+\.)+$/)
+  return match ? match[0] : ''
+}
+
 export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
   const [showDebug, setShowDebug] = useState(false)
+  const [expandedField, setExpandedField] = useState<string | null>(null)
+  const [resolvedSchema, setResolvedSchema] = useState<Schema | null>(null)
   const current = state.field(CurrentNodeField)
   const suggestionSchema = state.field(SuggestionSchemaField)
+  const schema = state.field(SchemaField, false)
+
+  // Get schema cache from options
+  const options = state.facet(DequelEditorOptions)
+  const schemaCache = options[0]?.schemaCache
+
+  // Detect current relationship path (e.g., "author." or "author.publisher.")
+  const currentPath = getCurrentRelationshipPath(state)
+  const pathSegments = currentPath ? currentPath.slice(0, -1).split('.') : []
+
+  // Resolve relationship path to get target schema
+  useEffect(() => {
+    if (pathSegments.length > 0 && schema && schemaCache) {
+      resolvePathSchema(pathSegments, schema, schemaCache)
+        .then((resolved) => setResolvedSchema(resolved))
+        .catch(() => setResolvedSchema(null))
+    } else {
+      setResolvedSchema(null)
+    }
+  }, [currentPath, schema, schemaCache])
 
   if (!current) {
     return null
@@ -55,12 +144,11 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
   if (!ctx) return null
 
   const actions = getActions(ctx)
-  const modifiers = actions.filter((a) => a.type === 'transform')
   const values = actions.filter((a) => a.type !== 'transform')
 
   const createClickHandler =
-    (action: SuggestionAction): React.MouseEventHandler<HTMLButtonElement> =>
-    (e) => {
+    (action: SuggestionAction) =>
+    (e: MouseEvent) => {
       e.preventDefault()
       view.dispatch(applyAction(ctx, action))
       view.focus()
@@ -72,58 +160,101 @@ export function SuggestionView({ view, view: { state } }: SuggestionViewProps) {
   const fieldValue = fieldNode ? state.doc.sliceString(fieldNode.from, fieldNode.to) : '*'
   const schemaForField = suggestionSchema[fieldValue] ?? suggestionSchema['*']
 
+  // Use resolved schema if we're in a relationship path, otherwise use base schema
+  const displaySchema = resolvedSchema || schema
+  const schemaFields = displaySchema ? Object.entries(displaySchema.fields) : []
+  const fieldsTitle = currentPath ? currentPath.slice(0, -1) : gettext('Fields')
+
   return (
     <div className="card space-y-3">
-      <h2 className="divider text-sm font-semibold text-base-content/70">
-        {schemaForField?.title || gettext('Narrow your search')}
-      </h2>
-
-      {schemaForField?.description && (
-        <p className="text-sm text-base-content/60 mb-2">{schemaForField.description}</p>
-      )}
-
-      {values.length > 0 && (
-        <ul className="grid gap-2">
-          {values.map((action) => (
-            <li key={action.id} className="contents">
-              <button className="btn justify-start" onClick={createClickHandler(action)}>
-                <span className="font-medium font-mono text-primary">{action.label}</span>
-                <span className="text-base-content/60 text-xs">
-                  {action.description}
-                  {showDebug && (
-                    <span className="badge badge-ghost badge-xs ml-1">{action.type}</span>
-                  )}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {modifiers.length > 0 && (
-        <div className="mt-4">
-          <h3 className="divider text-xs text-base-content/50">{gettext('Condition modifiers')}</h3>
-          <div className="flex gap-2">
-            {modifiers.map((action) => {
-              const isActive =
-                (action.id === 'negate' && ctx.condition?.name === 'ExcludeCondition') ||
-                (action.id === 'disable' && ctx.condition?.name === 'IgnoredCondition')
-
+      {/* Schema-based field suggestions */}
+      {schemaFields.length > 0 && (
+        <section>
+          <h3 className="divider text-sm font-semibold text-base-content/70">
+            {fieldsTitle}
+          </h3>
+          <ul className="space-y-1">
+            {schemaFields.map(([name, field]) => {
+              const isRelationship = field.type === 'relationship'
+              const hasValues = field.values?.length
               return (
-                <button
-                  key={action.id}
-                  className={`btn btn-sm flex-1 ${isActive ? 'btn-active' : ''}`}
-                  onClick={createClickHandler(action)}
-                  title={action.description}
-                >
-                  <span className="font-mono">{action.label}</span>
-                  <span className="text-xs">{action.description}</span>
-                </button>
+                <li key={name}>
+                  <div className="flex flex-col">
+                    <button
+                      type="button"
+                      className="w-full btn btn-sm btn-ghost justify-start gap-2"
+                      onClick={() => {
+                        if (hasValues) {
+                          setExpandedField(expandedField === name ? null : name)
+                        } else {
+                          appendFieldToQuery(view, name, isRelationship, currentPath)
+                        }
+                      }}
+                    >
+                      <span className="font-mono text-primary">{name}</span>
+                      <span className="text-xs text-base-content/50">{field.type}</span>
+                      {isRelationship && (
+                        <span className="text-xs text-base-content/40">→</span>
+                      )}
+                      {hasValues && (
+                        <span className="text-xs text-base-content/40 ml-auto">
+                          {expandedField === name ? '▼' : '▶'}
+                        </span>
+                      )}
+                    </button>
+                    {expandedField === name && field.values && (
+                      <ul className="ml-4 mt-1 space-y-1">
+                        {field.values.map((v) => (
+                          <li key={v}>
+                            <button
+                              type="button"
+                              className="w-full btn btn-xs btn-ghost justify-start"
+                              onClick={() => setFieldPredicate(view, name, `"${v}"`, currentPath)}
+                            >
+                              <span className="font-mono text-secondary">{v}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </li>
               )
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
+
+      {/* Curated suggestions */}
+      <section>
+        <h3 className="divider text-sm font-semibold text-base-content/70">
+          {schemaForField?.title || gettext('Suggestions')}
+        </h3>
+
+        {schemaForField?.description && (
+          <p className="text-sm text-base-content/60 mb-2">{schemaForField.description}</p>
+        )}
+
+        {values.length > 0 && (
+          <>
+            <ul className="space-y-3">
+              {values.map((action) => (
+                <li key={action.id} className="contents">
+                  <button type="button" title={action.description} className="w-full block btn justify-start *:border" onClick={createClickHandler(action)}>
+                    <span className="font-medium font-mono text-primary mr-2">{action.label}</span>
+                    <span className="text-base-content/60 text-xs">
+                      {action.description}
+                      {showDebug && (
+                        <span className="badge badge-ghost badge-xs ml-1">{action.type}</span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
 
       <div className="flex justify-end items-center gap-2">
         <label className="label cursor-pointer gap-2">

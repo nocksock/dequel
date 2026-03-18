@@ -25,8 +25,6 @@ const uuidPredicates: PredicateDefinition[] = [
 ]
 
 const datePredicates: PredicateDefinition[] = [
-  { label: 'after()', value: 'after(|)', description: () => gettext('After this date') },
-  { label: 'before()', value: 'before(|)', description: () => gettext('Before this date') },
   { label: 'between()', value: 'between(|,)', description: () => gettext('Between two dates') },
 ]
 

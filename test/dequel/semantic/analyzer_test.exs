@@ -22,14 +22,14 @@ defmodule Dequel.Semantic.AnalyzerTest do
 
   describe "analyze/2 without resolver" do
     test "passes through block nodes unchanged when no resolver provided" do
-      ast = {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+      ast = {:block, [], ["items", {:==, [], ["name", "foo"]}]}
 
       assert Analyzer.analyze(ast, nil) == ast
       assert Analyzer.analyze(ast) == ast
     end
 
     test "passes through comparison operators unchanged" do
-      ast = {:==, [], [:name, "foo"]}
+      ast = {:==, [], ["name", "foo"]}
       assert Analyzer.analyze(ast) == ast
     end
 
@@ -37,8 +37,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       ast =
         {:and, [],
          [
-           {:==, [], [:title, "LOTR"]},
-           {:block, [], [:items, {:==, [], [:name, "ring"]}]}
+           {:==, [], ["title", "LOTR"]},
+           {:block, [], ["items", {:==, [], ["name", "ring"]}]}
          ]}
 
       result = Analyzer.analyze(ast, nil)
@@ -46,8 +46,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       assert result ==
                {:and, [],
                 [
-                  {:==, [], [:title, "LOTR"]},
-                  {:block, [], [:items, {:==, [], [:name, "ring"]}]}
+                  {:==, [], ["title", "LOTR"]},
+                  {:block, [], ["items", {:==, [], ["name", "ring"]}]}
                 ]}
     end
 
@@ -55,22 +55,22 @@ defmodule Dequel.Semantic.AnalyzerTest do
       ast =
         {:or, [],
          [
-           {:==, [], [:name, "foo"]},
-           {:==, [], [:name, "bar"]}
+           {:==, [], ["name", "foo"]},
+           {:==, [], ["name", "bar"]}
          ]}
 
       assert Analyzer.analyze(ast) == ast
     end
 
     test "recursively analyzes NOT expressions" do
-      ast = {:not, [], {:==, [], [:name, "foo"]}}
+      ast = {:not, [], {:==, [], ["name", "foo"]}}
       assert Analyzer.analyze(ast) == ast
     end
   end
 
   describe "analyze/2 with resolver" do
     test "transforms has_many block to exists with cardinality: :many" do
-      ast = {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+      ast = {:block, [], ["items", {:==, [], ["name", "foo"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -78,7 +78,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "transforms belongs_to block to join with cardinality: :one" do
-      ast = {:block, [], [:author, {:==, [], [:name, "Tolkien"]}]}
+      ast = {:block, [], ["author", {:==, [], ["name", "Tolkien"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -86,7 +86,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "transforms has_one block to join with cardinality: :one" do
-      ast = {:block, [], [:profile, {:==, [], [:bio, "writer"]}]}
+      ast = {:block, [], ["profile", {:==, [], ["bio", "writer"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -94,7 +94,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "transforms embeds_one block to embedded with cardinality: :one" do
-      ast = {:block, [], [:address, {:==, [], [:city, "NYC"]}]}
+      ast = {:block, [], ["address", {:==, [], ["city", "NYC"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -102,19 +102,20 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "transforms embeds_many block to embedded with cardinality: :many" do
-      ast = {:block, [], [:tags, {:==, [], [:name, "urgent"]}]}
+      ast = {:block, [], ["tags", {:==, [], ["name", "urgent"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
       assert result == {:embedded, [cardinality: :many], [:tags, {:==, [], [:name, "urgent"]}]}
     end
 
-    test "keeps unknown relation as block" do
-      ast = {:block, [], [:unknown_relation, {:==, [], [:name, "foo"]}]}
+    test "keeps unknown relation as block with string field names" do
+      ast = {:block, [], ["unknown_relation", {:==, [], ["name", "foo"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
-      assert result == {:block, [], [:unknown_relation, {:==, [], [:name, "foo"]}]}
+      # Unknown relation keeps original strings since atom doesn't exist
+      assert result == {:block, [], ["unknown_relation", {:==, [], ["name", "foo"]}]}
     end
 
     test "recursively analyzes nested blocks with nested resolver" do
@@ -139,8 +140,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       ast =
         {:block, [],
          [
-           :author,
-           {:block, [], [:books, {:contains, [], [:title, "Ring"]}]}
+           "author",
+           {:block, [], ["books", {:contains, [], ["title", "Ring"]}]}
          ]}
 
       result = Analyzer.analyze(ast, nested_resolver)
@@ -159,8 +160,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       ast =
         {:and, [],
          [
-           {:==, [], [:name, "LOTR"]},
-           {:block, [], [:items, {:==, [], [:name, "ring"]}]}
+           {:==, [], ["name", "LOTR"]},
+           {:block, [], ["items", {:==, [], ["name", "ring"]}]}
          ]}
 
       result = Analyzer.analyze(ast, mock_resolver())
@@ -177,8 +178,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       ast =
         {:or, [],
          [
-           {:block, [], [:items, {:==, [], [:name, "ring"]}]},
-           {:block, [], [:author, {:==, [], [:name, "Tolkien"]}]}
+           {:block, [], ["items", {:==, [], ["name", "ring"]}]},
+           {:block, [], ["author", {:==, [], ["name", "Tolkien"]}]}
          ]}
 
       result = Analyzer.analyze(ast, mock_resolver())
@@ -192,7 +193,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "analyzes blocks within NOT expressions" do
-      ast = {:not, [], {:block, [], [:items, {:==, [], [:name, "ring"]}]}}
+      ast = {:not, [], {:block, [], ["items", {:==, [], ["name", "ring"]}]}}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -201,7 +202,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "preserves and merges metadata in transformed nodes" do
-      ast = {:block, [line: 1, column: 5], [:items, {:==, [], [:name, "foo"]}]}
+      ast = {:block, [line: 1, column: 5], ["items", {:==, [], ["name", "foo"]}]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -213,7 +214,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
 
   describe "type coercion" do
     test "coerces integer field values" do
-      ast = {:==, [], [:age, "25"]}
+      ast = {:==, [], ["age", "25"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -221,15 +222,23 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "coerces boolean field values" do
-      ast = {:==, [], [:active, "true"]}
+      ast = {:==, [], ["active", "true"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
       assert result == {:==, [], [:active, true]}
     end
 
+    test "coerces boolean field values with yes/no" do
+      assert Analyzer.analyze({:==, [], ["active", "yes"]}, mock_resolver()) ==
+               {:==, [], [:active, true]}
+
+      assert Analyzer.analyze({:==, [], ["active", "no"]}, mock_resolver()) ==
+               {:==, [], [:active, false]}
+    end
+
     test "coerces decimal field values" do
-      ast = {:==, [], [:price, "19.99"]}
+      ast = {:==, [], ["price", "19.99"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -238,7 +247,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "coerces date field values" do
-      ast = {:==, [], [:created_at, "2024-01-15"]}
+      ast = {:==, [], ["created_at", "2024-01-15"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -246,23 +255,24 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "leaves string fields unchanged" do
-      ast = {:==, [], [:name, "foo"]}
+      ast = {:==, [], ["name", "foo"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
       assert result == {:==, [], [:name, "foo"]}
     end
 
-    test "leaves unknown field values unchanged" do
-      ast = {:==, [], [:unknown_field, "value"]}
+    test "leaves unknown field values unchanged (keeps string field name)" do
+      ast = {:==, [], ["unknown_field", "value"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
-      assert result == {:==, [], [:unknown_field, "value"]}
+      # Unknown field keeps string since atom doesn't exist
+      assert result == {:==, [], ["unknown_field", "value"]}
     end
 
     test "coerces values in :in operator with list" do
-      ast = {:in, [], [:age, ["20", "30", "40"]]}
+      ast = {:in, [], ["age", ["20", "30", "40"]]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -270,7 +280,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "coerces values in :contains operator" do
-      ast = {:contains, [], [:name, "foo"]}
+      ast = {:contains, [], ["name", "foo"]}
 
       result = Analyzer.analyze(ast, mock_resolver())
 
@@ -299,11 +309,11 @@ defmodule Dequel.Semantic.AnalyzerTest do
       ast =
         {:block, [],
          [
-           :author,
+           "author",
            {:and, [],
             [
-              {:==, [], [:verified, "true"]},
-              {:==, [], [:age, "42"]}
+              {:==, [], ["verified", "true"]},
+              {:==, [], ["age", "42"]}
             ]}
          ]}
 
@@ -322,11 +332,61 @@ defmodule Dequel.Semantic.AnalyzerTest do
     end
 
     test "no coercion when resolver is nil" do
-      ast = {:==, [], [:age, "25"]}
+      ast = {:==, [], ["age", "25"]}
 
       result = Analyzer.analyze(ast, nil)
 
-      assert result == {:==, [], [:age, "25"]}
+      assert result == {:==, [], ["age", "25"]}
+    end
+  end
+
+  describe "partial date expansion" do
+    test "== with YYYY-MM on date field expands to :between" do
+      ast = {:==, [], ["created_at", "2024-01"]}
+
+      result = Analyzer.analyze(ast, mock_resolver())
+
+      assert result == {:between, [], [:created_at, ~D[2024-01-01], ~D[2024-01-31]]}
+    end
+
+    test "== with YYYY on date field expands to :between" do
+      ast = {:==, [], ["created_at", "2024"]}
+
+      result = Analyzer.analyze(ast, mock_resolver())
+
+      assert result == {:between, [], [:created_at, ~D[2024-01-01], ~D[2024-12-31]]}
+    end
+
+    test "== with full date stays as ==" do
+      ast = {:==, [], ["created_at", "2024-01-15"]}
+
+      result = Analyzer.analyze(ast, mock_resolver())
+
+      assert result == {:==, [], [:created_at, ~D[2024-01-15]]}
+    end
+
+    test "== with invalid date value stays as ==" do
+      ast = {:==, [], ["created_at", "not-a-date"]}
+
+      result = Analyzer.analyze(ast, mock_resolver())
+
+      assert result == {:==, [], [:created_at, "not-a-date"]}
+    end
+
+    test "comparison operators with partial dates use first-of-period (no expansion)" do
+      ast = {:>=, [], ["created_at", "2024-01"]}
+
+      result = Analyzer.analyze(ast, mock_resolver())
+
+      assert result == {:>=, [], [:created_at, ~D[2024-01-01]]}
+    end
+
+    test "== with partial date on non-date field does not expand" do
+      ast = {:==, [], ["name", "2024-01"]}
+
+      result = Analyzer.analyze(ast, mock_resolver())
+
+      assert result == {:==, [], [:name, "2024-01"]}
     end
   end
 
@@ -335,7 +395,7 @@ defmodule Dequel.Semantic.AnalyzerTest do
       # Parse: items { name: foo }
       ast = Dequel.Parser.parse!("items { name:foo }")
 
-      assert ast == {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+      assert ast == {:block, [], ["items", {:==, [], ["name", "foo"]}]}
 
       # Analyze with resolver
       result = Analyzer.analyze(ast, mock_resolver())
@@ -350,8 +410,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       assert ast ==
                {:and, [],
                 [
-                  {:==, [], [:name, "LOTR"]},
-                  {:block, [], [:items, {:==, [], [:name, "ring"]}]}
+                  {:==, [], ["name", "LOTR"]},
+                  {:block, [], ["items", {:==, [], ["name", "ring"]}]}
                 ]}
 
       # Analyze
@@ -372,8 +432,8 @@ defmodule Dequel.Semantic.AnalyzerTest do
       assert ast ==
                {:and, [],
                 [
-                  {:==, [], [:age, "25"]},
-                  {:==, [], [:active, "true"]}
+                  {:==, [], ["age", "25"]},
+                  {:==, [], ["active", "true"]}
                 ]}
 
       # Analyze with type coercion

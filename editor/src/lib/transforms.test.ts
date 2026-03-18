@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest'
 import { Text } from '@codemirror/state'
 import { parser } from '../dequel-lang/parser'
 import { parseCondition, ConditionParts } from './syntax'
-import { negate, disable, setPredicate, setField, wrapInCommand } from './transforms'
+import { negate, setPredicate, setField, wrapInCommand } from './transforms'
 
 const makeParts = (input: string): ConditionParts => {
   const tree = parser.parse(input)
@@ -27,33 +27,6 @@ describe('negate transform', () => {
     expect(result.prefix).toBe('')
   })
 
-  test('replaces "!" with "-" on ignored condition', () => {
-    const parts = makeParts('!title:foo')
-    const result = negate(parts)
-    expect(result.prefix).toBe('-')
-  })
-})
-
-describe('disable transform', () => {
-  test('adds "!" prefix to regular condition', () => {
-    const parts = makeParts('title:foo')
-    const result = disable(parts)
-    expect(result.prefix).toBe('!')
-    expect(result.field).toBe('title')
-    expect(result.predicate).toBe('foo')
-  })
-
-  test('removes "!" prefix from ignored condition', () => {
-    const parts = makeParts('!title:foo')
-    const result = disable(parts)
-    expect(result.prefix).toBe('')
-  })
-
-  test('replaces "-" with "!" on excluded condition', () => {
-    const parts = makeParts('-title:foo')
-    const result = disable(parts)
-    expect(result.prefix).toBe('!')
-  })
 })
 
 describe('setPredicate transform', () => {

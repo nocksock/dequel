@@ -16,6 +16,7 @@ defmodule DequelDemo.Bookstore.Book do
     belongs_to :bookstore, DequelDemo.Bookstore.Store
 
     has_many :reviews, DequelDemo.Bookstore.Review
+    many_to_many :tags, DequelDemo.Bookstore.Tag, join_through: "books_tags"
 
     timestamps()
   end

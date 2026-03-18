@@ -8,13 +8,14 @@ defmodule DequelDemo.Bookstore.Review do
     field :reviewer_name, :string
 
     belongs_to :book, DequelDemo.Bookstore.Book
+    belongs_to :bookstore, DequelDemo.Bookstore.Store
 
     timestamps()
   end
 
   def changeset(review, attrs) do
     review
-    |> cast(attrs, [:content, :rating, :reviewer_name, :book_id])
+    |> cast(attrs, [:content, :rating, :reviewer_name, :book_id, :bookstore_id])
     |> validate_required([:rating, :reviewer_name])
     |> validate_inclusion(:rating, 1..5)
   end

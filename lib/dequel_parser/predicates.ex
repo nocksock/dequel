@@ -92,9 +92,9 @@ defmodule Dequel.Parser.Predicates do
     |> replace(:between)
     |> ignore(ascii_char([?(]))
     |> optional(whitespace())
-    |> concat(numeric_literal())
+    |> concat(comparable_literal())
     |> ignore(whitespace())
-    |> concat(numeric_literal())
+    |> concat(comparable_literal())
     |> ignore(optional(whitespace()))
     |> ignore(ascii_char([?)]))
     |> label("between predicate"),
@@ -103,9 +103,9 @@ defmodule Dequel.Parser.Predicates do
 
   defcombinator(
     :range_literal,
-    numeric_literal()
+    comparable_literal()
     |> ignore(string(".."))
-    |> concat(numeric_literal())
+    |> concat(comparable_literal())
     |> tag(:between)
   )
 

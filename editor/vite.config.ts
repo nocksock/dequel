@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { ModuleNode, defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
 import tailwindcss from '@tailwindcss/vite';
@@ -33,6 +34,10 @@ export default defineConfig(() => {
 
   return {
     plugins: [preact(), fullReloadAlways, tailwindcss()],
+    test: {
+      // Only include src/ tests - browser tests in test/ run via web-test-runner (test:wtr)
+      include: ['src/**/*.test.ts'],
+    },
     build: {
       target: ['esnext'],
       emptyOutDir: !isLangOnly, // Don't clear dist when building lang (second pass)
@@ -62,7 +67,7 @@ export default defineConfig(() => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://localhost:4000',
+          target: 'http://localhost:4242',
           changeOrigin: true,
         },
       },

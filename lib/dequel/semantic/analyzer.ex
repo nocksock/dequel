@@ -2,21 +2,21 @@ defmodule Dequel.Semantic.Analyzer do
   @moduledoc """
   Semantic analyzer that transforms parser AST into typed AST.
 
-  The parser produces syntax-only AST with `:block` nodes for relation filtering.
-  This analyzer walks the AST and resolves `:block` nodes to their semantic
-  equivalents based on schema information:
+  The parser produces syntax-only AST with `:block` nodes for relation filtering
+  and string field names. This analyzer walks the AST and:
 
-  - `has_many` relations → `:exists` with `[cardinality: :many]`
-  - `belongs_to` / `has_one` relations → `:join` with `[cardinality: :one]`
-  - `embeds_many` → `:embedded` with `[cardinality: :many]`
-  - `embeds_one` → `:embedded` with `[cardinality: :one]`
-
-  Additionally, field values are coerced to their proper types based on schema info.
+  1. Converts string field names to atoms (safely via schema lookup)
+  2. Resolves `:block` nodes to their semantic equivalents based on schema info:
+     - `has_many` relations → `:exists` with `[cardinality: :many]`
+     - `belongs_to` / `has_one` relations → `:join` with `[cardinality: :one]`
+     - `embeds_many` → `:embedded` with `[cardinality: :many]`
+     - `embeds_one` → `:embedded` with `[cardinality: :one]`
+  3. Coerces field values to their proper types based on schema info
 
   ## Example
 
-      # Parser output (untyped AST)
-      {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+      # Parser output (untyped AST with string field names)
+      {:block, [], ["items", {:==, [], ["name", "foo"]}]}
 
       # After semantic analysis with has_many relation
       {:exists, [cardinality: :many], [:items, {:==, [], [:name, "foo"]}]}
@@ -25,7 +25,7 @@ defmodule Dequel.Semantic.Analyzer do
       {:join, [cardinality: :one], [:author, {:==, [], [:name, "foo"]}]}
 
       # Type coercion
-      {:==, [], [:age, "25"]}  →  {:==, [], [:age, 25]}
+      {:==, [], ["age", "25"]}  →  {:==, [], [:age, 25]}
 
   The semantic layer also enables LSP support by providing type information
   that can be used for validation, completion, and hover information.
@@ -70,67 +70,74 @@ defmodule Dequel.Semantic.Analyzer do
 
   ## Examples
 
-  Block nodes are transformed based on relation type:
+  Block nodes are transformed based on relation type (strings converted to atoms):
 
-      iex> ast = {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+      iex> ast = {:block, [], ["items", {:==, [], ["name", "foo"]}]}
       iex> resolver = fn :items -> %{kind: :has_many, resolver: nil}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:exists, [cardinality: :many], [:items, {:==, [], [:name, "foo"]}]}
 
-      iex> ast = {:block, [], [:author, {:==, [], [:name, "Tolkien"]}]}
+      iex> ast = {:block, [], ["author", {:==, [], ["name", "Tolkien"]}]}
       iex> resolver = fn :author -> %{kind: :belongs_to, resolver: nil}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:join, [cardinality: :one], [:author, {:==, [], [:name, "Tolkien"]}]}
 
-      iex> ast = {:block, [], [:address, {:==, [], [:city, "NYC"]}]}
+      iex> ast = {:block, [], ["address", {:==, [], ["city", "NYC"]}]}
       iex> resolver = fn :address -> %{kind: :embeds_one, resolver: nil}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:embedded, [cardinality: :one], [:address, {:==, [], [:city, "NYC"]}]}
 
   Field values are coerced based on type:
 
-      iex> ast = {:==, [], [:age, "25"]}
+      iex> ast = {:==, [], ["age", "25"]}
       iex> resolver = fn :age -> %{kind: :field, type: :integer}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:==, [], [:age, 25]}
 
-      iex> ast = {:==, [], [:active, "true"]}
+      iex> ast = {:==, [], ["active", "true"]}
       iex> resolver = fn :active -> %{kind: :field, type: :boolean}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:==, [], [:active, true]}
 
   Comparison operators are coerced based on field type:
 
-      iex> ast = {:>, [], [:age, "18"]}
+      iex> ast = {:>, [], ["age", "18"]}
       iex> resolver = fn :age -> %{kind: :field, type: :integer}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:>, [], [:age, 18]}
 
-      iex> ast = {:between, [], [:price, "10", "50"]}
+      iex> ast = {:between, [], ["price", "10", "50"]}
       iex> resolver = fn :price -> %{kind: :field, type: :integer}; _ -> nil end
       iex> Dequel.Semantic.Analyzer.analyze(ast, resolver)
       {:between, [], [:price, 10, 50]}
 
-  Without a resolver, AST passes through unchanged:
+  Without a resolver, AST passes through unchanged (fields stay as strings):
 
-      iex> Dequel.Semantic.Analyzer.analyze({:==, [], [:name, "foo"]}, nil)
-      {:==, [], [:name, "foo"]}
+      iex> Dequel.Semantic.Analyzer.analyze({:==, [], ["name", "foo"]}, nil)
+      {:==, [], ["name", "foo"]}
 
-      iex> Dequel.Semantic.Analyzer.analyze({:block, [], [:items, {:==, [], [:name, "foo"]}]}, nil)
-      {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+      iex> Dequel.Semantic.Analyzer.analyze({:block, [], ["items", {:==, [], ["name", "foo"]}]}, nil)
+      {:block, [], ["items", {:==, [], ["name", "foo"]}]}
 
   """
   @spec analyze(ast, resolver) :: ast
   def analyze(ast, resolver \\ nil)
 
-  # Block nodes need schema lookup to determine type
-  def analyze({:block, meta, [relation, inner]}, resolver) when is_atom(relation) do
-    case resolve_field(resolver, relation) do
+  # Block nodes need schema lookup to determine type (string relation name from parser)
+  def analyze({:block, meta, [relation, inner]}, resolver) when is_binary(relation) do
+    atom_relation = to_field_atom(relation, resolver)
+
+    case resolve_field(resolver, atom_relation) do
       %{kind: kind, resolver: nested_resolver}
       when kind in [:has_many, :has_one, :belongs_to, :embeds_one, :embeds_many] ->
-        analyzed_inner = analyze(inner, nested_resolver)
+        # Use nested resolver if available, otherwise use a passthrough resolver
+        # that just converts strings to atoms without field lookups
+        inner_resolver = nested_resolver || passthrough_resolver()
+        analyzed_inner = analyze(inner, inner_resolver)
         {node_type, cardinality} = relation_to_node(kind)
-        {node_type, Keyword.merge(meta, cardinality: cardinality), [relation, analyzed_inner]}
+
+        {node_type, Keyword.merge(meta, cardinality: cardinality),
+         [atom_relation, analyzed_inner]}
 
       nil ->
         # Unknown relation, keep as block for adapter to handle
@@ -149,38 +156,66 @@ defmodule Dequel.Semantic.Analyzer do
     {:not, meta, analyze(inner, resolver)}
   end
 
-  # Comparison operators - coerce values based on field type
+  # Equality on partial dates — expand to :between range
+  def analyze({:==, meta, [field, value]}, resolver)
+      when is_binary(field) and is_binary(value) do
+    atom_field = to_field_atom(field, resolver)
+
+    case resolve_field(resolver, atom_field) do
+      %{kind: :field, type: type} ->
+        case Coerce.date_range(value, type) do
+          {:range, start_val, end_val} ->
+            {:between, meta, [atom_field, start_val, end_val]}
+
+          {:exact, val} ->
+            {:==, meta, [atom_field, val]}
+
+          :error ->
+            {:==, meta, [atom_field, Coerce.coerce(value, type)]}
+        end
+
+      _ ->
+        {:==, meta, [atom_field, value]}
+    end
+  end
+
+  # Comparison operators - coerce values based on field type (string field from parser)
   def analyze({op, meta, [field, value]}, resolver)
       when op in [:==, :!=, :contains, :starts_with, :ends_with, :>, :<, :>=, :<=] and
-             is_atom(field) do
-    coerced_value = coerce_value(resolver, field, value)
-    {op, meta, [field, coerced_value]}
+             is_binary(field) do
+    atom_field = to_field_atom(field, resolver)
+    coerced_value = coerce_value(resolver, atom_field, value)
+    {op, meta, [atom_field, coerced_value]}
   end
 
-  # :in operator with list values
+  # :in operator with list values (string field from parser)
   def analyze({:in, meta, [field, values]}, resolver)
-      when is_atom(field) and is_list(values) do
-    coerced_values = Enum.map(values, &coerce_value(resolver, field, &1))
-    {:in, meta, [field, coerced_values]}
+      when is_binary(field) and is_list(values) do
+    atom_field = to_field_atom(field, resolver)
+    coerced_values = Enum.map(values, &coerce_value(resolver, atom_field, &1))
+    {:in, meta, [atom_field, coerced_values]}
   end
 
-  # :in operator with single value
+  # :in operator with single value (string field from parser)
   def analyze({:in, meta, [field, value]}, resolver)
-      when is_atom(field) do
-    coerced_value = coerce_value(resolver, field, value)
-    {:in, meta, [field, coerced_value]}
+      when is_binary(field) do
+    atom_field = to_field_atom(field, resolver)
+    coerced_value = coerce_value(resolver, atom_field, value)
+    {:in, meta, [atom_field, coerced_value]}
   end
 
-  # :between operator with two values
+  # :between operator with two values (string field from parser)
   def analyze({:between, meta, [field, start_val, end_val]}, resolver)
-      when is_atom(field) do
-    coerced_start = coerce_value(resolver, field, start_val)
-    coerced_end = coerce_value(resolver, field, end_val)
-    {:between, meta, [field, coerced_start, coerced_end]}
+      when is_binary(field) do
+    atom_field = to_field_atom(field, resolver)
+    coerced_start = coerce_value(resolver, atom_field, start_val)
+    coerced_end = coerce_value(resolver, atom_field, end_val)
+    {:between, meta, [atom_field, coerced_start, coerced_end]}
   end
 
   # Path-based comparison operators (e.g., items.name:foo where items is has_many)
   # Transforms to EXISTS node if first segment is a has_many relation
+  # Path is list of strings from parser
   def analyze({op, meta, [path, value]}, resolver)
       when op in [:==, :!=, :contains, :starts_with, :ends_with] and is_list(path) do
     analyze_path(op, meta, path, value, resolver)
@@ -232,42 +267,52 @@ defmodule Dequel.Semantic.Analyzer do
   end
 
   # Analyzes a path-based expression, transforming to EXISTS if first segment is has_many
+  # Path segments are strings from parser, converted to atoms when resolver available
   defp analyze_path(op, meta, [first_segment | rest], value, resolver) do
-    case resolve_field(resolver, first_segment) do
+    atom_first = to_field_atom(first_segment, resolver)
+
+    case resolve_field(resolver, atom_first) do
       %{kind: :has_many, resolver: nested_resolver} ->
+        # Use nested resolver if available, otherwise use passthrough
+        inner_resolver = nested_resolver || passthrough_resolver()
         # Transform to EXISTS node with inner expression using remaining path
-        inner = build_inner_expr(op, rest, value)
-        analyzed_inner = analyze(inner, nested_resolver)
-        {:exists, [cardinality: :many], [first_segment, analyzed_inner]}
+        inner = build_inner_expr(op, rest, value, inner_resolver)
+        analyzed_inner = analyze(inner, inner_resolver)
+        {:exists, [cardinality: :many], [atom_first, analyzed_inner]}
 
       %{kind: kind, resolver: _nested_resolver}
       when kind in [:has_one, :belongs_to] ->
         # Keep as path - JOINs are correct for :one cardinality
-        # Note: value coercion for nested paths deferred to adapter
-        {op, meta, [[first_segment | rest], value]}
+        # Convert all path segments to atoms
+        atom_path = Enum.map([first_segment | rest], &to_field_atom(&1, resolver))
+        {op, meta, [atom_path, value]}
 
-      %{kind: kind, resolver: _nested_resolver}
+      %{kind: kind, resolver: nested_resolver}
       when kind in [:embeds_many, :embeds_one] ->
+        # Use nested resolver if available, otherwise use passthrough
+        inner_resolver = nested_resolver || passthrough_resolver()
         # Transform to EMBEDDED node
-        inner = build_inner_expr(op, rest, value)
+        inner = build_inner_expr(op, rest, value, inner_resolver)
         cardinality = if kind == :embeds_many, do: :many, else: :one
-        {:embedded, [cardinality: cardinality], [first_segment, inner]}
+        {:embedded, [cardinality: cardinality], [atom_first, inner]}
 
       nil ->
-        # Unknown relation - leave as-is for adapter to handle
+        # Unknown relation - leave as-is for adapter to handle (keep strings)
         {op, meta, [[first_segment | rest], value]}
     end
   end
 
   # Build inner expression from remaining path segments
-  defp build_inner_expr(op, [field], value) when is_atom(field) do
+  defp build_inner_expr(op, [field], value, resolver) do
     # Single remaining segment - simple field expression
-    {op, [], [field, value]}
+    atom_field = to_field_atom(field, resolver)
+    {op, [], [atom_field, value]}
   end
 
-  defp build_inner_expr(op, path, value) when is_list(path) do
+  defp build_inner_expr(op, path, value, resolver) when is_list(path) do
     # Multiple remaining segments - nested path (will be handled recursively)
-    {op, [], [path, value]}
+    atom_path = Enum.map(path, &to_field_atom(&1, resolver))
+    {op, [], [atom_path, value]}
   end
 
   # Determine association kind from Ecto association struct
@@ -324,4 +369,22 @@ defmodule Dequel.Semantic.Analyzer do
         value
     end
   end
+
+  # A passthrough resolver that returns nil for all lookups but signals
+  # "we're in semantic analysis mode" to enable string-to-atom conversion.
+  defp passthrough_resolver, do: fn _ -> nil end
+
+  # Converts a string field name to an atom safely.
+  # When a resolver is available, uses String.to_existing_atom to ensure the field exists.
+  # If the atom doesn't exist, returns the original string.
+  # Without a resolver, keeps the string (no conversion).
+  defp to_field_atom(field, nil) when is_binary(field), do: field
+
+  defp to_field_atom(field, _resolver) when is_binary(field) do
+    String.to_existing_atom(field)
+  rescue
+    ArgumentError -> field
+  end
+
+  defp to_field_atom(field, _resolver) when is_atom(field), do: field
 end

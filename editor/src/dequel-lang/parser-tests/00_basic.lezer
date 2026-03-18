@@ -56,7 +56,6 @@ type:markets
   title:EDEKA
   title:"Some string"
   id:123
-  some.field:/^EDEKA/i
 
 ==>
 
@@ -66,7 +65,6 @@ QueryList(
     Condition(Field, ":", Predicate(Value(Identifier))),
     Condition(Field, ":", Predicate(Value(String))),
     Condition(Field, ":", Predicate(Value(Number))),
-    Condition(Field, ":", Predicate(Regex)),
   )
 )
 

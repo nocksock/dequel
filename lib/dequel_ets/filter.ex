@@ -3,15 +3,22 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
   ETS adapter for Dequel queries. Converts parsed AST to ETS filtering functions.
   """
 
+  alias Dequel.Comparators
+
   def filter(input, records) when is_binary(input) do
-    input
-    |> Dequel.Parser.parse!()
-    |> filter(records)
+    # Handle empty/whitespace-only queries - return all records unchanged
+    if String.trim(input) == "" do
+      records
+    else
+      input
+      |> Dequel.Parser.parse!()
+      |> filter(records)
+    end
   end
 
   def filter({:==, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      get_field_value(record, field) == value
+      Comparators.get_field_value(record, field) == value
     end)
   end
 
@@ -28,57 +35,57 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
 
   def filter({:starts_with, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      is_binary(field_value) and String.starts_with?(field_value, value)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.string_match?(field_value, value, :starts_with)
     end)
   end
 
   def filter({:ends_with, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      is_binary(field_value) and String.ends_with?(field_value, value)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.string_match?(field_value, value, :ends_with)
     end)
   end
 
   def filter({:contains, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      is_binary(field_value) and String.contains?(field_value, value)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.string_match?(field_value, value, :contains)
     end)
   end
 
   def filter({:>, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      compare_values(field_value, value, &Kernel.>/2)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.compare_values(field_value, value, &Kernel.>/2)
     end)
   end
 
   def filter({:<, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      compare_values(field_value, value, &Kernel.</2)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.compare_values(field_value, value, &Kernel.</2)
     end)
   end
 
   def filter({:>=, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      compare_values(field_value, value, &Kernel.>=/2)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.compare_values(field_value, value, &Kernel.>=/2)
     end)
   end
 
   def filter({:<=, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      compare_values(field_value, value, &Kernel.<=/2)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.compare_values(field_value, value, &Kernel.<=/2)
     end)
   end
 
   def filter({:between, [], [field, start_val, end_val]}, records) do
     Enum.filter(records, fn record ->
-      field_value = get_field_value(record, field)
-      in_range?(field_value, start_val, end_val)
+      field_value = Comparators.get_field_value(record, field)
+      Comparators.in_range?(field_value, start_val, end_val)
     end)
   end
 
@@ -89,80 +96,12 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
 
   def filter({:in, [], [field, values]}, records) do
     Enum.filter(records, fn record ->
-      get_field_value(record, field) in values
+      Comparators.get_field_value(record, field) in values
     end)
   end
 
   def filter({op, [], [field, value]}, _records) do
     raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
-  end
-
-  # Helper function to get field value from record
-  defp get_field_value(record, field) when is_atom(field) do
-    Map.get(record, field)
-  end
-
-  defp get_field_value(record, path) when is_list(path) do
-    Enum.reduce_while(path, record, fn
-      _field, nil -> {:halt, nil}
-      field, current when is_map(current) -> {:cont, Map.get(current, field)}
-      _field, _ -> {:halt, nil}
-    end)
-  end
-
-  defp get_field_value(record, field) when is_binary(field) do
-    # The parser converts field names to atoms, so string fields here indicate
-    # either programmatic use or an unsupported path. Use :erlang function
-    # directly with catch instead of rescue for control flow.
-    atom_field = :erlang.binary_to_existing_atom(field, :utf8)
-    Map.get(record, atom_field)
-  catch
-    :error, :badarg ->
-      # Atom doesn't exist - field name not recognized, treat as nil
-      nil
-  end
-
-  # Helper to compare values, handling type coercion
-  defp compare_values(nil, _value, _op), do: false
-
-  defp compare_values(field_value, value, op) when is_number(field_value) and is_binary(value) do
-    case parse_number(value) do
-      {:ok, num} -> op.(field_value, num)
-      :error -> false
-    end
-  end
-
-  defp compare_values(field_value, value, op), do: op.(field_value, value)
-
-  defp parse_number(str) do
-    cond do
-      String.contains?(str, ".") ->
-        case Float.parse(str) do
-          {num, ""} -> {:ok, num}
-          _ -> :error
-        end
-
-      true ->
-        case Integer.parse(str) do
-          {num, ""} -> {:ok, num}
-          _ -> :error
-        end
-    end
-  end
-
-  defp in_range?(nil, _start, _end), do: false
-
-  defp in_range?(field_value, start_val, end_val) when is_number(field_value) do
-    with {:ok, start_num} <- parse_number(start_val),
-         {:ok, end_num} <- parse_number(end_val) do
-      field_value >= start_num and field_value <= end_num
-    else
-      _ -> false
-    end
-  end
-
-  defp in_range?(field_value, start_val, end_val) do
-    field_value >= start_val and field_value <= end_val
   end
 
   # Public function to filter a single record (for testing)

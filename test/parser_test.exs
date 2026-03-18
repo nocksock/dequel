@@ -1,5 +1,4 @@
 defmodule Dequel.ParserTest do
-  alias Dequel.Parser.ValueExpression
   use ExUnit.Case
   doctest Dequel.Parser
 
@@ -14,63 +13,63 @@ defmodule Dequel.ParserTest do
     do:
       assert(
         ~Q<field:"value"> ==
-          {:==, [], [:field, "value"]}
+          {:==, [], ["field", "value"]}
       )
 
   test "implicit string value",
     do:
       assert(
         ~Q<field:value> ==
-          {:==, [], [:field, "value"]}
+          {:==, [], ["field", "value"]}
       )
 
   test "implicit string value with predicate alias",
     do:
       assert(
         ~Q<field:*value> ==
-          {:contains, [], [:field, "value"]}
+          {:contains, [], ["field", "value"]}
       )
 
   test "explicit string value with predicate alias",
     do:
       assert(
         ~Q<field:*"value"> ==
-          {:contains, [], [:field, "value"]}
+          {:contains, [], ["field", "value"]}
       )
 
   test "string value with spaces",
     do:
       assert(
         ~Q<field:"value with spaces"> ==
-          {:==, [], [:field, "value with spaces"]}
+          {:==, [], ["field", "value with spaces"]}
       )
 
   test "string with quotes",
     do:
       assert(
         ~Q<field:"value with spaces"> ==
-          {:==, [], [:field, "value with spaces"]}
+          {:==, [], ["field", "value with spaces"]}
       )
 
   test "whitespace after comparator",
     do:
       assert(
         ~Q<field: "value with spaces"> ==
-          {:==, [], [:field, "value with spaces"]}
+          {:==, [], ["field", "value with spaces"]}
       )
 
   test "whitespace after comparator with value prefix",
     do:
       assert(
         ~Q<field:  *"value with spaces"> ==
-          {:contains, [], [:field, "value with spaces"]}
+          {:contains, [], ["field", "value with spaces"]}
       )
 
   test "invert expression with - prefix",
     do:
       assert(
         ~Q<-field:value> ==
-          {:not, [], {:==, [], [:field, "value"]}}
+          {:not, [], {:==, [], ["field", "value"]}}
       )
 
   describe "implicit and literal binary operation:" do
@@ -81,8 +80,8 @@ defmodule Dequel.ParserTest do
           ~Q<a:a b:b> ==
             {:and, [],
              [
-               {:==, [], [:a, "a"]},
-               {:==, [], [:b, "b"]}
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
              ]}
         )
 
@@ -94,8 +93,8 @@ defmodule Dequel.ParserTest do
           ~Q<a:a ( b:b )> ==
             {:and, [],
              [
-               {:==, [], [:a, "a"]},
-               {:==, [], [:b, "b"]}
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
              ]}
         )
 
@@ -107,8 +106,8 @@ defmodule Dequel.ParserTest do
           ~Q<a:a || b:b> ==
             {:or, [],
              [
-               {:==, [], [:a, "a"]},
-               {:==, [], [:b, "b"]}
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
              ]}
         )
 
@@ -120,11 +119,11 @@ defmodule Dequel.ParserTest do
           ~Q<a:a b:b c:c> ==
             {:and, [],
              [
-               {:==, [], [:a, "a"]},
+               {:==, [], ["a", "a"]},
                {:and, [],
                 [
-                  {:==, [], [:b, "b"]},
-                  {:==, [], [:c, "c"]}
+                  {:==, [], ["b", "b"]},
+                  {:==, [], ["c", "c"]}
                 ]}
              ]}
         )
@@ -137,11 +136,11 @@ defmodule Dequel.ParserTest do
           ~Q<a:a ( b:b ( c:c ) )> ==
             {:and, [],
              [
-               {:==, [], [:a, "a"]},
+               {:==, [], ["a", "a"]},
                {:and, [],
                 [
-                  {:==, [], [:b, "b"]},
-                  {:==, [], [:c, "c"]}
+                  {:==, [], ["b", "b"]},
+                  {:==, [], ["c", "c"]}
                 ]}
              ]}
         )
@@ -154,11 +153,11 @@ defmodule Dequel.ParserTest do
           ~Q<a:a b:b || c:c> ==
             {:and, [],
              [
-               {:==, [], [:a, "a"]},
+               {:==, [], ["a", "a"]},
                {:or, [],
                 [
-                  {:==, [], [:b, "b"]},
-                  {:==, [], [:c, "c"]}
+                  {:==, [], ["b", "b"]},
+                  {:==, [], ["c", "c"]}
                 ]}
              ]}
         )
@@ -171,11 +170,11 @@ defmodule Dequel.ParserTest do
           ~Q<a:a || b:b || c:c> ==
             {:or, [],
              [
-               {:==, [], [:a, "a"]},
+               {:==, [], ["a", "a"]},
                {:or, [],
                 [
-                  {:==, [], [:b, "b"]},
-                  {:==, [], [:c, "c"]}
+                  {:==, [], ["b", "b"]},
+                  {:==, [], ["c", "c"]}
                 ]}
              ]}
         )
@@ -188,11 +187,11 @@ defmodule Dequel.ParserTest do
           ~Q<a:a || b:b && c:c> ==
             {:or, [],
              [
-               {:==, [], [:a, "a"]},
+               {:==, [], ["a", "a"]},
                {:and, [],
                 [
-                  {:==, [], [:b, "b"]},
-                  {:==, [], [:c, "c"]}
+                  {:==, [], ["b", "b"]},
+                  {:==, [], ["c", "c"]}
                 ]}
              ]}
         )
@@ -207,10 +206,10 @@ defmodule Dequel.ParserTest do
              [
                {:or, [],
                 [
-                  {:==, [], [:a, "a"]},
-                  {:==, [], [:b, "b"]}
+                  {:==, [], ["a", "a"]},
+                  {:==, [], ["b", "b"]}
                 ]},
-               {:==, [], [:c, "c"]}
+               {:==, [], ["c", "c"]}
              ]}
         )
 
@@ -224,10 +223,10 @@ defmodule Dequel.ParserTest do
              [
                {:and, [],
                 [
-                  {:==, [], [:a, "a"]},
-                  {:==, [], [:b, "b"]}
+                  {:==, [], ["a", "a"]},
+                  {:==, [], ["b", "b"]}
                 ]},
-               {:==, [], [:c, "c"]}
+               {:==, [], ["c", "c"]}
              ]}
         )
 
@@ -239,14 +238,14 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<a:contains(b)> ==
-            {:contains, [], [:a, "b"]}
+            {:contains, [], ["a", "b"]}
         )
 
     test "with explicit string argument",
       do:
         assert(
           ~Q<a:ends_with("foo")> ==
-            {:ends_with, [], [:a, "foo"]}
+            {:ends_with, [], ["a", "foo"]}
         )
 
     test "with multiple and implicit string arguments",
@@ -255,8 +254,8 @@ defmodule Dequel.ParserTest do
           ~Q<a:starts_with(b, c)> ==
             {:or, [],
              [
-               {:starts_with, [], [:a, "b"]},
-               {:starts_with, [], [:a, "c"]}
+               {:starts_with, [], ["a", "b"]},
+               {:starts_with, [], ["a", "c"]}
              ]}
         )
 
@@ -264,21 +263,21 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<a:ends_with("foo" i)> ==
-            {:ends_with, [], [:a, "foo", ["i"]]}
+            {:ends_with, [], ["a", "foo", ["i"]]}
         )
 
     test "with single argument and multiple flags",
       do:
         assert(
           ~Q<a:ends_with("foo" a b c)> ==
-            {:ends_with, [], [:a, "foo", ["a", "b", "c"]]}
+            {:ends_with, [], ["a", "foo", ["a", "b", "c"]]}
         )
 
     test "with single argument and flag",
       do:
         assert(
           ~Q<a:ends_with("foo" i)> ==
-            {:ends_with, [], [:a, "foo", ["i"]]}
+            {:ends_with, [], ["a", "foo", ["i"]]}
         )
 
     test "with single argument and option ",
@@ -287,7 +286,7 @@ defmodule Dequel.ParserTest do
           ~Q"""
             a:ends_with("foo" xyz)
           """ ==
-            {:ends_with, [], [:a, "foo", ["xyz"]]}
+            {:ends_with, [], ["a", "foo", ["xyz"]]}
         )
 
     test "with multiple arguments and option ",
@@ -296,19 +295,19 @@ defmodule Dequel.ParserTest do
           ~Q<a:ends_with("a" i, b x y)> ==
             {:or, [],
              [
-               {:ends_with, [], [:a, "a", ["i"]]},
-               {:ends_with, [], [:a, "b", ["x", "y"]]}
+               {:ends_with, [], ["a", "a", ["i"]]},
+               {:ends_with, [], ["a", "b", ["x", "y"]]}
              ]}
         )
   end
 
   describe "string predicate shorthands" do
-    test "*", do: assert(~Q<a: *b> == {:contains, [], [:a, "b"]})
-    test "^", do: assert(~Q<a:  ^"b"> == {:starts_with, [], [:a, "b"]})
-    test "$", do: assert(~Q<a :$"foo bar"> == {:ends_with, [], [:a, "foo bar"]})
+    test "*", do: assert(~Q<a: *b> == {:contains, [], ["a", "b"]})
+    test "^", do: assert(~Q<a:  ^"b"> == {:starts_with, [], ["a", "b"]})
+    test "$", do: assert(~Q<a :$"foo bar"> == {:ends_with, [], ["a", "foo bar"]})
 
     # Continue:
-    # test "a: $(b, c)" #, do: assert ~Q<a: $(b, c)> == {:ends_with, [], [:a, "foo bar"]}
+    # test "a: $(b, c)" #, do: assert ~Q<a: $(b, c)> == {:ends_with, [], ["a", "foo bar"]}
   end
 
   describe "one_of predicate" do
@@ -316,42 +315,42 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<a:one_of(b)> ==
-            {:==, [], [:a, "b"]}
+            {:==, [], ["a", "b"]}
         )
 
     test "with single value and spaced",
       do:
         assert(
           ~Q<a: one_of(b)> ==
-            {:==, [], [:a, "b"]}
+            {:==, [], ["a", "b"]}
         )
 
     test "with multiple values",
       do:
         assert(
           ~Q<a:one_of(b, c)> ==
-            {:in, [], [:a, ["b", "c"]]}
+            {:in, [], ["a", ["b", "c"]]}
         )
 
     test "with multiple values and spaced",
       do:
         assert(
           ~Q<a: one_of(b, c)> ==
-            {:in, [], [:a, ["b", "c"]]}
+            {:in, [], ["a", ["b", "c"]]}
         )
 
     test "with quoted values",
       do:
         assert(
           ~Q<city:one_of("New York", London)> ==
-            {:in, [], [:city, ["New York", "London"]]}
+            {:in, [], ["city", ["New York", "London"]]}
         )
 
     test "with three or more values",
       do:
         assert(
           ~Q<a:one_of(b, c, d)> ==
-            {:in, [], [:a, ["b", "c", "d"]]}
+            {:in, [], ["a", ["b", "c", "d"]]}
         )
   end
 
@@ -360,28 +359,28 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<a:[b]> ==
-            {:==, [], [:a, "b"]}
+            {:==, [], ["a", "b"]}
         )
 
     test "with multiple values",
       do:
         assert(
           ~Q<a:[b, c]> ==
-            {:in, [], [:a, ["b", "c"]]}
+            {:in, [], ["a", ["b", "c"]]}
         )
 
     test "with quoted values",
       do:
         assert(
           ~Q<city:["New York", London]> ==
-            {:in, [], [:city, ["New York", "London"]]}
+            {:in, [], ["city", ["New York", "London"]]}
         )
 
     test "with three or more values",
       do:
         assert(
           ~Q<a:[b, c, d]> ==
-            {:in, [], [:a, ["b", "c", "d"]]}
+            {:in, [], ["a", ["b", "c", "d"]]}
         )
   end
 
@@ -390,56 +389,56 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<author.name:"frodo"> ==
-            {:==, [], [[:author, :name], "frodo"]}
+            {:==, [], [["author", "name"], "frodo"]}
         )
 
     test "multiple dots - three segments",
       do:
         assert(
           ~Q<author.address.city:"Shire"> ==
-            {:==, [], [[:author, :address, :city], "Shire"]}
+            {:==, [], [["author", "address", "city"], "Shire"]}
         )
 
     test "multiple dots - several segments",
       do:
         assert(
           ~Q<foo.bar.baz.any.thing:"Shire"> ==
-            {:==, [], [[:foo, :bar, :baz, :any, :thing], "Shire"]}
+            {:==, [], [["foo", "bar", "baz", "any", "thing"], "Shire"]}
         )
 
     test "dotted field with contains predicate",
       do:
         assert(
           ~Q<author.name:*frodo> ==
-            {:contains, [], [[:author, :name], "frodo"]}
+            {:contains, [], [["author", "name"], "frodo"]}
         )
 
     test "dotted field with starts_with predicate",
       do:
         assert(
           ~Q<author.bio:^"Once upon"> ==
-            {:starts_with, [], [[:author, :bio], "Once upon"]}
+            {:starts_with, [], [["author", "bio"], "Once upon"]}
         )
 
     test "dotted field with ends_with predicate",
       do:
         assert(
           ~Q<author.name:$do> ==
-            {:ends_with, [], [[:author, :name], "do"]}
+            {:ends_with, [], [["author", "name"], "do"]}
         )
 
     test "dotted field with negation",
       do:
         assert(
           ~Q<-author.name:frodo> ==
-            {:not, [], {:==, [], [[:author, :name], "frodo"]}}
+            {:not, [], {:==, [], [["author", "name"], "frodo"]}}
         )
 
     test "dotted field with predicate function",
       do:
         assert(
           ~Q<author.name:contains(frodo)> ==
-            {:contains, [], [[:author, :name], "frodo"]}
+            {:contains, [], [["author", "name"], "frodo"]}
         )
 
     test "dotted field in AND expression",
@@ -448,8 +447,8 @@ defmodule Dequel.ParserTest do
           ~Q<author.name:frodo title:LOTR> ==
             {:and, [],
              [
-               {:==, [], [[:author, :name], "frodo"]},
-               {:==, [], [:title, "LOTR"]}
+               {:==, [], [["author", "name"], "frodo"]},
+               {:==, [], ["title", "LOTR"]}
              ]}
         )
 
@@ -459,8 +458,8 @@ defmodule Dequel.ParserTest do
           ~Q<author.name:frodo || author.name:bilbo> ==
             {:or, [],
              [
-               {:==, [], [[:author, :name], "frodo"]},
-               {:==, [], [[:author, :name], "bilbo"]}
+               {:==, [], [["author", "name"], "frodo"]},
+               {:==, [], [["author", "name"], "bilbo"]}
              ]}
         )
 
@@ -468,7 +467,7 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<name:"frodo"> ==
-            {:==, [], [:name, "frodo"]}
+            {:==, [], ["name", "frodo"]}
         )
   end
 
@@ -477,21 +476,21 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<-field:value> ==
-            {:not, [], {:==, [], [:field, "value"]}}
+            {:not, [], {:==, [], ["field", "value"]}}
         )
 
     test "with predicate",
       do:
         assert(
           ~Q<-field:contains(value)> ==
-            {:not, [], {:contains, [], [:field, "value"]}}
+            {:not, [], {:contains, [], ["field", "value"]}}
         )
 
     test "with quoted value",
       do:
         assert(
           ~Q<-field:"some value"> ==
-            {:not, [], {:==, [], [:field, "some value"]}}
+            {:not, [], {:==, [], ["field", "some value"]}}
         )
   end
 
@@ -500,56 +499,56 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<field:!value> ==
-            {:not, [], {:==, [], [:field, "value"]}}
+            {:not, [], {:==, [], ["field", "value"]}}
         )
 
     test "negated equality with quoted value",
       do:
         assert(
           ~Q<field:!"some value"> ==
-            {:not, [], {:==, [], [:field, "some value"]}}
+            {:not, [], {:==, [], ["field", "some value"]}}
         )
 
     test "negated contains shorthand",
       do:
         assert(
           ~Q<field:!*value> ==
-            {:not, [], {:contains, [], [:field, "value"]}}
+            {:not, [], {:contains, [], ["field", "value"]}}
         )
 
     test "negated starts_with shorthand",
       do:
         assert(
           ~Q<field:!^value> ==
-            {:not, [], {:starts_with, [], [:field, "value"]}}
+            {:not, [], {:starts_with, [], ["field", "value"]}}
         )
 
     test "negated ends_with shorthand",
       do:
         assert(
           ~Q<field:!$value> ==
-            {:not, [], {:ends_with, [], [:field, "value"]}}
+            {:not, [], {:ends_with, [], ["field", "value"]}}
         )
 
     test "negated predicate function call",
       do:
         assert(
           ~Q<field:!contains(value)> ==
-            {:not, [], {:contains, [], [:field, "value"]}}
+            {:not, [], {:contains, [], ["field", "value"]}}
         )
 
     test "negated starts_with function call",
       do:
         assert(
           ~Q<field:!starts_with(value)> ==
-            {:not, [], {:starts_with, [], [:field, "value"]}}
+            {:not, [], {:starts_with, [], ["field", "value"]}}
         )
 
     test "negated ends_with function call",
       do:
         assert(
           ~Q<field:!ends_with(value)> ==
-            {:not, [], {:ends_with, [], [:field, "value"]}}
+            {:not, [], {:ends_with, [], ["field", "value"]}}
         )
 
     test "multiple values expand to AND (neither a nor b)",
@@ -558,8 +557,8 @@ defmodule Dequel.ParserTest do
           ~Q<field:!contains(a, b)> ==
             {:and, [],
              [
-               {:not, [], {:contains, [], [:field, "a"]}},
-               {:not, [], {:contains, [], [:field, "b"]}}
+               {:not, [], {:contains, [], ["field", "a"]}},
+               {:not, [], {:contains, [], ["field", "b"]}}
              ]}
         )
 
@@ -567,21 +566,21 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<author.name:!frodo> ==
-            {:not, [], {:==, [], [[:author, :name], "frodo"]}}
+            {:not, [], {:==, [], [["author", "name"], "frodo"]}}
         )
 
     test "negated contains with dotted field path",
       do:
         assert(
           ~Q<author.name:!*ring> ==
-            {:not, [], {:contains, [], [[:author, :name], "ring"]}}
+            {:not, [], {:contains, [], [["author", "name"], "ring"]}}
         )
 
     test "double negation is allowed (user's responsibility)",
       do:
         assert(
           ~Q<-field:!value> ==
-            {:not, [], {:not, [], {:==, [], [:field, "value"]}}}
+            {:not, [], {:not, [], {:==, [], ["field", "value"]}}}
         )
   end
 
@@ -590,21 +589,21 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<items { name:foo }> ==
-            {:block, [], [:items, {:==, [], [:name, "foo"]}]}
+            {:block, [], ["items", {:==, [], ["name", "foo"]}]}
         )
 
     test "object block with quoted value",
       do:
         assert(
           ~Q<items { name:"foo bar" }> ==
-            {:block, [], [:items, {:==, [], [:name, "foo bar"]}]}
+            {:block, [], ["items", {:==, [], ["name", "foo bar"]}]}
         )
 
     test "object block with contains predicate",
       do:
         assert(
           ~Q<items { name:*foo }> ==
-            {:block, [], [:items, {:contains, [], [:name, "foo"]}]}
+            {:block, [], ["items", {:contains, [], ["name", "foo"]}]}
         )
 
     test "object block with multiple conditions",
@@ -612,7 +611,10 @@ defmodule Dequel.ParserTest do
         assert(
           ~Q<items { name:foo rarity:legendary }> ==
             {:block, [],
-             [:items, {:and, [], [{:==, [], [:name, "foo"]}, {:==, [], [:rarity, "legendary"]}]}]}
+             [
+               "items",
+               {:and, [], [{:==, [], ["name", "foo"]}, {:==, [], ["rarity", "legendary"]}]}
+             ]}
         )
 
     test "object block with OR conditions",
@@ -620,7 +622,7 @@ defmodule Dequel.ParserTest do
         assert(
           ~Q<items { name:foo || name:bar }> ==
             {:block, [],
-             [:items, {:or, [], [{:==, [], [:name, "foo"]}, {:==, [], [:name, "bar"]}]}]}
+             ["items", {:or, [], [{:==, [], ["name", "foo"]}, {:==, [], ["name", "bar"]}]}]}
         )
 
     test "object block combined with field match",
@@ -629,8 +631,8 @@ defmodule Dequel.ParserTest do
           ~Q<title:LOTR items { name:ring }> ==
             {:and, [],
              [
-               {:==, [], [:title, "LOTR"]},
-               {:block, [], [:items, {:==, [], [:name, "ring"]}]}
+               {:==, [], ["title", "LOTR"]},
+               {:block, [], ["items", {:==, [], ["name", "ring"]}]}
              ]}
         )
 
@@ -638,85 +640,102 @@ defmodule Dequel.ParserTest do
       do:
         assert(
           ~Q<items { -name:ring }> ==
-            {:block, [], [:items, {:not, [], {:==, [], [:name, "ring"]}}]}
+            {:block, [], ["items", {:not, [], {:==, [], ["name", "ring"]}}]}
         )
 
     test "nested object blocks",
       do:
         assert(
           ~Q<author { books { title:*Ring } }> ==
-            {:block, [], [:author, {:block, [], [:books, {:contains, [], [:title, "Ring"]}]}]}
+            {:block, [], ["author", {:block, [], ["books", {:contains, [], ["title", "Ring"]}]}]}
         )
   end
 
-  # describe "numeric comparators" do
-  # # these don't need the foo > (10, 20) as it doesn't makes sense.
-  #   test "title > 10"  # , do: assert ~Q[a > 10] === {:>, [], [:a, 10]}
-  #   test "a < 10"  # , do: assert ~Q[a < 10] === {:<, [], [:a, 10]}
-  #   test "a <= 10" # , do: assert ~Q[a < 10] === {:<=, [], [:a, 10]}
-  #   test "a >= 10" # , do: assert ~Q[a < 10] === {:>=, [], [:a, 10]}
-  #
-  # # but these can have that again
-  #   test "a <> (10 20)" # in between 10 and 20, inclusive
-  #   test "a <> (10 20, 40 60)" # in between
-  #   test "a >< (10 20)" # outside of
-  #   test "a >< (10 20, 30)" # outside of, basicalle alternate way to describe in betweens
-  # end
-
-  # describe "date comparators" do
-  #   test "a > 2024-08-12"  # , do: assert ~Q[a > 10] === {:>, [], [:a, 10]}
-  #   test "a < 2024-08-12"  # , do: assert ~Q[a < 10] === {:<, [], [:a, 10]}
-  #   test "a <= 2024-08-12" # , do: assert ~Q[a < 10] === {:<=, [], [:a, 10]}
-  #   test "a >= 2024-08-12" # , do: assert ~Q[a < 10] === {:>=, [], [:a, 10]}
-  #   test "a <> (2024-08-12 2024-08-23)" # in between
-  #   test "a >< (2024-08-12 2024-08-23)" # outside of
-  # end
-
-  # describe "field functions" do
-  #   test "sum(a b) > 10"
-  #   test "sum(a b, c d) > 10"
-  # end
-
   describe "comparison operators" do
     test "greater than",
-      do: assert(~Q[age:>18] == {:>, [], [:age, "18"]})
+      do: assert(~Q[age:>18] == {:>, [], ["age", "18"]})
 
     test "less than",
-      do: assert(~Q[age:<18] == {:<, [], [:age, "18"]})
+      do: assert(~Q[age:<18] == {:<, [], ["age", "18"]})
 
     test "greater than or equal",
-      do: assert(~Q[age:>=18] == {:>=, [], [:age, "18"]})
+      do: assert(~Q[age:>=18] == {:>=, [], ["age", "18"]})
 
     test "less than or equal",
-      do: assert(~Q[age:<=18] == {:<=, [], [:age, "18"]})
+      do: assert(~Q[age:<=18] == {:<=, [], ["age", "18"]})
 
     test "comparison with decimal",
-      do: assert(~Q[price:>19.99] == {:>, [], [:price, "19.99"]})
+      do: assert(~Q[price:>19.99] == {:>, [], ["price", "19.99"]})
 
     test "comparison with negative number",
-      do: assert(~Q[temp:>-10] == {:>, [], [:temp, "-10"]})
+      do: assert(~Q[temp:>-10] == {:>, [], ["temp", "-10"]})
 
     test "negated comparison",
-      do: assert(~Q[age:!>18] == {:not, [], {:>, [], [:age, "18"]}})
+      do: assert(~Q[age:!>18] == {:not, [], {:>, [], ["age", "18"]}})
+  end
+
+  describe "date literals in comparisons" do
+    test "date equality requires quoting",
+      do: assert(~Q[published_at:"2024-01-15"] == {:==, [], ["published_at", "2024-01-15"]})
+
+    test "date greater than",
+      do: assert(~Q[published_at:>2024-01-15] == {:>, [], ["published_at", "2024-01-15"]})
+
+    test "date greater than or equal",
+      do: assert(~Q[published_at:>=2024-01-15] == {:>=, [], ["published_at", "2024-01-15"]})
+
+    test "date less than",
+      do: assert(~Q[published_at:<2024-01-15] == {:<, [], ["published_at", "2024-01-15"]})
+
+    test "date YYYY-MM in comparison",
+      do: assert(~Q[published_at:>=2024-01] == {:>=, [], ["published_at", "2024-01"]})
+
+    test "date range with double-dot",
+      do:
+        assert(
+          ~Q[published_at:2024-01..2025-06] ==
+            {:between, [], ["published_at", "2024-01", "2025-06"]}
+        )
+
+    test "full date range",
+      do:
+        assert(
+          ~Q[published_at:2024-01-01..2025-06-30] ==
+            {:between, [], ["published_at", "2024-01-01", "2025-06-30"]}
+        )
+
+    test "negated date comparison",
+      do:
+        assert(
+          ~Q[published_at:!>2024-01-15] ==
+            {:not, [], {:>, [], ["published_at", "2024-01-15"]}}
+        )
+
+    test "negated date range",
+      do:
+        assert(
+          ~Q[published_at:!2024-01..2025-01] ==
+            {:not, [], {:between, [], ["published_at", "2024-01", "2025-01"]}}
+        )
   end
 
   describe "range syntax" do
     test "double-dot range",
-      do: assert(~Q[price:10..50] == {:between, [], [:price, "10", "50"]})
+      do: assert(~Q[price:10..50] == {:between, [], ["price", "10", "50"]})
 
     test "between predicate",
-      do: assert(~Q[price:between(10 50)] == {:between, [], [:price, "10", "50"]})
+      do: assert(~Q[price:between(10 50)] == {:between, [], ["price", "10", "50"]})
 
     test "range with decimals",
-      do: assert(~Q[rate:0.5..1.5] == {:between, [], [:rate, "0.5", "1.5"]})
+      do: assert(~Q[rate:0.5..1.5] == {:between, [], ["rate", "0.5", "1.5"]})
 
     test "range with negative numbers",
-      do: assert(~Q[temp:-10..30] == {:between, [], [:temp, "-10", "30"]})
+      do: assert(~Q[temp:-10..30] == {:between, [], ["temp", "-10", "30"]})
 
     test "negated range",
-      do: assert(~Q[price:!10..50] == {:not, [], {:between, [], [:price, "10", "50"]}})
+      do: assert(~Q[price:!10..50] == {:not, [], {:between, [], ["price", "10", "50"]}})
 
     test "negated between predicate",
-      do: assert(~Q[price:!between(10 50)] == {:not, [], {:between, [], [:price, "10", "50"]}})
+      do: assert(~Q[price:!between(10 50)] == {:not, [], {:between, [], ["price", "10", "50"]}})
   end
 end

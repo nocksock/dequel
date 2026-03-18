@@ -7,8 +7,8 @@ on:
     branches: [ main, dev ]
 
 jobs:
-  test:
-    name: Test
+  test-elixir:
+    name: Test Elixir
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -83,4 +83,42 @@ jobs:
 
     - name: Check formatting
       run: mix format --check-formatted
+
+  test-editor:
+    name: Test Editor
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: editor
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: editor/pnpm-lock.yaml
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Lint
+      run: pnpm lint
+
+    - name: Type check
+      run: pnpm tsc --noEmit
+
+    - name: Test
+      run: pnpm test
+
+    - name: Build
+      run: pnpm build
 

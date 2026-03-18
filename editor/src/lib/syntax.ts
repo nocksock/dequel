@@ -36,7 +36,7 @@ export const flattenStack = (
 // Condition handling
 
 export interface ConditionParts {
-  prefix: '' | '-' | '!'
+  prefix: '' | '-'
   field: string
   predicate: string
   node: SyntaxNode
@@ -45,7 +45,7 @@ export interface ConditionParts {
 export type Transform = (parts: ConditionParts) => Omit<ConditionParts, 'node'>
 
 /**
- * Find the closest condition node (Condition, ExcludeCondition, or IgnoredCondition).
+ * Find the closest condition node (Condition or ExcludeCondition).
  */
 export const closestCondition = (node: SyntaxNode): SyntaxNode | null => {
   // Check if the node itself is a condition
@@ -66,9 +66,7 @@ export function parseCondition(node: SyntaxNode, doc: Text): ConditionParts {
   const prefix =
     node.name === 'ExcludeCondition'
       ? '-'
-      : node.name === 'IgnoredCondition'
-        ? '!'
-        : ''
+      : ''
 
   const fieldNode = node.getChild('Field')
   const predicateNode = node.getChild('Predicate')

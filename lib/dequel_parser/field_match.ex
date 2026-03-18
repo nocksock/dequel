@@ -93,14 +93,14 @@ defmodule Dequel.Parser.FieldMatch do
       |> ignore(spaced(":"))
       |> ignore(string("!"))
       |> parsec(:comparison_op)
-      |> concat(numeric_literal())
+      |> concat(comparable_literal())
       |> reduce(:postfix_negated),
 
       # comparison: field:>value, field:>=value, etc.
       field_expression()
       |> ignore(spaced(":"))
       |> parsec(:comparison_op)
-      |> concat(numeric_literal())
+      |> concat(comparable_literal())
       |> reduce(:postfix),
 
       # simple comparison: field:value or field:*value

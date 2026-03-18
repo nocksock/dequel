@@ -21,6 +21,7 @@ import { indentOnInput } from "@codemirror/language";
  */
 export const basicSetup = () => [
   keymap.of([
+    { key: "Ctrl-Space", run: startCompletion },
     ...historyKeymap,
     ...defaultKeymap,
     ...standardKeymap,

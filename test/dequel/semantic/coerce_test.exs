@@ -51,6 +51,9 @@ defmodule Dequel.Semantic.CoerceTest do
       assert Coerce.coerce("TRUE", :boolean) == true
       assert Coerce.coerce("True", :boolean) == true
       assert Coerce.coerce("1", :boolean) == true
+      assert Coerce.coerce("yes", :boolean) == true
+      assert Coerce.coerce("Yes", :boolean) == true
+      assert Coerce.coerce("YES", :boolean) == true
     end
 
     test "coerces false values" do
@@ -58,11 +61,12 @@ defmodule Dequel.Semantic.CoerceTest do
       assert Coerce.coerce("FALSE", :boolean) == false
       assert Coerce.coerce("False", :boolean) == false
       assert Coerce.coerce("0", :boolean) == false
+      assert Coerce.coerce("no", :boolean) == false
+      assert Coerce.coerce("No", :boolean) == false
+      assert Coerce.coerce("NO", :boolean) == false
     end
 
     test "returns original value for invalid boolean" do
-      assert Coerce.coerce("yes", :boolean) == "yes"
-      assert Coerce.coerce("no", :boolean) == "no"
       assert Coerce.coerce("2", :boolean) == "2"
     end
   end
@@ -73,10 +77,24 @@ defmodule Dequel.Semantic.CoerceTest do
       assert Coerce.coerce("2023-12-31", :date) == ~D[2023-12-31]
     end
 
+    test "coerces YYYY-MM to first of month" do
+      assert Coerce.coerce("2024-01", :date) == ~D[2024-01-01]
+      assert Coerce.coerce("2024-12", :date) == ~D[2024-12-01]
+    end
+
+    test "coerces YYYY to January 1st" do
+      assert Coerce.coerce("2024", :date) == ~D[2024-01-01]
+      assert Coerce.coerce("1990", :date) == ~D[1990-01-01]
+    end
+
     test "returns original value for invalid date" do
       assert Coerce.coerce("2024-13-01", :date) == "2024-13-01"
       assert Coerce.coerce("not-a-date", :date) == "not-a-date"
       assert Coerce.coerce("01-15-2024", :date) == "01-15-2024"
+    end
+
+    test "returns original value for invalid YYYY-MM" do
+      assert Coerce.coerce("2024-13", :date) == "2024-13"
     end
   end
 
@@ -88,7 +106,18 @@ defmodule Dequel.Semantic.CoerceTest do
 
     test "returns original value for invalid datetime" do
       assert Coerce.coerce("not-a-datetime", :naive_datetime) == "not-a-datetime"
-      assert Coerce.coerce("2024-01-15", :naive_datetime) == "2024-01-15"
+    end
+
+    test "coerces date-only string to beginning of day" do
+      assert Coerce.coerce("2024-01-15", :naive_datetime) == ~N[2024-01-15 00:00:00]
+    end
+
+    test "coerces YYYY-MM to beginning of month" do
+      assert Coerce.coerce("2024-01", :naive_datetime) == ~N[2024-01-01 00:00:00]
+    end
+
+    test "coerces YYYY to beginning of year" do
+      assert Coerce.coerce("2024", :naive_datetime) == ~N[2024-01-01 00:00:00]
     end
 
     test "naive_datetime_usec coerces like naive_datetime" do
@@ -105,6 +134,18 @@ defmodule Dequel.Semantic.CoerceTest do
     test "returns original value for invalid datetime" do
       assert Coerce.coerce("not-a-datetime", :utc_datetime) == "not-a-datetime"
       assert Coerce.coerce("2024-01-15T10:30:00", :utc_datetime) == "2024-01-15T10:30:00"
+    end
+
+    test "coerces date-only string to beginning of day" do
+      assert Coerce.coerce("2024-01-15", :utc_datetime) == ~U[2024-01-15 00:00:00Z]
+    end
+
+    test "coerces YYYY-MM to beginning of month" do
+      assert Coerce.coerce("2024-01", :utc_datetime) == ~U[2024-01-01 00:00:00Z]
+    end
+
+    test "coerces YYYY to beginning of year" do
+      assert Coerce.coerce("2024", :utc_datetime) == ~U[2024-01-01 00:00:00Z]
     end
 
     test "utc_datetime_usec coerces like utc_datetime" do
@@ -126,6 +167,68 @@ defmodule Dequel.Semantic.CoerceTest do
 
     test "returns original value for invalid decimal" do
       assert Coerce.coerce("not-a-number", :decimal) == "not-a-number"
+    end
+  end
+
+  describe "date_range/2 with :date" do
+    test "YYYY-MM returns range for the full month" do
+      assert Coerce.date_range("2024-01", :date) == {:range, ~D[2024-01-01], ~D[2024-01-31]}
+      assert Coerce.date_range("2024-02", :date) == {:range, ~D[2024-02-01], ~D[2024-02-29]}
+      assert Coerce.date_range("2023-02", :date) == {:range, ~D[2023-02-01], ~D[2023-02-28]}
+    end
+
+    test "YYYY returns range for the full year" do
+      assert Coerce.date_range("2024", :date) == {:range, ~D[2024-01-01], ~D[2024-12-31]}
+    end
+
+    test "YYYY-MM-DD returns exact date" do
+      assert Coerce.date_range("2024-01-15", :date) == {:exact, ~D[2024-01-15]}
+    end
+
+    test "invalid values return :error" do
+      assert Coerce.date_range("hello", :date) == :error
+      assert Coerce.date_range("2024-13", :date) == :error
+    end
+  end
+
+  describe "date_range/2 with :naive_datetime" do
+    test "YYYY-MM returns range with end-of-day time" do
+      assert Coerce.date_range("2024-01", :naive_datetime) ==
+               {:range, ~N[2024-01-01 00:00:00], ~N[2024-01-31 23:59:59]}
+    end
+
+    test "YYYY returns range with end-of-day time" do
+      assert Coerce.date_range("2024", :naive_datetime) ==
+               {:range, ~N[2024-01-01 00:00:00], ~N[2024-12-31 23:59:59]}
+    end
+
+    test "YYYY-MM-DD returns exact naive datetime" do
+      assert Coerce.date_range("2024-01-15", :naive_datetime) ==
+               {:exact, ~N[2024-01-15 00:00:00]}
+    end
+  end
+
+  describe "date_range/2 with :utc_datetime" do
+    test "YYYY-MM returns range with end-of-day time" do
+      assert Coerce.date_range("2024-01", :utc_datetime) ==
+               {:range, ~U[2024-01-01 00:00:00Z], ~U[2024-01-31 23:59:59Z]}
+    end
+
+    test "YYYY returns range with end-of-day time" do
+      assert Coerce.date_range("2024", :utc_datetime) ==
+               {:range, ~U[2024-01-01 00:00:00Z], ~U[2024-12-31 23:59:59Z]}
+    end
+
+    test "YYYY-MM-DD returns exact utc datetime" do
+      assert Coerce.date_range("2024-01-15", :utc_datetime) ==
+               {:exact, ~U[2024-01-15 00:00:00Z]}
+    end
+  end
+
+  describe "date_range/2 with non-date types" do
+    test "returns :error for non-date types" do
+      assert Coerce.date_range("2024-01", :string) == :error
+      assert Coerce.date_range("2024-01", :integer) == :error
     end
   end
 

@@ -47,7 +47,7 @@ devenv tasks run build:sync-version    # Sync version from mix.exs to editor
 
 ```bash
 devenv up                              # Start demo + editor dev servers
-devenv up demo                         # Demo server only (localhost:4000)
+devenv up demo                         # Demo server only (localhost:4242)
 devenv up editor                       # Editor dev server only
 ```
 
@@ -61,7 +61,7 @@ For manual setup or running outside devenv:
 ```bash
 cd demo
 mix setup                              # First time: deps, db, seeds, assets
-mix phx.server                         # Start on localhost:4000
+mix phx.server                         # Start on localhost:4242
 ```
 
 ## Code Style

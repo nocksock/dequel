@@ -1,6 +1,8 @@
-{ pkgs, config, ... }:
-
 {
+  pkgs,
+  config,
+  ...
+}: {
   # Elixir development
   languages.elixir.enable = true;
 
@@ -11,30 +13,33 @@
     pnpm.enable = true;
   };
 
-  packages = with pkgs; [
-    elixir-ls
-    fd
-    entr
-    ] ++ lib.optionals stdenv.isLinux [
+  packages = with pkgs;
+    [
+      elixir-ls
+      fd
+      entr
+    ]
+    ++ lib.optionals stdenv.isLinux [
       # For ExUnit Notifier on Linux.
       libnotify
 
       # For file_system on Linux.
       inotify-tools
-    ] ++ lib.optionals stdenv.isDarwin ([
+    ]
+    ++ lib.optionals stdenv.isDarwin [
       # For ExUnit Notifier on macOS.
       terminal-notifier
 
       # For file_system on macOS.
       darwin.apple_sdk.frameworks.CoreFoundation
       darwin.apple_sdk.frameworks.CoreServices
-    ]);
+    ];
 
   # PostgreSQL for Ecto tests
   services.postgres = {
     enable = true;
     initialDatabases = [
-      { name = "dequel_test"; }
+      {name = "dequel_test";}
     ];
   };
 
@@ -52,7 +57,7 @@
       echo "Installing workspace dependencies..."
       pnpm install
     '';
-    before = [ "devenv:enterShell" ];
+    before = ["devenv:enterShell"];
     status = ''
       # Skip if deps are already installed
       [ -d deps ] && [ -d node_modules ]
@@ -65,8 +70,8 @@
       MIX_ENV=test mix ecto.create --quiet 2>/dev/null || true
       MIX_ENV=test mix ecto.migrate
     '';
-    after = [ "setup:deps" ];
-    before = [ "devenv:enterShell" ];
+    after = ["setup:deps"];
+    before = ["devenv:enterShell"];
   };
 
   tasks."setup:demo" = {
@@ -79,7 +84,7 @@
       mix run priv/repo/seeds.exs 2>/dev/null || true
       mix assets.setup 2>/dev/null || true
     '';
-    after = [ "setup:deps" ];
+    after = ["setup:deps"];
     status = ''
       # Skip if demo deps are already installed
       [ -d demo/deps ] && [ -f demo/dequel_demo_dev.db ]
@@ -127,7 +132,7 @@
       cp editor/dist/style.css priv/static/
       echo "Done!"
     '';
-    after = [ "build:editor" ];
+    after = ["build:editor"];
   };
 
   tasks."build:sync-version" = {
@@ -138,21 +143,17 @@
     '';
   };
 
-  # ===================
-  # DEVELOPMENT PROCESSES
-  # ===================
-
-  processes.editor = {
+  processes.build-editor = {
     exec = "pnpm dev:build";
     cwd = "editor";
   };
 
-  processes.demo = {
+  processes.demo-server = {
     exec = "mix deps.get --quiet && mix ecto.migrate --quiet && mix phx.server";
     cwd = "demo";
   };
 
-  processes.test = {
+  processes.test-elixir = {
     exec = "MIX_ENV=test mix test";
   };
 

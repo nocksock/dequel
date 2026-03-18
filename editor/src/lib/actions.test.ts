@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { applyAction, ActionContext, SuggestionAction } from './actions'
 import { closestCondition, getNodeAt } from './syntax'
-import { negate, disable } from './transforms'
+import { negate } from './transforms'
 
 /**
  * Helper to build an ActionContext from a cursor-marked input string.
@@ -35,16 +35,35 @@ const buildContext = (inputWithCursor: string): { ctx: ActionContext; input: str
 }
 
 /**
+ * Apply an action and return the resulting state.
+ */
+const applyAndGetState = (inputWithCursor: string, action: SuggestionAction): EditorState => {
+  const { ctx } = buildContext(inputWithCursor)
+  const transaction = applyAction(ctx, action)
+  return ctx.state.update(transaction).state
+}
+
+/**
+ * Convert state to string with optional cursor position marker.
+ */
+const stateToString = (state: EditorState, options?: { showCursor?: boolean }): string => {
+  const doc = state.doc.toString()
+  if (!options?.showCursor) return doc
+
+  const cursor = state.selection.main.anchor
+  return doc.slice(0, cursor) + '|' + doc.slice(cursor)
+}
+
+/**
  * Apply an action and return the resulting document text.
  */
-const applyAndGetResult = (inputWithCursor: string, action: SuggestionAction): string => {
-  const { ctx, input } = buildContext(inputWithCursor)
-  const transaction = applyAction(ctx, action)
-
-  if (!transaction.changes) return input
-
-  const newState = ctx.state.update(transaction).state
-  return newState.doc.toString()
+const applyAndGetResult = (
+  inputWithCursor: string,
+  action: SuggestionAction,
+  options?: { showCursor?: boolean }
+): string => {
+  const state = applyAndGetState(inputWithCursor, action)
+  return stateToString(state, options)
 }
 
 /**
@@ -83,11 +102,6 @@ describe('transform actions', () => {
       expect(result).toBe('title:foo')
     })
 
-    test('replaces "!" with "-" on IgnoredCondition', () => {
-      const result = applyAndGetResult('!title:|foo', negateAction)
-      expect(result).toBe('-title:foo')
-    })
-
     test('works when cursor is on field', () => {
       const result = applyAndGetResult('tit|le:foo', negateAction)
       expect(result).toBe('-title:foo')
@@ -106,11 +120,6 @@ describe('transform actions', () => {
     test('works when cursor is right after prefix -|foo:bar', () => {
       const result = applyAndGetResult('-|foo:bar', negateAction)
       expect(result).toBe('foo:bar')
-    })
-
-    test('works when cursor is right after prefix !|foo:bar', () => {
-      const result = applyAndGetResult('!|foo:bar', negateAction)
-      expect(result).toBe('-foo:bar')
     })
 
     describe('cursor position preservation', () => {
@@ -136,54 +145,6 @@ describe('transform actions', () => {
     })
   })
 
-  describe('disableCondition (via disable transform)', () => {
-    const disableAction: SuggestionAction = {
-      type: 'transform',
-      id: 'disable',
-      label: '!',
-      transform: disable,
-    }
-
-    test('adds "!" prefix to regular Condition', () => {
-      const result = applyAndGetResult('title:|foo', disableAction)
-      expect(result).toBe('!title:foo')
-    })
-
-    test('removes "!" prefix from IgnoredCondition', () => {
-      const result = applyAndGetResult('!title:|foo', disableAction)
-      expect(result).toBe('title:foo')
-    })
-
-    test('replaces "-" with "!" on ExcludeCondition', () => {
-      const result = applyAndGetResult('-title:|foo', disableAction)
-      expect(result).toBe('!title:foo')
-    })
-
-    test('works when cursor is on field', () => {
-      const result = applyAndGetResult('tit|le:foo', disableAction)
-      expect(result).toBe('!title:foo')
-    })
-
-    test('works with multiple conditions - first condition', () => {
-      const result = applyAndGetResult('ti|tle:foo region:bar', disableAction)
-      expect(result).toBe('!title:foo region:bar')
-    })
-
-    test('works with multiple conditions - second condition', () => {
-      const result = applyAndGetResult('title:foo reg|ion:bar', disableAction)
-      expect(result).toBe('title:foo !region:bar')
-    })
-
-    test('works when cursor is right after prefix !|foo:bar', () => {
-      const result = applyAndGetResult('!|foo:bar', disableAction)
-      expect(result).toBe('foo:bar')
-    })
-
-    test('works when cursor is right after prefix -|foo:bar', () => {
-      const result = applyAndGetResult('-|foo:bar', disableAction)
-      expect(result).toBe('!foo:bar')
-    })
-  })
 })
 
 describe('insert actions', () => {
@@ -252,6 +213,13 @@ describe('append actions', () => {
   test('appends after all conditions in query', () => {
     const result = applyAndGetResult('title:|foo status:active', makeAppendAction('region:bar'))
     expect(result).toBe('title:foo status:active region:bar')
+  })
+
+  test('can define cursor position with |', () => {
+    const result = applyAndGetResult('title:|foo status:active', makeAppendAction('region { title:| }'), {
+      showCursor: true,
+    })
+    expect(result).toBe('title:foo status:active region { title:| }')
   })
 })
 

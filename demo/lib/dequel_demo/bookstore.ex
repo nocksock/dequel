@@ -6,7 +6,7 @@ defmodule DequelDemo.Bookstore do
   import Ecto.Query
 
   alias DequelDemo.Repo
-  alias DequelDemo.Bookstore.{Author, Book, Store, Review}
+  alias DequelDemo.Bookstore.{Author, Book, Store, Review, Tag}
 
   @collections %{
     "books" => Book,
@@ -16,49 +16,46 @@ defmodule DequelDemo.Bookstore do
   }
 
   # Schema definitions for each collection
-  # Format: fields list with optional values for enum fields
+  # Format: fields map with field name as key
   @schemas %{
     "books" => %{
-      fields: [
-        %{label: "title", type: "string", info: "Book title"},
-        %{label: "isbn", type: "string", info: "ISBN identifier"},
-        %{label: "price", type: "number", info: "Book price"},
-        %{label: "published_at", type: "string", info: "Publication date"},
-        %{label: "page_count", type: "number", info: "Number of pages"},
-        %{label: "genre", type: "keyword", info: "Book genre"},
-        %{label: "author", type: "relationship", target: "authors", info: "Book author"},
-        %{label: "bookstore", type: "relationship", target: "bookstores", info: "Store selling this book"},
-        %{label: "reviews", type: "relationship", target: "reviews", cardinality: "many", info: "Book reviews"}
-      ],
-      values: %{
-        "genre" => Book.genres()
+      fields: %{
+        "title" => %{type: "string", info: "Book title"},
+        "isbn" => %{type: "string", info: "ISBN identifier"},
+        "price" => %{type: "number", info: "Book price"},
+        "published_at" => %{type: "date", info: "Publication date"},
+        "page_count" => %{type: "number", info: "Number of pages"},
+        "genre" => %{type: "keyword", info: "Book genre", values: Book.genres()},
+        "author" => %{type: "relationship", schema: "authors", info: "Book author"},
+        "bookstore" => %{type: "relationship", schema: "bookstores", info: "Store selling this book"},
+        "reviews" => %{type: "relationship", schema: "reviews", cardinality: "has_many", info: "Book reviews"}
       }
     },
     "authors" => %{
-      fields: [
-        %{label: "name", type: "string", info: "Author name"},
-        %{label: "bio", type: "string", info: "Author biography"},
-        %{label: "birth_date", type: "string", info: "Birth date"},
-        %{label: "country", type: "string", info: "Country of origin"},
-        %{label: "books", type: "relationship", target: "books", cardinality: "many", info: "Books by this author"}
-      ]
+      fields: %{
+        "name" => %{type: "string", info: "Author name"},
+        "bio" => %{type: "string", info: "Author biography"},
+        "birth_date" => %{type: "date", info: "Birth date"},
+        "country" => %{type: "string", info: "Country of origin"},
+        "books" => %{type: "relationship", schema: "books", cardinality: "has_many", info: "Books by this author"}
+      }
     },
     "bookstores" => %{
-      fields: [
-        %{label: "name", type: "string", info: "Store name"},
-        %{label: "location", type: "string", info: "Store location"},
-        %{label: "rating", type: "number", info: "Store rating"},
-        %{label: "founded_at", type: "string", info: "Date founded"},
-        %{label: "books", type: "relationship", target: "books", cardinality: "many", info: "Books in this store"}
-      ]
+      fields: %{
+        "name" => %{type: "string", info: "Store name"},
+        "location" => %{type: "string", info: "Store location"},
+        "rating" => %{type: "number", info: "Store rating"},
+        "founded_at" => %{type: "date", info: "Date founded"},
+        "books" => %{type: "relationship", schema: "books", cardinality: "has_many", info: "Books in this store"}
+      }
     },
     "reviews" => %{
-      fields: [
-        %{label: "content", type: "string", info: "Review content"},
-        %{label: "rating", type: "number", info: "Star rating (1-5)"},
-        %{label: "reviewer_name", type: "string", info: "Reviewer name"},
-        %{label: "book", type: "relationship", target: "books", info: "Reviewed book"}
-      ]
+      fields: %{
+        "content" => %{type: "string", info: "Review content"},
+        "rating" => %{type: "number", info: "Star rating (1-5)"},
+        "reviewer_name" => %{type: "string", info: "Reviewer name"},
+        "book" => %{type: "relationship", schema: "books", info: "Reviewed book"}
+      }
     }
   }
 
@@ -195,16 +192,6 @@ defmodule DequelDemo.Bookstore do
     end
   end
 
-  defp execute_query(schema, "") do
-    results =
-      schema
-      |> limit(50)
-      |> Repo.all()
-      |> Enum.map(&format_result/1)
-
-    {:ok, results}
-  end
-
   defp execute_query(schema, query_string) do
     try do
       dynamic = Dequel.Adapter.Ecto.Filter.where(query_string)
@@ -212,7 +199,6 @@ defmodule DequelDemo.Bookstore do
       results =
         schema
         |> where(^dynamic)
-        |> limit(50)
         |> Repo.all()
         |> Enum.map(&format_result/1)
 

@@ -4,7 +4,6 @@ export const raise = (msg: string) => {
 
 const prefix: string = "Invariant failed";
 export function invariant(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   condition: any,
   message?: string | (() => string)
 ): asserts condition {

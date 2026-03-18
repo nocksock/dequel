@@ -2,12 +2,11 @@ defmodule Dequel.Parser.Token do
   @moduledoc """
   Token parsers for the Dequel query language (identifiers, strings, operators, etc.).
 
-  ## Atom Conversion
+  ## Field Paths
 
-  Field paths are converted to atoms via `to_field_path/1` using
-  `String.to_existing_atom/1`. This requires that field name atoms already
-  exist (typically from compiled Ecto schemas). See `Dequel.Parser` moduledoc
-  for details on atom safety.
+  Field paths are kept as strings in `to_field_path/1`. The conversion to atoms
+  is deferred to the semantic analysis or adapter layer, which has schema context
+  available to safely convert strings to atoms.
   """
 
   import NimbleParsec
@@ -23,6 +22,21 @@ defmodule Dequel.Parser.Token do
     |> concat(ascii_string([?0..?9], min: 1))
     |> optional(string(".") |> concat(ascii_string([?0..?9], min: 1)))
     |> reduce({Enum, :join, [""]})
+  end
+
+  def date_literal do
+    ascii_string([?0..?9], 4)
+    |> string("-")
+    |> concat(ascii_string([?0..?9], 2))
+    |> optional(string("-") |> concat(ascii_string([?0..?9], 2)))
+    |> reduce({Enum, :join, [""]})
+  end
+
+  def comparable_literal do
+    choice([
+      date_literal(),
+      numeric_literal()
+    ])
   end
 
   def num_to_string(rest, args, context, _, _) do
@@ -68,8 +82,8 @@ defmodule Dequel.Parser.Token do
     |> reduce(:to_field_path)
   end
 
-  def to_field_path([single]), do: String.to_existing_atom(single)
-  def to_field_path(segments), do: Enum.map(segments, &String.to_existing_atom/1)
+  def to_field_path([single]), do: single
+  def to_field_path(segments), do: segments
 
   def string_with_quotes do
     ignore(ascii_char([?"]))

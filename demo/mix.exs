@@ -33,6 +33,7 @@ defmodule DequelDemo.MixProject do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:bench), do: ["lib", "bench"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
@@ -64,7 +65,9 @@ defmodule DequelDemo.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:dequel, path: ".."},
-      {:faker, "~> 0.18"}
+      {:faker, "~> 0.18"},
+      {:benchee, "~> 1.3", only: :bench},
+      {:benchee_json, "~> 1.0", only: :bench}
     ]
   end
 

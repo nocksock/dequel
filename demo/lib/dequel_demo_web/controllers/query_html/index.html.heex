@@ -1,47 +1,51 @@
-<div class="max-w-4xl mx-auto">
+<DequelDemoWeb.Layouts.app flash={@flash}>
+<div class="max-w-4xl mx-auto space-y-8">
   <h1 class="text-3xl font-bold mb-2">Dequel Demo</h1>
   <p class="text-gray-600 mb-6">Query the bookstore database using Dequel syntax.</p>
 
-  <div class="card bg-base-100 shadow-md mb-6">
+  <div class="card bg-base-100 shadow-md">
     <div class="card-body">
       <form action="/" method="get">
-        <div class="form-control mb-4">
-          <label class="label" for="collection">
-            <span class="label-text font-medium">Collection</span>
-          </label>
-          <select
-            id="collection"
-            name="collection"
-            class="select select-bordered w-full max-w-xs"
-          >
-            <%= for col <- @collections do %>
-              <option value={col} selected={col == @collection}><%= col %></option>
-            <% end %>
-          </select>
-        </div>
+        <.input
+          id="collection"
+          name="collection"
+          type="select"
+          label="Collection"
+          options={@collections}
+          value={@collection}
+          class="select-bordered max-w-xs"
+        />
 
         <div class="form-control mb-4">
-          <label class="label" for="editor">
+          <label class="label sr-only" for="editor">
             <span class="label-text font-medium">Query</span>
           </label>
           <dequel-editor
             id="editor"
             name="query"
+            value={@query}
             endpoint="/api/dql"
             collection={@collection}
-            class="w-full min-h-[80px] border border-base-300 rounded-lg p-2 bg-base-100 font-mono"
+            class="w-full min-h-[80px] border border-base-300 rounded-lg p-2 bg-base-100 font-mono shadow-inner"
           />
           <dequel-suggestions class="empty:hidden flex flex-col gap-2 text-sm pt-2" for="editor" />
         </div>
 
-        <button type="submit" class="btn btn-primary">
+        <div class="text-right">
+          <.button type="submit">
           Run Query
-        </button>
+          </.button>
+        </div>
       </form>
     </div>
   </div>
 
-  <div id="result" class="mb-6">
+  <details class="p-4 border border-base-300 rounded">
+    <summary>Syntax Quick Overview</summary>
+    <.syntax_help class="p-4" />
+  </details>
+
+  <div id="result">
     <%= if @error do %>
       <div class="alert alert-error">
         <span><%= @error %></span>
@@ -52,10 +56,16 @@
       <div class="font-semibold mb-2"><%= length(@results) %> results:</div>
       <div class="space-y-1">
         <%= for item <- @results do %>
-          <div class="bg-base-100 border border-base-300 rounded p-3 font-mono text-sm">
-            <%= item.title || item.name || "ID: #{item.id}" %>
-            <span class="text-gray-400">(id: <%= item.id %>)</span>
+          <details class="bg-base-100 border border-base-300 rounded px-3 py-2 font-mono text-sm has-[summary:hover]:bg-base-200">
+            <summary>
+              <h3 class="ml-2 inline-block">
+                <%= item.title || item.name || "ID: #{item.id}" %><span class="text-gray-400">(id: <%= item.id %>)</span>
+              </h3>
+            </summary>
+            <div>
+              <pre><%= inspect item, pretty: true %></pre>
           </div>
+        </details>
         <% end %>
       </div>
     <% end %>
@@ -66,8 +76,6 @@
       </div>
     <% end %>
   </div>
-
-  <.syntax_help />
 </div>
 
 <script>
@@ -75,3 +83,4 @@
     document.getElementById("editor").setAttribute("collection", event.target.value);
   });
 </script>
+</DequelDemoWeb.Layouts.app>

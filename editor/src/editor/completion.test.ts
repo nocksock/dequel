@@ -21,7 +21,7 @@ describe("SchemaCache", () => {
 
   test("fetches schema from endpoint on first get", async () => {
     const mockSchema: Schema = {
-      fields: [{ label: "name", type: "string" }],
+      fields: { name: { type: "string" } },
     };
     vi.mocked(axios.get).mockResolvedValue({ data: mockSchema });
 
@@ -34,7 +34,7 @@ describe("SchemaCache", () => {
 
   test("returns cached promise on subsequent gets", async () => {
     const mockSchema: Schema = {
-      fields: [{ label: "name", type: "string" }],
+      fields: { name: { type: "string" } },
     };
     vi.mocked(axios.get).mockResolvedValue({ data: mockSchema });
 
@@ -51,7 +51,7 @@ describe("SchemaCache", () => {
 
   test("prime() sets schema without fetching", async () => {
     const mockSchema: Schema = {
-      fields: [{ label: "title", type: "string" }],
+      fields: { title: { type: "string" } },
     };
 
     const cache = new SchemaCache("/api");
@@ -69,31 +69,25 @@ describe("SchemaCache", () => {
     const cache = new SchemaCache("/api");
     const result = await cache.get("unknown");
 
-    expect(result).toEqual({ fields: [] });
+    expect(result).toEqual({ fields: {} });
   });
 });
 
 describe("Relationship path autocompletion", () => {
   const booksSchema: Schema = {
-    fields: [
-      { label: "title", type: "string", info: "Book title" },
-      { label: "isbn", type: "string" },
-      {
-        label: "author",
-        type: "relationship",
-        target: "authors",
-        info: "Book author",
-      },
-    ],
-    values: {},
+    fields: {
+      title: { type: "string", info: "Book title" },
+      isbn: { type: "string" },
+      author: { type: "relationship", schema: "authors", info: "Book author" },
+    },
   };
 
   const authorsSchema: Schema = {
-    fields: [
-      { label: "name", type: "string", info: "Author name" },
-      { label: "bio", type: "string" },
-      { label: "country", type: "string" },
-    ],
+    fields: {
+      name: { type: "string", info: "Author name" },
+      bio: { type: "string" },
+      country: { type: "string" },
+    },
   };
 
   beforeEach(() => {
@@ -107,16 +101,16 @@ describe("Relationship path autocompletion", () => {
     cache.prime("books", booksSchema);
 
     // Find the relationship field
-    const authorField = booksSchema.fields.find((f) => f.label === "author");
+    const authorField = booksSchema.fields["author"];
     expect(authorField?.type).toBe("relationship");
-    expect(authorField?.target).toBe("authors");
+    expect(authorField?.schema).toBe("authors");
 
     // Fetch the target schema through the cache
-    const result = await cache.get(authorField!.target!);
-    expect(result.fields).toHaveLength(3);
-    expect(result.fields.map((f) => f.label)).toContain("name");
-    expect(result.fields.map((f) => f.label)).toContain("bio");
-    expect(result.fields.map((f) => f.label)).toContain("country");
+    const result = await cache.get(authorField!.schema!);
+    expect(Object.keys(result.fields)).toHaveLength(3);
+    expect(Object.keys(result.fields)).toContain("name");
+    expect(Object.keys(result.fields)).toContain("bio");
+    expect(Object.keys(result.fields)).toContain("country");
   });
 
   test("cache fetches target schema when resolving relationship", async () => {
@@ -126,18 +120,14 @@ describe("Relationship path autocompletion", () => {
     cache.prime("books", booksSchema);
 
     // Simulate what resolvePathSchema does
-    const authorField = booksSchema.fields.find((f) => f.label === "author");
+    const authorField = booksSchema.fields["author"];
     expect(authorField?.type).toBe("relationship");
-    expect(authorField?.target).toBe("authors");
+    expect(authorField?.schema).toBe("authors");
 
     // Fetch target schema
-    const targetSchema = await cache.get(authorField!.target!);
+    const targetSchema = await cache.get(authorField!.schema!);
     expect(axios.get).toHaveBeenCalledWith("/api/authors/schema");
-    expect(targetSchema.fields.map((f) => f.label)).toEqual([
-      "name",
-      "bio",
-      "country",
-    ]);
+    expect(Object.keys(targetSchema.fields)).toEqual(["name", "bio", "country"]);
   });
 
   test("returns null for non-relationship field paths", async () => {
@@ -145,28 +135,24 @@ describe("Relationship path autocompletion", () => {
     cache.prime("books", booksSchema);
 
     // "title" is a string field, not a relationship
-    const titleField = booksSchema.fields.find((f) => f.label === "title");
+    const titleField = booksSchema.fields["title"];
     expect(titleField?.type).toBe("string");
-    expect(titleField?.target).toBeUndefined();
+    expect(titleField?.schema).toBeUndefined();
   });
 
   test("handles nested relationship paths", async () => {
     const publisherSchema: Schema = {
-      fields: [
-        { label: "name", type: "string" },
-        { label: "location", type: "string" },
-      ],
+      fields: {
+        name: { type: "string" },
+        location: { type: "string" },
+      },
     };
 
     const extendedAuthorsSchema: Schema = {
-      fields: [
-        { label: "name", type: "string" },
-        {
-          label: "publisher",
-          type: "relationship",
-          target: "publishers",
-        },
-      ],
+      fields: {
+        name: { type: "string" },
+        publisher: { type: "relationship", schema: "publishers" },
+      },
     };
 
     vi.mocked(axios.get)
@@ -182,42 +168,37 @@ describe("Relationship path autocompletion", () => {
     expect(axios.get).toHaveBeenCalledWith("/api/authors/schema");
 
     // Find publisher relationship
-    const publisherField = authorsResult.fields.find(
-      (f) => f.label === "publisher"
-    );
+    const publisherField = authorsResult.fields["publisher"];
     expect(publisherField?.type).toBe("relationship");
 
     // Get publisher schema
-    const publisherResult = await cache.get(publisherField!.target!);
+    const publisherResult = await cache.get(publisherField!.schema!);
     expect(axios.get).toHaveBeenCalledWith("/api/publishers/schema");
-    expect(publisherResult.fields.map((f) => f.label)).toEqual([
-      "name",
-      "location",
-    ]);
+    expect(Object.keys(publisherResult.fields)).toEqual(["name", "location"]);
   });
 });
 
 describe("resolvePathSchema", () => {
   const booksSchema: Schema = {
-    fields: [
-      { label: "title", type: "string" },
-      { label: "author", type: "relationship", target: "authors" },
-    ],
+    fields: {
+      title: { type: "string" },
+      author: { type: "relationship", schema: "authors" },
+    },
   };
 
   const authorsSchema: Schema = {
-    fields: [
-      { label: "name", type: "string" },
-      { label: "bio", type: "string" },
-      { label: "publisher", type: "relationship", target: "publishers" },
-    ],
+    fields: {
+      name: { type: "string" },
+      bio: { type: "string" },
+      publisher: { type: "relationship", schema: "publishers" },
+    },
   };
 
   const publishersSchema: Schema = {
-    fields: [
-      { label: "name", type: "string" },
-      { label: "location", type: "string" },
-    ],
+    fields: {
+      name: { type: "string" },
+      location: { type: "string" },
+    },
   };
 
   beforeEach(() => {

@@ -11,7 +11,7 @@ defmodule Dequel.Semantic.Coerce do
   |-------------------|----------------------------|--------------------------------|
   | `:integer`        | `"25"`                     | `25`                           |
   | `:float`          | `"3.14"`                   | `3.14`                         |
-  | `:boolean`        | `"true"/"false"/"1"/"0"`   | `true`/`false`                 |
+  | `:boolean`        | `"true"/"yes"/"1"/"false"/"no"/"0"` | `true`/`false`          |
   | `:date`           | `"2024-01-15"`             | `~D[2024-01-15]`               |
   | `:naive_datetime` | `"2024-01-15T10:30:00"`    | `~N[2024-01-15 10:30:00]`      |
   | `:utc_datetime`   | `"2024-01-15T10:30:00Z"`   | `~U[2024-01-15 10:30:00Z]`     |
@@ -20,6 +20,8 @@ defmodule Dequel.Semantic.Coerce do
 
   Invalid values are returned unchanged, letting the adapter or runtime handle errors.
   """
+
+  @date_types [:date, :naive_datetime, :naive_datetime_usec, :utc_datetime, :utc_datetime_usec]
 
   @doc """
   Coerces a string value to the given type.
@@ -50,6 +52,12 @@ defmodule Dequel.Semantic.Coerce do
       true
 
       iex> Dequel.Semantic.Coerce.coerce("0", :boolean)
+      false
+
+      iex> Dequel.Semantic.Coerce.coerce("yes", :boolean)
+      true
+
+      iex> Dequel.Semantic.Coerce.coerce("no", :boolean)
       false
 
       iex> Dequel.Semantic.Coerce.coerce("2024-01-15", :date)
@@ -101,21 +109,44 @@ defmodule Dequel.Semantic.Coerce do
   def coerce(value, :boolean) do
     case String.downcase(value) do
       "true" -> true
+      "yes" -> true
       "1" -> true
       "false" -> false
+      "no" -> false
       "0" -> false
       _ -> value
     end
   end
 
-  # Date
-  def coerce(value, :date) do
+  # Date — YYYY-MM-DD
+  def coerce(<<_, _, _, _, ?-, _, _, ?-, _, _>> = value, date_type)
+      when date_type in @date_types do
     case Date.from_iso8601(value) do
-      {:ok, date} -> date
+      {:ok, date} -> to_date_type(date, date_type)
       {:error, _} -> value
     end
   end
 
+  # Date — YYYY-MM (expand to first of month)
+  def coerce(<<_, _, _, _, ?-, _, _>> = value, date_type)
+      when date_type in @date_types do
+    case Date.from_iso8601(value <> "-01") do
+      {:ok, date} -> to_date_type(date, date_type)
+      {:error, _} -> value
+    end
+  end
+
+  # Date — YYYY (expand to January 1st)
+  def coerce(<<y1, y2, y3, y4>> = value, date_type)
+      when y1 in ?0..?9 and y2 in ?0..?9 and y3 in ?0..?9 and y4 in ?0..?9 and
+             date_type in @date_types do
+    case Date.from_iso8601(value <> "-01-01") do
+      {:ok, date} -> to_date_type(date, date_type)
+      {:error, _} -> value
+    end
+  end
+
+  # NaiveDateTime — full ISO8601 datetime
   def coerce(value, :naive_datetime) do
     case NaiveDateTime.from_iso8601(value) do
       {:ok, datetime} -> datetime
@@ -125,6 +156,7 @@ defmodule Dequel.Semantic.Coerce do
 
   def coerce(value, :naive_datetime_usec), do: coerce(value, :naive_datetime)
 
+  # UTC DateTime — full ISO8601 datetime with timezone
   def coerce(value, :utc_datetime) do
     case DateTime.from_iso8601(value) do
       {:ok, datetime, _offset} -> datetime
@@ -148,4 +180,86 @@ defmodule Dequel.Semantic.Coerce do
 
   # String and unknown types - pass through unchanged
   def coerce(value, _), do: value
+
+  @doc """
+  Returns date range bounds for partial date strings.
+
+  Used by the Analyzer to expand `:==` on partial dates to `:between` ranges.
+
+  ## Examples
+
+      iex> Dequel.Semantic.Coerce.date_range("2024-01", :date)
+      {:range, ~D[2024-01-01], ~D[2024-01-31]}
+
+      iex> Dequel.Semantic.Coerce.date_range("2024", :date)
+      {:range, ~D[2024-01-01], ~D[2024-12-31]}
+
+      iex> Dequel.Semantic.Coerce.date_range("2024-01-15", :date)
+      {:exact, ~D[2024-01-15]}
+
+      iex> Dequel.Semantic.Coerce.date_range("hello", :date)
+      :error
+
+      iex> Dequel.Semantic.Coerce.date_range("2024-01", :naive_datetime)
+      {:range, ~N[2024-01-01 00:00:00], ~N[2024-01-31 23:59:59]}
+
+      iex> Dequel.Semantic.Coerce.date_range("2024", :utc_datetime)
+      {:range, ~U[2024-01-01 00:00:00Z], ~U[2024-12-31 23:59:59Z]}
+  """
+  @spec date_range(String.t(), atom()) :: {:range, term(), term()} | {:exact, term()} | :error
+
+  # YYYY-MM — partial month range
+  def date_range(<<_, _, _, _, ?-, _, _>> = value, date_type)
+      when date_type in @date_types do
+    case Date.from_iso8601(value <> "-01") do
+      {:ok, start_date} ->
+        end_date = Date.new!(start_date.year, start_date.month, Date.days_in_month(start_date))
+        {:range, to_date_type(start_date, date_type), to_end_of_day(end_date, date_type)}
+
+      {:error, _} ->
+        :error
+    end
+  end
+
+  # YYYY — partial year range
+  def date_range(<<y1, y2, y3, y4>> = value, date_type)
+      when y1 in ?0..?9 and y2 in ?0..?9 and y3 in ?0..?9 and y4 in ?0..?9 and
+             date_type in @date_types do
+    case Date.from_iso8601(value <> "-01-01") do
+      {:ok, start_date} ->
+        end_date = Date.new!(start_date.year, 12, 31)
+        {:range, to_date_type(start_date, date_type), to_end_of_day(end_date, date_type)}
+
+      {:error, _} ->
+        :error
+    end
+  end
+
+  # YYYY-MM-DD — exact date
+  def date_range(<<_, _, _, _, ?-, _, _, ?-, _, _>> = value, date_type)
+      when date_type in @date_types do
+    case Date.from_iso8601(value) do
+      {:ok, date} -> {:exact, to_date_type(date, date_type)}
+      {:error, _} -> :error
+    end
+  end
+
+  # Anything else
+  def date_range(_value, _type), do: :error
+
+  defp to_end_of_day(date, :date), do: date
+
+  defp to_end_of_day(date, t) when t in [:naive_datetime, :naive_datetime_usec],
+    do: NaiveDateTime.new!(date, ~T[23:59:59])
+
+  defp to_end_of_day(date, t) when t in [:utc_datetime, :utc_datetime_usec],
+    do: DateTime.new!(date, ~T[23:59:59], "Etc/UTC")
+
+  defp to_date_type(date, :date), do: date
+
+  defp to_date_type(date, t) when t in [:naive_datetime, :naive_datetime_usec],
+    do: NaiveDateTime.new!(date, ~T[00:00:00])
+
+  defp to_date_type(date, t) when t in [:utc_datetime, :utc_datetime_usec],
+    do: DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
 end

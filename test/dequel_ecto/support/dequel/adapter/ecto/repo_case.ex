@@ -5,7 +5,9 @@ defmodule Dequel.Adapter.Ecto.RepoCase do
   using do
     quote do
       import Dequel.Adapter.Ecto.Repo
-      import Dequel.Adapter.Ecto.Fixtures
+      import Dequel.Fixtures
+
+      alias Dequel.Test.Schemas.{Author, Book, Store, Review, Tag}
 
       import Ecto
       import Ecto.Query

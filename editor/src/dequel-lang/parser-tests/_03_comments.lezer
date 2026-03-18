@@ -36,17 +36,4 @@ QueryList(
   Comment,
 )
 
-# comment condition inline
-
-some:thing !dont.need:this but:this
-
-==>
-
-QueryList(
-  Query(
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    IgnoredCondition(Field, ":", Predicate(Value(Identifier)))
-    Condition(Field, ":", Predicate(Value(Identifier))),
-  ),
-)
 

@@ -1,6 +1,8 @@
-import type { DequelEditor } from './editor/index.js'
 import { SchemaCache, SchemaEffect, SchemaField } from './editor/completion.js'
-import { Suggestions, SuggestionSchemaEffect } from './editor/suggestions/suggestions.js'
+import { dequelLinter } from './dequel-lang/linter.js'
+import { diagnosticCount } from '@codemirror/lint'
+import { gettext } from './lib/i18n.js'
+import { Suggestions, SuggestionSchemaEffect, SuggestionSchemaField } from './editor/suggestions/suggestions.js'
 import { raise } from './lib/error.js'
 import { detectLocale, loadTranslations } from './lib/i18n.js'
 import axios from 'axios'
@@ -11,6 +13,9 @@ import { CurrentNodeField } from './editor/current-node.js'
 import { OnUpdate } from './editor/on-update.js'
 import { DequelEditorOptions } from './editor/options.js'
 import { editorStylesheet } from './editor/styles.js'
+
+
+type DequelEditor = EditorView
 
 const submitKeymap = (onSubmit?: () => void) =>
     onSubmit
@@ -99,6 +104,7 @@ export class DequelEditorElement extends HTMLElement {
                 DequelLang(),
                 CurrentNodeField,
                 SchemaField,
+                SuggestionSchemaField,
                 DequelEditorOptions.of({
                     root: this,
                     value: this.#value,
@@ -114,10 +120,23 @@ export class DequelEditorElement extends HTMLElement {
                 submitKeymap(() => {
                     this.form?.requestSubmit()
                 }),
+                Suggestions,
+                dequelLinter(
+                    (state) => state.field(SchemaField, false),
+                    (state) => state.facet(DequelEditorOptions)[0]?.schemaCache
+                ),
+                EditorView.updateListener.of((update) => {
+                    // Update form validity based on lint diagnostics
+                    const count = diagnosticCount(update.state)
+                    this.updateValidity(count)
+                }),
             ],
             parent: this.shadowRoot!,
             doc: this.value,
         })
+
+        this.updateSchema()
+        this.updateSuggestions()
     }
 
     attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
@@ -171,6 +190,17 @@ export class DequelEditorElement extends HTMLElement {
                 })
             })
             .catch(console.error)
+    }
+
+    private updateValidity(errorCount: number) {
+        if (errorCount > 0) {
+            this.#internals.setValidity(
+                { customError: true },
+                gettext('Query has %1 validation error(s)', errorCount)
+            )
+        } else {
+            this.#internals.setValidity({})
+        }
     }
 }
 

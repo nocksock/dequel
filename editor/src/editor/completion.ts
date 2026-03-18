@@ -6,17 +6,16 @@ import { dequelParser } from "../dequel-lang/language";
 import { DequelEditorOptions } from "./options.js";
 import { closest } from "../lib/syntax";
 
-export type CompletionField = {
-  label: string;
+export type FieldDefinition = {
   type: string;
   info?: string;
-  target?: string;      // For relationships: target collection name
-  cardinality?: string; // "one" | "many"
+  schema?: string;      // For relationships: target collection name
+  cardinality?: string; // "has_many" for has_many relationships
+  values?: string[];    // For keyword fields: allowed values
 };
 
 export type Schema = {
-  fields: CompletionField[];
-  values?: Record<string, string[]>;
+  fields: Record<string, FieldDefinition>;
 };
 
 export class SchemaCache {
@@ -31,7 +30,7 @@ export class SchemaCache {
         axios
           .get(`${this.endpoint}/${collection}/schema`)
           .then((r) => r.data)
-          .catch(() => ({ fields: [] })) // Empty on error
+          .catch(() => ({ fields: {} })) // Empty on error
       );
     }
     return this.cache.get(collection)!;
@@ -51,11 +50,11 @@ export async function resolvePathSchema(
   let schema = baseSchema;
 
   for (const segment of pathSegments) {
-    const field = schema.fields.find((f) => f.label === segment);
-    if (field?.type !== "relationship" || !field.target) {
+    const field = schema.fields[segment];
+    if (field?.type !== "relationship" || !field.schema) {
       return null; // Not a valid relationship path
     }
-    schema = await cache.get(field.target);
+    schema = await cache.get(field.schema);
   }
 
   return schema;
@@ -64,7 +63,7 @@ export async function resolvePathSchema(
 export const SchemaEffect = StateEffect.define<Schema>();
 
 export const SchemaField = StateField.define<Schema>({
-  create: () => ({ fields: [] }),
+  create: () => ({ fields: {} }),
   update: (value, tr) => {
     for (const effect of tr.effects) {
       if (effect.is(SchemaEffect)) {
@@ -101,7 +100,7 @@ export const DequelAutocomplete = dequelParser.data.of({
     if (fieldNode && colonNode && context.pos > colonNode.to) {
       // We're after the colon, so we're in value position
       const fieldName = context.state.doc.sliceString(fieldNode.from, fieldNode.to);
-      const values = schema?.values?.[fieldName];
+      const values = schema?.fields[fieldName]?.values;
 
       if (values?.length) {
         const completions: Completion[] = values.map((v) => ({
@@ -117,7 +116,7 @@ export const DequelAutocomplete = dequelParser.data.of({
     }
 
     // Field name completions
-    if (nodeBefore.name === "Field" && schema?.fields?.length) {
+    if (nodeBefore.name === "Field" && schema && Object.keys(schema.fields).length) {
       // Get the full field text to check for relationship paths
       const fieldText = context.state.doc.sliceString(nodeBefore.from, context.pos);
       const pathSegments = fieldText.split(".");
@@ -134,8 +133,8 @@ export const DequelAutocomplete = dequelParser.data.of({
         );
 
         if (resolvedSchema) {
-          const completions: Completion[] = resolvedSchema.fields.map((f) => ({
-            label: f.label,
+          const completions: Completion[] = Object.entries(resolvedSchema.fields).map(([name, f]) => ({
+            label: name,
             type: f.type,
             info: f.info,
           }));
@@ -154,8 +153,8 @@ export const DequelAutocomplete = dequelParser.data.of({
       }
 
       // No path, just return base schema fields
-      const completions: Completion[] = schema.fields.map((f) => ({
-        label: f.label,
+      const completions: Completion[] = Object.entries(schema.fields).map(([name, f]) => ({
+        label: name,
         type: f.type,
         info: f.info,
       }));

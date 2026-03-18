@@ -2,26 +2,24 @@ defmodule Dequel.Parser do
   @moduledoc """
   Parser for the Dequel query language using NimbleParsec.
 
-  Parses query strings into AST tuples like `{:==, [], [:field, "value"]}`.
+  Parses query strings into AST tuples like `{:==, [], ["field", "value"]}`.
 
-  ## Atom Safety
+  ## Field Names as Strings
 
-  Field names and relation names in queries are converted to atoms using
-  `String.to_existing_atom/1`. This means:
+  Field names and relation names are kept as strings in the parser output.
+  This allows parsing queries without requiring schema atoms to be loaded first.
 
-  1. **Schemas must be loaded before parsing** - The atoms for field names must
-     already exist in the atom table. When using Ecto schemas, this happens
-     automatically when the schema module is compiled/loaded.
+  The conversion to atoms is deferred to the semantic analysis or adapter layer,
+  which has schema context available to safely convert strings to atoms using
+  `String.to_existing_atom/1`.
 
-  2. **Unknown fields will raise** - If a query references a field that doesn't
-     exist as an atom, an `ArgumentError` will be raised. This is intentional
-     to catch typos early rather than silently returning no results.
-
-  3. **No atom table exhaustion** - Since we only convert to existing atoms,
-     malicious queries cannot exhaust the atom table.
-
-  For runtime field validation with better error messages, use the semantic
-  analyzer with a schema resolver which can provide context-aware errors.
+  This design ensures:
+  1. **Parsing works without schema** - Queries can be validated syntactically
+     without loading Ecto schemas.
+  2. **No atom table exhaustion** - Strings are only converted to atoms by
+     adapters/analyzers that validate against known schemas.
+  3. **Better error messages** - The semantic layer can provide context-aware
+     errors for unknown fields.
   """
 
   import NimbleParsec
@@ -59,7 +57,7 @@ defmodule Dequel.Parser do
   )
 
   def wrap_block([relation, inner]) do
-    {:block, [], [String.to_existing_atom(relation), inner]}
+    {:block, [], [relation, inner]}
   end
 
   defparsec(

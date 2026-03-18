@@ -16,12 +16,6 @@ describe('closestCondition', () => {
     expect(condition?.name).toBe('ExcludeCondition')
   })
 
-  test('returns condition when node is an IgnoredCondition', () => {
-    const { node } = getNodeAt('!tit|le:foo')
-    const condition = closestCondition(node)
-    expect(condition?.name).toBe('IgnoredCondition')
-  })
-
   test('returns condition when inside matcher', () => {
     const { node } = getNodeAt('title:fo|o')
     const condition = closestCondition(node)
@@ -67,25 +61,11 @@ describe('parseCondition', () => {
     expect(parts.predicate).toBe('foo')
   })
 
-  test('parses ignored condition', () => {
-    const parts = parse('!title:foo')
-    expect(parts.prefix).toBe('!')
-    expect(parts.field).toBe('title')
-    expect(parts.predicate).toBe('foo')
-  })
-
   test('parses condition with command matcher', () => {
     const parts = parse('created_at:after(2024,01)')
     expect(parts.prefix).toBe('')
     expect(parts.field).toBe('created_at')
     expect(parts.predicate).toBe('after(2024,01)')
-  })
-
-  test('parses condition with regex matcher', () => {
-    const parts = parse('name:/^test.*/i')
-    expect(parts.prefix).toBe('')
-    expect(parts.field).toBe('name')
-    expect(parts.predicate).toBe('/^test.*/i')
   })
 })
 
@@ -100,10 +80,6 @@ describe('serializeCondition', () => {
     expect(result).toBe('-title:foo')
   })
 
-  test('serializes ignored condition', () => {
-    const result = serializeCondition({ prefix: '!', field: 'title', predicate: 'foo' })
-    expect(result).toBe('!title:foo')
-  })
 })
 
 describe('round-trip parse/serialize', () => {
@@ -124,16 +100,8 @@ describe('round-trip parse/serialize', () => {
     expect(roundTrip('-title:foo')).toBe('-title:foo')
   })
 
-  test('round-trips ignored condition', () => {
-    expect(roundTrip('!title:foo')).toBe('!title:foo')
-  })
-
   test('round-trips condition with command', () => {
     expect(roundTrip('created_at:after(2024,01)')).toBe('created_at:after(2024,01)')
-  })
-
-  test('round-trips condition with regex', () => {
-    expect(roundTrip('name:/^test.*/i')).toBe('name:/^test.*/i')
   })
 })
 
@@ -166,10 +134,6 @@ describe('getFieldContext', () => {
 
   test('works with ExcludeCondition', () => {
     expect(getFieldName('-title:fo|o')).toBe('title')
-  })
-
-  test('works with IgnoredCondition', () => {
-    expect(getFieldName('!title:fo|o')).toBe('title')
   })
 
   test('returns field with multiple conditions - first condition', () => {

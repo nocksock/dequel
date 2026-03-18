@@ -65,14 +65,6 @@ msgid "Exclude from results"
 msgstr "Von Ergebnissen ausschliessen"
 
 #: src/lib/actions.ts
-msgid "Enable condition"
-msgstr "Bedingung aktivieren"
-
-#: src/lib/actions.ts
-msgid "Disable condition"
-msgstr "Bedingung deaktivieren"
-
-#: src/lib/actions.ts
 msgid "Add another condition"
 msgstr "Weitere Bedingung hinzufuegen"
 

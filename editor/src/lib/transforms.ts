@@ -4,22 +4,10 @@ import { Transform } from './syntax'
  * Toggle negation prefix.
  * - Regular condition → Excluded (add '-')
  * - Excluded → Regular (remove '-')
- * - Ignored → Excluded (replace '!' with '-')
  */
 export const negate: Transform = (parts) => ({
   ...parts,
   prefix: parts.prefix === '-' ? '' : '-',
-})
-
-/**
- * Toggle disable prefix.
- * - Regular condition → Ignored (add '!')
- * - Ignored → Regular (remove '!')
- * - Excluded → Ignored (replace '-' with '!')
- */
-export const disable: Transform = (parts) => ({
-  ...parts,
-  prefix: parts.prefix === '!' ? '' : '!',
 })
 
 /**

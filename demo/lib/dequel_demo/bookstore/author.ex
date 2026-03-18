@@ -7,6 +7,7 @@ defmodule DequelDemo.Bookstore.Author do
     field :bio, :string
     field :birth_date, :date
     field :country, :string
+    field :details, :map
 
     has_many :books, DequelDemo.Bookstore.Book
 
@@ -15,7 +16,7 @@ defmodule DequelDemo.Bookstore.Author do
 
   def changeset(author, attrs) do
     author
-    |> cast(attrs, [:name, :bio, :birth_date, :country])
+    |> cast(attrs, [:name, :bio, :birth_date, :country, :details])
     |> validate_required([:name])
   end
 end

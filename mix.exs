@@ -5,7 +5,7 @@ defmodule Dequel.MixProject do
     [
       name: "Dequel",
       app: :dequel,
-      version: "0.5.0",
+      version: "0.6.0",
       elixir: "~> 1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -13,6 +13,7 @@ defmodule Dequel.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       source_url: "https://github.com/nocksock/dequel",
       docs: [
+        formatters: ["html", "llms"],
         extras: [
           "README.md"
         ]
@@ -27,9 +28,6 @@ defmodule Dequel.MixProject do
   defp elixirc_paths(:test),
     do: ["lib", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
 
-  defp elixirc_paths(:bench),
-    do: ["lib", "bench", "shared"]
-
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
@@ -40,10 +38,7 @@ defmodule Dequel.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:telemetry, "~> 1.3"},
       {:ecto_sql, "~> 3.10"},
-      {:ecto_sqlite3, "~> 0.16"},
-      {:benchee, "~> 1.3", only: :bench},
-      {:benchee_json, "~> 1.0", only: :bench},
-      {:faker, "~> 0.18", only: :bench}
+      {:ecto_sqlite3, "~> 0.16"}
     ]
   end
 
@@ -51,7 +46,7 @@ defmodule Dequel.MixProject do
     [
       description: "friendly query language for user input built on Ecto",
       licenses: ["MIT"],
-      files: ~w(lib priv/static mix.exs README.md),
+      files: ~w(lib priv/static priv/integration.md mix.exs README.md),
       links: %{
         "Github" => "https://github.com/nocksock/dequel",
         "npm" => "https://www.npmjs.com/package/dequel-editor"

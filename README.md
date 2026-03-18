@@ -17,7 +17,10 @@ age:18..65
 category:[frontend, design] status:pending
 
 # Relationship filtering
-author.name:Tolkien items { rarity:legendary }
+author.name:Tolkien books { genre:fantasy }
+
+# Many-to-many relationships
+tags { name:classic }
 ```
 
 ## Features
@@ -29,8 +32,10 @@ author.name:Tolkien items { rarity:legendary }
 - Negation with `!` or `-` prefix
 - Logical operators (AND/OR) with grouping
 - Relationship filtering via dot notation and block syntax
+- Many-to-many relationship support (e.g., tags, categories)
 - Type coercion with schema support (integers, dates, booleans, etc.)
 - Ecto and ETS adapters included
+- Live demo with CodeMirror-based editor (`demo/`)
 
 See [SYNTAX.md](./SYNTAX.md) for the complete syntax reference.
 
@@ -143,6 +148,28 @@ Dequel provides a query interface that's powerful enough for developers but appr
 - Building dynamic content collections
 - Creating data-driven features without exposing SQL
 - Providing domain-specific search predicates
+
+## Demo & Development
+
+The `demo/` directory contains a Phoenix LiveView application showcasing Dequel with a live CodeMirror-based editor:
+
+```bash
+cd demo
+mix setup
+mix phx.server
+# Visit http://localhost:4242
+```
+
+### Benchmarking
+
+Run performance benchmarks with realistic datasets:
+
+```bash
+cd demo
+MIX_ENV=bench mix bench              # Small dataset (100 books)
+MIX_ENV=bench mix bench --size large # Large dataset (10,000 books)
+MIX_ENV=bench mix bench.history      # View historical results
+```
 
 ## License
 

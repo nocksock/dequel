@@ -52,14 +52,16 @@ defmodule Dequel.Query.Context do
   end
 
   defp do_ensure_joins(ctx, [assoc | rest], accumulated, parent_binding) do
-    current_path = accumulated ++ [assoc]
+    # Convert string path segments to atoms for join tracking
+    assoc_atom = to_atom(assoc)
+    current_path = accumulated ++ [assoc_atom]
 
     case Map.get(ctx.joins, current_path) do
       nil ->
         binding = :"join_#{Enum.join(current_path, "_")}"
 
         join_info = %{
-          assoc: assoc,
+          assoc: assoc_atom,
           parent: parent_binding,
           binding: binding,
           path: current_path
@@ -73,6 +75,9 @@ defmodule Dequel.Query.Context do
         do_ensure_joins(ctx, rest, current_path, existing.binding)
     end
   end
+
+  defp to_atom(value) when is_atom(value), do: value
+  defp to_atom(value) when is_binary(value), do: String.to_existing_atom(value)
 
   @doc "Returns joins in dependency order (parent joins first)"
   @spec ordered_joins(t()) :: [join_info()]

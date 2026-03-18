@@ -1,10 +1,7 @@
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { render } from 'preact'
 import { StateEffect, StateField } from '@codemirror/state'
-import axios from 'axios'
 import { SuggestionView } from '../../components/SuggestionView'
-import { raise } from '../../lib/error'
-import { DequelEditorOptions } from '../options.js'
 
 /**
  * Action type in API responses.
@@ -61,38 +58,25 @@ export const SuggestionSchemaEffect = SuggestionSchemaEffectType
 
 export const Suggestions = ViewPlugin.fromClass(
   class {
-    #dom: HTMLElement
+    #dom: HTMLElement | null = null
+    #hostId: string | undefined
 
     constructor(view: EditorView) {
-      const hostId = (view.dom.getRootNode() as ShadowRoot).host?.id
-      this.#dom =
-        document.querySelector(`[for="${hostId}"]`) ||
-        raise(`no suggestion container found`)
-
-      const options = view.state.facet(DequelEditorOptions)[0]
-      const endpoint = options.root.endpoint
-      if (endpoint) {
-        this.fetchSuggestions(view, endpoint)
-      }
+      this.#hostId = (view.dom.getRootNode() as ShadowRoot).host?.id
     }
 
-    fetchSuggestions(view: EditorView, endpoint: string) {
-      axios
-        .get(endpoint)
-        .then(({ data }) => {
-          view.dispatch({
-            effects: SuggestionSchemaEffectType.of(data),
-          })
-        })
-        .catch(console.error)
+    #findTarget(): HTMLElement | null {
+      if (!this.#dom && this.#hostId) {
+        this.#dom = document.querySelector(`dequel-suggestions[for="${this.#hostId}"]`)
+      }
+      return this.#dom
     }
 
     update(update: ViewUpdate) {
-      render(<SuggestionView view={update.view} />, this.#dom)
+      const target = this.#findTarget()
+      if (target) {
+        render(<SuggestionView view={update.view} />, target)
+      }
     }
-  },
-  {
-    // @ts-ignore
-    provide: v => [SuggestionSchemaField, v],
   }
 )

@@ -59,18 +59,23 @@ defmodule Dequel.Adapter.Ecto.Filter do
   """
   @spec query(Ecto.Query.t(), String.t(), keyword()) :: Ecto.Query.t()
   def query(base_query, input, opts \\ []) when is_binary(input) do
-    ast = Dequel.Parser.parse!(input)
-    schema = Keyword.get(opts, :schema)
-    # Extract prefix from base query for subqueries (e.g., many_to_many join tables)
-    prefix = get_query_prefix(base_query)
-    {dynamic_expr, ctx} = filter(ast, Context.new(schema, prefix))
+    # Handle empty/whitespace-only queries - return all records (no WHERE clause)
+    if String.trim(input) == "" do
+      base_query
+    else
+      ast = Dequel.Parser.parse!(input)
+      schema = Keyword.get(opts, :schema)
+      # Extract prefix from base query for subqueries (e.g., many_to_many join tables)
+      prefix = get_query_prefix(base_query)
+      {dynamic_expr, ctx} = filter(ast, Context.new(schema, prefix))
 
-    # Ensure the base query has the :q alias for join references
-    base_query
-    |> ensure_base_alias()
-    |> apply_joins(Context.ordered_joins(ctx))
-    |> where(^dynamic_expr)
-    |> maybe_preload(ctx, opts)
+      # Ensure the base query has the :q alias for join references
+      base_query
+      |> ensure_base_alias()
+      |> apply_joins(Context.ordered_joins(ctx))
+      |> where(^dynamic_expr)
+      |> maybe_preload(ctx, opts)
+    end
   end
 
   # Adds the :q alias to the base query if not already present
@@ -108,45 +113,51 @@ defmodule Dequel.Adapter.Ecto.Filter do
     build_filter(analyzed_ast, ctx)
   end
 
-  # IN clause - simple field
-  defp build_filter({:in, [], [field, values]}, ctx) when is_atom(field) do
-    {dynamic([schema], field(schema, ^field) in ^values), ctx}
+  # IN clause - simple field (atom or string)
+  defp build_filter({:in, [], [field, values]}, ctx) when is_atom(field) or is_binary(field) do
+    atom_field = to_atom(field)
+    {dynamic([schema], field(schema, ^atom_field) in ^values), ctx}
   end
 
   # IN clause - relationship path
   defp build_filter({:in, [], [path, values]}, ctx) when is_list(path) do
     {binding, ctx} = Context.ensure_joins(ctx, path)
-    field_name = List.last(path)
+    field_name = to_atom(List.last(path))
     {dynamic([{^binding, x}], field(x, ^field_name) in ^values), ctx}
   end
 
-  # Between - simple field
-  defp build_filter({:between, [], [field, start_val, end_val]}, ctx) when is_atom(field) do
-    {where({:between, [], [field, start_val, end_val]}), ctx}
+  # Between - simple field (atom or string)
+  defp build_filter({:between, [], [field, start_val, end_val]}, ctx)
+       when is_atom(field) or is_binary(field) do
+    atom_field = to_atom(field)
+    {where({:between, [], [atom_field, start_val, end_val]}), ctx}
   end
 
   # Between - relationship path
   defp build_filter({:between, [], [path, start_val, end_val]}, ctx) when is_list(path) do
     {binding, ctx} = Context.ensure_joins(ctx, path)
-    field_name = List.last(path)
+    field_name = to_atom(List.last(path))
     dynamic_expr = build_dynamic(:between, binding, field_name, {start_val, end_val})
     {dynamic_expr, ctx}
   end
 
-  # Simple field - use base binding
-  defp build_filter({op, [], [field, value]}, ctx) when is_atom(field) do
-    {where({op, [], [field, value]}), ctx}
+  # Simple field - use base binding (atom or string)
+  defp build_filter({op, [], [field, value]}, ctx) when is_atom(field) or is_binary(field) do
+    atom_field = to_atom(field)
+    {where({op, [], [atom_field, value]}), ctx}
   end
 
   # Simple field with options (e.g., case-insensitive flag)
-  defp build_filter({op, [], [field, value, opts]}, ctx) when is_atom(field) do
-    {where({op, [], [field, value, opts]}), ctx}
+  defp build_filter({op, [], [field, value, opts]}, ctx)
+       when is_atom(field) or is_binary(field) do
+    atom_field = to_atom(field)
+    {where({op, [], [atom_field, value, opts]}), ctx}
   end
 
   # Relationship path - track joins, build dynamic with named binding
   defp build_filter({op, [], [path, value]}, ctx) when is_list(path) do
     {binding, ctx} = Context.ensure_joins(ctx, path)
-    field_name = List.last(path)
+    field_name = to_atom(List.last(path))
     dynamic_expr = build_dynamic(op, binding, field_name, value)
     {dynamic_expr, ctx}
   end
@@ -154,7 +165,7 @@ defmodule Dequel.Adapter.Ecto.Filter do
   # Relationship path with options
   defp build_filter({op, [], [path, value, _opts]}, ctx) when is_list(path) do
     {binding, ctx} = Context.ensure_joins(ctx, path)
-    field_name = List.last(path)
+    field_name = to_atom(List.last(path))
     dynamic_expr = build_dynamic(op, binding, field_name, value)
     {dynamic_expr, ctx}
   end
@@ -333,8 +344,10 @@ defmodule Dequel.Adapter.Ecto.Filter do
   end
 
   # Build filter with explicit binding for join relations
-  defp build_filter_with_binding({op, [], [field, value]}, ctx, binding) when is_atom(field) do
-    dynamic_expr = build_dynamic(op, binding, field, value)
+  defp build_filter_with_binding({op, [], [field, value]}, ctx, binding)
+       when is_atom(field) or is_binary(field) do
+    atom_field = to_atom(field)
+    dynamic_expr = build_dynamic(op, binding, atom_field, value)
     {dynamic_expr, ctx}
   end
 
@@ -446,11 +459,13 @@ defmodule Dequel.Adapter.Ecto.Filter do
   def where([]), do: dynamic(true)
 
   def where({:in, [], [field, values]}) do
-    dynamic([schema], field(schema, ^field) in ^values)
+    atom_field = to_atom(field)
+    dynamic([schema], field(schema, ^atom_field) in ^values)
   end
 
   def where({:==, [], [field, value]}) do
-    dynamic([schema], field(schema, ^field) == ^value)
+    atom_field = to_atom(field)
+    dynamic([schema], field(schema, ^atom_field) == ^value)
   end
 
   def where({:and, [], [lhs, rhs]}) do
@@ -466,38 +481,51 @@ defmodule Dequel.Adapter.Ecto.Filter do
   end
 
   def where({:starts_with, [], [field, value]}) do
+    atom_field = to_atom(field)
+
     dynamic(
       [schema],
-      fragment("? LIKE ?", field(schema, ^field), ^"#{String.replace(value, "%", "\\%")}%")
+      fragment("? LIKE ?", field(schema, ^atom_field), ^"#{String.replace(value, "%", "\\%")}%")
     )
   end
 
   def where({:ends_with, [], [field, value]}) do
-    dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}"))
+    atom_field = to_atom(field)
+    dynamic([schema], fragment("? LIKE ?", field(schema, ^atom_field), ^"%#{value}"))
   end
 
   def where({:contains, [], [field, value]}) do
-    dynamic([schema], fragment("? LIKE ?", field(schema, ^field), ^"%#{value}%"))
+    atom_field = to_atom(field)
+    dynamic([schema], fragment("? LIKE ?", field(schema, ^atom_field), ^"%#{value}%"))
   end
 
   def where({:>, [], [field, value]}) do
-    dynamic([schema], field(schema, ^field) > ^value)
+    atom_field = to_atom(field)
+    dynamic([schema], field(schema, ^atom_field) > ^value)
   end
 
   def where({:<, [], [field, value]}) do
-    dynamic([schema], field(schema, ^field) < ^value)
+    atom_field = to_atom(field)
+    dynamic([schema], field(schema, ^atom_field) < ^value)
   end
 
   def where({:>=, [], [field, value]}) do
-    dynamic([schema], field(schema, ^field) >= ^value)
+    atom_field = to_atom(field)
+    dynamic([schema], field(schema, ^atom_field) >= ^value)
   end
 
   def where({:<=, [], [field, value]}) do
-    dynamic([schema], field(schema, ^field) <= ^value)
+    atom_field = to_atom(field)
+    dynamic([schema], field(schema, ^atom_field) <= ^value)
   end
 
   def where({:between, [], [field, start_val, end_val]}) do
-    dynamic([schema], field(schema, ^field) >= ^start_val and field(schema, ^field) <= ^end_val)
+    atom_field = to_atom(field)
+
+    dynamic(
+      [schema],
+      field(schema, ^atom_field) >= ^start_val and field(schema, ^atom_field) <= ^end_val
+    )
   end
 
   def where({:not, [], expression}) do
@@ -507,4 +535,9 @@ defmodule Dequel.Adapter.Ecto.Filter do
   def where({op, [], [field, value]}) do
     raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
   end
+
+  # Helper to convert string field names to atoms.
+  # Strings are converted using String.to_existing_atom to ensure the field exists.
+  defp to_atom(field) when is_atom(field), do: field
+  defp to_atom(field) when is_binary(field), do: String.to_existing_atom(field)
 end
