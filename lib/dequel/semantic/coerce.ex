@@ -87,9 +87,12 @@ defmodule Dequel.Semantic.Coerce do
 
   def coerce(value, type)
 
-  # Dynamic values — resolve via Dequel.Dynamic for date types, pass through otherwise
-  def coerce({:dynamic, name}, type) when type in @date_types do
-    apply(Dequel.Dynamic, type, [name])
+  # Dynamic values — resolve via Dequel.Dynamic based on field type
+  def coerce({:dynamic, name}, type) do
+    case Dequel.Dynamic.resolve(type, name) do
+      :error -> {:dynamic, name}
+      result -> result
+    end
   end
 
   # Already the right type - pass through
@@ -214,8 +217,9 @@ defmodule Dequel.Semantic.Coerce do
   @spec date_range(term(), atom()) :: {:range, term(), term()} | {:exact, term()} | :error
 
   # Dynamic values — resolve via Dequel.Dynamic
-  def date_range({:dynamic, name}, type) when type in @date_types do
-    case apply(Dequel.Dynamic, type, [name]) do
+  def date_range({:dynamic, name}, type) do
+    case Dequel.Dynamic.resolve(type, name) do
+      :error -> :error
       {:range, start_val, end_val} -> {:range, start_val, end_val}
       val -> {:exact, val}
     end

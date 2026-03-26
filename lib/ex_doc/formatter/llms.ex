@@ -116,8 +116,7 @@ defmodule ExDoc.Formatter.LLMS do
 
   defp extract_text(doc) when is_list(doc) do
     doc
-    |> Enum.map(&ast_to_text/1)
-    |> Enum.join("")
+    |> Enum.map_join("", &ast_to_text/1)
     |> String.replace(~r/\n{3,}/, "\n\n")
     |> String.trim()
   end

@@ -104,18 +104,16 @@ defmodule Dequel.Comparators do
   """
   @spec parse_number(binary()) :: {:ok, number()} | :error
   def parse_number(str) when is_binary(str) do
-    cond do
-      String.contains?(str, ".") ->
-        case Float.parse(str) do
-          {num, ""} -> {:ok, num}
-          _ -> :error
-        end
-
-      true ->
-        case Integer.parse(str) do
-          {num, ""} -> {:ok, num}
-          _ -> :error
-        end
+    if String.contains?(str, ".") do
+      case Float.parse(str) do
+        {num, ""} -> {:ok, num}
+        _ -> :error
+      end
+    else
+      case Integer.parse(str) do
+        {num, ""} -> {:ok, num}
+        _ -> :error
+      end
     end
   end
 

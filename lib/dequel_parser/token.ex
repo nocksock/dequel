@@ -54,23 +54,15 @@ defmodule Dequel.Parser.Token do
   def dynamic_value do
     ignore(string("@"))
     |> choice([
-      dynamic_value("today"),
-      dynamic_value("tomorrow"),
-      dynamic_value("yesterday"),
-      dynamic_value("this-year"),
-      dynamic_value("this-month-start"),
-      dynamic_value("this-month-end"),
-      dynamic_value("this-month")
+      string("today") |> replace({:dynamic, :today}),
+      string("tomorrow") |> replace({:dynamic, :tomorrow}),
+      string("yesterday") |> replace({:dynamic, :yesterday}),
+      string("this-year") |> replace({:dynamic, :"this-year"}),
+      string("this-month-start") |> replace({:dynamic, :"this-month-start"}),
+      string("this-month-end") |> replace({:dynamic, :"this-month-end"}),
+      string("this-month") |> replace({:dynamic, :"this-month"})
     ])
   end
-
-  def dynamic_value("today" = v), do: string(v) |> replace({:dynamic, :today})
-  def dynamic_value("tomorrow" = v), do: string(v) |> replace({:dynamic, :tomorrow})
-  def dynamic_value("yesterday" = v), do: string(v) |> replace({:dynamic, :yesterday})
-  def dynamic_value("this-year" = v), do: string(v) |> replace({:dynamic, :"this-year"})
-  def dynamic_value("this-month-start" = v), do: string(v) |> replace({:dynamic, :"this-month-start"})
-  def dynamic_value("this-month-end" = v), do: string(v) |> replace({:dynamic, :"this-month-end"})
-  def dynamic_value("this-month" = v), do: string(v) |> replace({:dynamic, :"this-month"})
 
   def value do
     choice([

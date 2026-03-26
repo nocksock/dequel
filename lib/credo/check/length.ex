@@ -1,4 +1,5 @@
 defmodule Credo.Check.Readability.Length do
+  @moduledoc false
   use Credo.Check,
     base_priority: :high,
     category: :readability,

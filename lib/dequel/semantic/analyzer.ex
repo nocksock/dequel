@@ -294,32 +294,22 @@ defmodule Dequel.Semantic.Analyzer do
     atom_first = to_field_atom(first_segment, resolver)
 
     case resolve_field(resolver, atom_first) do
-      %{kind: :has_many, resolver: nested_resolver} ->
-        # Use nested resolver if available, otherwise use passthrough
-        inner_resolver = nested_resolver || passthrough_resolver()
-        # Transform to EXISTS node with inner expression using remaining path
+      %{kind: :has_many, resolver: nested} ->
+        inner_resolver = nested || passthrough_resolver()
         inner = build_inner_expr(op, rest, value, inner_resolver)
-        analyzed_inner = analyze(inner, inner_resolver)
-        {:exists, [cardinality: :many], [atom_first, analyzed_inner]}
+        {:exists, [cardinality: :many], [atom_first, analyze(inner, inner_resolver)]}
 
-      %{kind: kind, resolver: _nested_resolver}
-      when kind in [:has_one, :belongs_to] ->
-        # Keep as path - JOINs are correct for :one cardinality
-        # Convert all path segments to atoms
+      %{kind: kind} when kind in [:has_one, :belongs_to] ->
         atom_path = Enum.map([first_segment | rest], &to_field_atom(&1, resolver))
         {op, meta, [atom_path, value]}
 
-      %{kind: kind, resolver: nested_resolver}
-      when kind in [:embeds_many, :embeds_one] ->
-        # Use nested resolver if available, otherwise use passthrough
-        inner_resolver = nested_resolver || passthrough_resolver()
-        # Transform to EMBEDDED node
+      %{kind: kind, resolver: nested} when kind in [:embeds_many, :embeds_one] ->
+        inner_resolver = nested || passthrough_resolver()
         inner = build_inner_expr(op, rest, value, inner_resolver)
         cardinality = if kind == :embeds_many, do: :many, else: :one
         {:embedded, [cardinality: cardinality], [atom_first, inner]}
 
       nil ->
-        # Unknown relation - leave as-is for adapter to handle (keep strings)
         {op, meta, [[first_segment | rest], value]}
     end
   end

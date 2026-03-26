@@ -42,7 +42,7 @@ defmodule Dequel.Adapter.Ecto.StoreTest do
     test "filter books by price greater than", %{books: %{lotr: lotr}} do
       query = from(b in Book) |> Filter.query("price:>25")
       results = Repo.all(query)
-      assert length(results) >= 1
+      assert results != []
       assert Enum.any?(results, fn b -> b.id == lotr.id end)
     end
 
@@ -202,7 +202,7 @@ defmodule Dequel.Adapter.Ecto.StoreTest do
 
       results = Repo.all(query)
       # Should include authors who have books with 5-star reviews
-      assert length(results) >= 1
+      assert results != []
     end
 
     test "filter stores by their books' genre" do
@@ -238,7 +238,7 @@ defmodule Dequel.Adapter.Ecto.StoreTest do
 
       results = Repo.all(query)
       # Should include English authors' books with over 200 pages
-      assert length(results) >= 1
+      assert results != []
     end
 
     test "find sci-fi books or highly-rated books" do

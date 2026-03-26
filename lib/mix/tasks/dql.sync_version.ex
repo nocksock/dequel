@@ -57,34 +57,30 @@ defmodule Mix.Tasks.Dql.SyncVersion do
   end
 
   defp handle_versions(mix_version, editor_version, path, content, opts) do
-    in_sync = versions_match?(mix_version, editor_version, opts[:strict])
-
-    if in_sync do
+    if versions_match?(mix_version, editor_version, opts[:strict]) do
       Mix.shell().info("Versions in sync: #{mix_version} / #{editor_version}")
     else
-      if opts[:check] do
-        Mix.shell().error(
-          "Version mismatch: mix.exs has #{mix_version}, editor/package.json has #{editor_version}"
-        )
+      handle_mismatch(mix_version, editor_version, path, content, opts)
+    end
+  end
 
-        Mix.raise("Versions out of sync")
-      else
-        updated_content =
-          String.replace(
-            content,
-            ~r/"version":\s*"[^"]+"/,
-            ~s("version": "#{mix_version}"),
-            global: false
-          )
+  defp handle_mismatch(mix_version, editor_version, _path, _content, check: true) do
+    Mix.shell().error(
+      "Version mismatch: mix.exs has #{mix_version}, editor/package.json has #{editor_version}"
+    )
 
-        case File.write(path, updated_content) do
-          :ok ->
-            Mix.shell().info("Synced version #{mix_version} to editor/package.json")
+    Mix.raise("Versions out of sync")
+  end
 
-          {:error, reason} ->
-            Mix.raise("Failed to write editor/package.json: #{inspect(reason)}")
-        end
-      end
+  defp handle_mismatch(mix_version, _editor_version, path, content, _opts) do
+    updated_content =
+      String.replace(content, ~r/"version":\s*"[^"]+"/, ~s("version": "#{mix_version}"),
+        global: false
+      )
+
+    case File.write(path, updated_content) do
+      :ok -> Mix.shell().info("Synced version #{mix_version} to editor/package.json")
+      {:error, reason} -> Mix.raise("Failed to write editor/package.json: #{inspect(reason)}")
     end
   end
 

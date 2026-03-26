@@ -1,4 +1,5 @@
 defmodule Dequel.Test.Schemas.Review do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
