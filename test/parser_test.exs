@@ -675,6 +675,17 @@ defmodule Dequel.ParserTest do
   end
 
   describe "date literals in comparisons" do
+    test "date placeholder",
+      do: assert(~Q[published_at:@today] == {:==, [], ["published_at", 
+        Date.utc_today() |> Date.to_iso8601()
+      ]})
+
+    test "date placeholder this month",
+      do: assert(~Q[published_at:@this-month] == {:==, [], ["published_at", Date.utc_today() |> Date.to_iso8601() |> String.slice(0..6) ]})
+
+    test "invalid placeholder",
+      do: assert({:error, _} = ~Q[published_at:@not-existing])
+
     test "date equality ",
       do: assert(~Q[published_at:2024-01-15] == {:==, [], ["published_at", "2024-01-15"]})
 
