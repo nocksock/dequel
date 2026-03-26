@@ -9,6 +9,9 @@ defmodule Dequel.ParserTest do
   require Logger
   Logger.configure(level: :info)
 
+  @today Date.utc_today() |> Date.to_iso8601()
+  @this_month Date.utc_today() |> Date.to_iso8601() |> String.slice(0..6)
+
   test "base experssion",
     do:
       assert(
@@ -676,12 +679,10 @@ defmodule Dequel.ParserTest do
 
   describe "date literals in comparisons" do
     test "date placeholder",
-      do: assert(~Q[published_at:@today] == {:==, [], ["published_at", 
-        Date.utc_today() |> Date.to_iso8601()
-      ]})
+      do: assert(~Q[published_at:@today] == {:==, [], ["published_at", @today]})
 
     test "date placeholder this month",
-      do: assert(~Q[published_at:@this-month] == {:==, [], ["published_at", Date.utc_today() |> Date.to_iso8601() |> String.slice(0..6) ]})
+      do: assert(~Q[published_at:@this-month] == {:==, [], ["published_at", @this_month]})
 
     test "invalid placeholder",
       do: assert({:error, _} = ~Q[published_at:@not-existing])
@@ -703,6 +704,9 @@ defmodule Dequel.ParserTest do
 
     test "date YYYY-MM in comparison",
       do: assert(~Q[published_at:>=2024-01] == {:>=, [], ["published_at", "2024-01"]})
+
+    test "date @this-month in comparison",
+      do: assert(~Q[published_at:>=@this-month] == {:>=, [], ["published_at", @this_month]})
 
     test "date range with double-dot",
       do:

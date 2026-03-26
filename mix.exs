@@ -5,7 +5,7 @@ defmodule Dequel.MixProject do
     [
       name: "Dequel",
       app: :dequel,
-      version: "0.6.0",
+      version: "0.8.1",
       elixir: "~> 1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -46,7 +46,7 @@ defmodule Dequel.MixProject do
     [
       description: "friendly query language for user input built on Ecto",
       licenses: ["MIT"],
-      files: ~w(lib priv/static priv/integration.md mix.exs README.md),
+      files: ~w(lib  priv/integration.md mix.exs README.md),
       links: %{
         "Github" => "https://github.com/nocksock/dequel",
         "npm" => "https://www.npmjs.com/package/dequel-editor"

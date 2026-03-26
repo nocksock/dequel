@@ -34,6 +34,7 @@ defmodule Dequel.Parser.Token do
 
   def comparable_literal do
     choice([
+      dynamic_value(),
       date_literal(),
       numeric_literal()
     ])
