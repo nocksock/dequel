@@ -384,6 +384,14 @@ defmodule Dequel.Adapter.EctoTest do
       assert result == [mid, recent]
     end
 
+    test "date month", %{old: old} do
+      result =
+        from(b in Book)
+        |> Filter.query("published_at: 2020-01", schema: Book)
+        |> Repo.all()
+
+      assert result == [old]
+    end
     test "date less than", %{old: old} do
       result =
         from(b in Book)

@@ -141,6 +141,19 @@ defmodule Dequel.Adapter.Ecto.Filter do
     {dynamic_expr, ctx}
   end
 
+  # YYYY-MM equality → expand to month range (between first and last day)
+  defp build_filter({:==, [], [field, value]}, ctx)
+       when (is_atom(field) or is_binary(field)) and is_binary(value) do
+    case month_range(value) do
+      {start_date, end_date} ->
+        build_filter({:between, [], [field, start_date, end_date]}, ctx)
+
+      nil ->
+        atom_field = to_atom(field)
+        {where({:==, [], [atom_field, value]}), ctx}
+    end
+  end
+
   # Simple field - use base binding (atom or string)
   defp build_filter({op, [], [field, value]}, ctx) when is_atom(field) or is_binary(field) do
     atom_field = to_atom(field)
@@ -463,6 +476,17 @@ defmodule Dequel.Adapter.Ecto.Filter do
     dynamic([schema], field(schema, ^atom_field) in ^values)
   end
 
+  def where({:==, [], [field, value]}) when is_binary(value) do
+    case month_range(value) do
+      {start_date, end_date} ->
+        where({:between, [], [field, start_date, end_date]})
+
+      nil ->
+        atom_field = to_atom(field)
+        dynamic([schema], field(schema, ^atom_field) == ^value)
+    end
+  end
+
   def where({:==, [], [field, value]}) do
     atom_field = to_atom(field)
     dynamic([schema], field(schema, ^atom_field) == ^value)
@@ -535,6 +559,25 @@ defmodule Dequel.Adapter.Ecto.Filter do
   def where({op, [], [field, value]}) do
     raise "Operator `#{op}` not yet implemented. Tried calling `#{field}:#{op}(#{value})`"
   end
+
+  # Detect YYYY-MM values and return {first_day, last_day} of the month, or nil.
+  defp month_range(<<y1, y2, y3, y4, ?-, m1, m2>> = _value)
+       when y1 in ?0..?9 and y2 in ?0..?9 and y3 in ?0..?9 and y4 in ?0..?9 and
+              m1 in ?0..?9 and m2 in ?0..?9 do
+    year = String.to_integer(<<y1, y2, y3, y4>>)
+    month = String.to_integer(<<m1, m2>>)
+
+    case Date.new(year, month, 1) do
+      {:ok, first} ->
+        last = Date.end_of_month(first)
+        {Date.to_iso8601(first), Date.to_iso8601(last)}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp month_range(_), do: nil
 
   # Helper to convert string field names to atoms.
   # Strings are converted using String.to_existing_atom to ensure the field exists.
