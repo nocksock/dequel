@@ -20,19 +20,19 @@ type FieldValidationResult =
 
 // Validation functions
 
-function validateNumber(value: string): boolean {
+export function validateNumber(value: string): boolean {
   return /^-?\d+(\.\d+)?$/.test(value);
 }
 
-function validateBoolean(value: string): boolean {
+export function validateBoolean(value: string): boolean {
   return /^(true|false|yes|no)$/i.test(value);
 }
 
-function validateDate(value: string): boolean {
+export function validateDate(value: string): boolean {
   return /^\d{4}(-\d{2}(-\d{2})?)?$/.test(value);
 }
 
-function validateKeyword(value: string, allowed: string[]): boolean {
+export function validateKeyword(value: string, allowed: string[]): boolean {
   return allowed.some((v) => v.toLowerCase() === value.toLowerCase());
 }
 
@@ -91,7 +91,7 @@ async function validateField(
 
 // Value validation
 
-function validateValue(
+export function validateValue(
   value: string,
   fieldInfo: FieldInfo
 ): { severity: "error" | "warning"; message: string } | null {

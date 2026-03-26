@@ -1,173 +1,214 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
+import {
+  validateNumber,
+  validateBoolean,
+  validateDate,
+  validateKeyword,
+  validateValue,
+} from "./linter";
 
-// Test the validation functions directly
-// These are internal functions, so we'll need to export them or test via the linter
-
-// For now, let's test the regex patterns directly
-
-describe("validation patterns", () => {
-  describe("validateNumber", () => {
-    const pattern = /^-?\d+(\.\d+)?$/;
-
-    test("accepts positive integers", () => {
-      expect(pattern.test("25")).toBe(true);
-      expect(pattern.test("0")).toBe(true);
-      expect(pattern.test("12345")).toBe(true);
-    });
-
-    test("accepts negative integers", () => {
-      expect(pattern.test("-10")).toBe(true);
-      expect(pattern.test("-0")).toBe(true);
-    });
-
-    test("accepts decimals", () => {
-      expect(pattern.test("19.99")).toBe(true);
-      expect(pattern.test("-5.5")).toBe(true);
-      expect(pattern.test("0.1")).toBe(true);
-    });
-
-    test("rejects non-numeric values", () => {
-      expect(pattern.test("hello")).toBe(false);
-      expect(pattern.test("12abc")).toBe(false);
-      expect(pattern.test("")).toBe(false);
-      expect(pattern.test(" ")).toBe(false);
-    });
-
-    test("rejects partial numbers", () => {
-      expect(pattern.test("12.")).toBe(false);
-      expect(pattern.test(".5")).toBe(false);
-    });
+describe("validateNumber", () => {
+  test("accepts positive integers", () => {
+    expect(validateNumber("25")).toBe(true);
+    expect(validateNumber("0")).toBe(true);
+    expect(validateNumber("12345")).toBe(true);
   });
 
-  describe("validateBoolean", () => {
-    const pattern = /^(true|false|yes|no)$/i;
-
-    test("accepts true/false", () => {
-      expect(pattern.test("true")).toBe(true);
-      expect(pattern.test("false")).toBe(true);
-    });
-
-    test("accepts yes/no", () => {
-      expect(pattern.test("yes")).toBe(true);
-      expect(pattern.test("no")).toBe(true);
-    });
-
-    test("is case insensitive", () => {
-      expect(pattern.test("TRUE")).toBe(true);
-      expect(pattern.test("False")).toBe(true);
-      expect(pattern.test("YES")).toBe(true);
-      expect(pattern.test("No")).toBe(true);
-    });
-
-    test("rejects invalid values", () => {
-      expect(pattern.test("maybe")).toBe(false);
-      expect(pattern.test("1")).toBe(false);
-      expect(pattern.test("0")).toBe(false);
-      expect(pattern.test("")).toBe(false);
-      expect(pattern.test("yesno")).toBe(false);
-    });
+  test("accepts negative integers", () => {
+    expect(validateNumber("-10")).toBe(true);
+    expect(validateNumber("-0")).toBe(true);
   });
 
-  describe("validateDate", () => {
-    const pattern = /^\d{4}(-\d{2}(-\d{2})?)?$/;
-
-    test("accepts YYYY format", () => {
-      expect(pattern.test("2024")).toBe(true);
-      expect(pattern.test("1999")).toBe(true);
-      expect(pattern.test("2000")).toBe(true);
-    });
-
-    test("accepts YYYY-MM format", () => {
-      expect(pattern.test("2024-01")).toBe(true);
-      expect(pattern.test("2024-12")).toBe(true);
-    });
-
-    test("accepts YYYY-MM-DD format", () => {
-      expect(pattern.test("2024-01-15")).toBe(true);
-      expect(pattern.test("2024-12-31")).toBe(true);
-    });
-
-    test("rejects invalid formats", () => {
-      expect(pattern.test("yesterday")).toBe(false);
-      expect(pattern.test("2024/01/15")).toBe(false);
-      expect(pattern.test("01-15-2024")).toBe(false);
-      expect(pattern.test("24")).toBe(false);
-      expect(pattern.test("")).toBe(false);
-    });
-
-    test("rejects partial dates", () => {
-      expect(pattern.test("2024-")).toBe(false);
-      expect(pattern.test("2024-1")).toBe(false);
-      expect(pattern.test("2024-01-")).toBe(false);
-      expect(pattern.test("2024-01-1")).toBe(false);
-    });
+  test("accepts decimals", () => {
+    expect(validateNumber("19.99")).toBe(true);
+    expect(validateNumber("-5.5")).toBe(true);
+    expect(validateNumber("0.1")).toBe(true);
   });
 
-  describe("validateKeyword", () => {
-    const validateKeyword = (value: string, allowed: string[]): boolean =>
-      allowed.some((v) => v.toLowerCase() === value.toLowerCase());
+  test("rejects non-numeric values", () => {
+    expect(validateNumber("hello")).toBe(false);
+    expect(validateNumber("12abc")).toBe(false);
+    expect(validateNumber("")).toBe(false);
+    expect(validateNumber(" ")).toBe(false);
+  });
 
-    test("accepts value in allowed list", () => {
-      expect(validateKeyword("fiction", ["fiction", "non-fiction"])).toBe(true);
-      expect(validateKeyword("sci-fi", ["mystery", "sci-fi", "fantasy"])).toBe(
-        true
-      );
-    });
-
-    test("is case insensitive", () => {
-      expect(validateKeyword("FICTION", ["fiction", "non-fiction"])).toBe(true);
-      expect(validateKeyword("Fiction", ["fiction"])).toBe(true);
-    });
-
-    test("rejects value not in allowed list", () => {
-      expect(validateKeyword("romance", ["fiction", "non-fiction"])).toBe(
-        false
-      );
-      expect(validateKeyword("unknown", ["mystery", "sci-fi"])).toBe(false);
-    });
+  test("rejects partial numbers", () => {
+    expect(validateNumber("12.")).toBe(false);
+    expect(validateNumber(".5")).toBe(false);
   });
 });
 
-describe("value extraction", () => {
-  test("strips quotes from value", () => {
-    const stripQuotes = (value: string) => value.replace(/^"|"$/g, "");
-
-    expect(stripQuotes('"hello"')).toBe("hello");
-    expect(stripQuotes('"my value"')).toBe("my value");
-    expect(stripQuotes("unquoted")).toBe("unquoted");
-    expect(stripQuotes('"partial')).toBe("partial"); // Leading quote gets stripped
+describe("validateBoolean", () => {
+  test("accepts true/false", () => {
+    expect(validateBoolean("true")).toBe(true);
+    expect(validateBoolean("false")).toBe(true);
   });
 
-  test("detects command predicates", () => {
-    const isCommand = (value: string) => /^\w+\(.*\)$/.test(value);
-
-    expect(isCommand("contains(foo)")).toBe(true);
-    expect(isCommand("after(2024,01)")).toBe(true);
-    expect(isCommand("between(10,50)")).toBe(true);
-
-    expect(isCommand("simple")).toBe(false);
-    expect(isCommand("10..50")).toBe(false);
+  test("accepts yes/no", () => {
+    expect(validateBoolean("yes")).toBe(true);
+    expect(validateBoolean("no")).toBe(true);
   });
 
-  test("detects range predicates", () => {
-    const isRange = (value: string) => /\.\./.test(value);
-
-    expect(isRange("10..50")).toBe(true);
-    expect(isRange("2024-01..2024-12")).toBe(true);
-
-    expect(isRange("10")).toBe(false);
-    expect(isRange("simple")).toBe(false);
+  test("is case insensitive", () => {
+    expect(validateBoolean("TRUE")).toBe(true);
+    expect(validateBoolean("False")).toBe(true);
+    expect(validateBoolean("YES")).toBe(true);
+    expect(validateBoolean("No")).toBe(true);
   });
 
-  test("detects comparison operators", () => {
-    const hasComparison = (value: string) => /^[<>]=?/.test(value);
+  test("rejects invalid values", () => {
+    expect(validateBoolean("maybe")).toBe(false);
+    expect(validateBoolean("1")).toBe(false);
+    expect(validateBoolean("0")).toBe(false);
+    expect(validateBoolean("")).toBe(false);
+    expect(validateBoolean("yesno")).toBe(false);
+  });
+});
 
-    expect(hasComparison(">10")).toBe(true);
-    expect(hasComparison("<50")).toBe(true);
-    expect(hasComparison(">=18")).toBe(true);
-    expect(hasComparison("<=100")).toBe(true);
+describe("validateDate", () => {
+  test("accepts YYYY format", () => {
+    expect(validateDate("2024")).toBe(true);
+    expect(validateDate("1999")).toBe(true);
+    expect(validateDate("2000")).toBe(true);
+  });
 
-    expect(hasComparison("10")).toBe(false);
-    expect(hasComparison("hello")).toBe(false);
+  test("accepts YYYY-MM format", () => {
+    expect(validateDate("2024-01")).toBe(true);
+    expect(validateDate("2024-12")).toBe(true);
+  });
+
+  test("accepts YYYY-MM-DD format", () => {
+    expect(validateDate("2024-01-15")).toBe(true);
+    expect(validateDate("2024-12-31")).toBe(true);
+  });
+
+  test("rejects invalid formats", () => {
+    expect(validateDate("yesterday")).toBe(false);
+    expect(validateDate("2024/01/15")).toBe(false);
+    expect(validateDate("01-15-2024")).toBe(false);
+    expect(validateDate("24")).toBe(false);
+    expect(validateDate("")).toBe(false);
+  });
+
+  test("rejects partial dates", () => {
+    expect(validateDate("2024-")).toBe(false);
+    expect(validateDate("2024-1")).toBe(false);
+    expect(validateDate("2024-01-")).toBe(false);
+    expect(validateDate("2024-01-1")).toBe(false);
+  });
+});
+
+describe("validateKeyword", () => {
+  test("accepts value in allowed list", () => {
+    expect(validateKeyword("fiction", ["fiction", "non-fiction"])).toBe(true);
+    expect(validateKeyword("sci-fi", ["mystery", "sci-fi", "fantasy"])).toBe(true);
+  });
+
+  test("is case insensitive", () => {
+    expect(validateKeyword("FICTION", ["fiction", "non-fiction"])).toBe(true);
+    expect(validateKeyword("Fiction", ["fiction"])).toBe(true);
+  });
+
+  test("rejects value not in allowed list", () => {
+    expect(validateKeyword("romance", ["fiction", "non-fiction"])).toBe(false);
+    expect(validateKeyword("unknown", ["mystery", "sci-fi"])).toBe(false);
+  });
+});
+
+describe("validateValue", () => {
+  describe("number field", () => {
+    const fieldInfo = { type: "number" };
+
+    test("accepts valid number", () => {
+      expect(validateValue("42", fieldInfo)).toBeNull();
+      expect(validateValue("-10", fieldInfo)).toBeNull();
+      expect(validateValue("3.14", fieldInfo)).toBeNull();
+    });
+
+    test("rejects invalid number", () => {
+      const result = validateValue("hello", fieldInfo);
+      expect(result).not.toBeNull();
+      expect(result?.severity).toBe("error");
+    });
+  });
+
+  describe("boolean field", () => {
+    const fieldInfo = { type: "boolean" };
+
+    test("accepts valid boolean", () => {
+      expect(validateValue("true", fieldInfo)).toBeNull();
+      expect(validateValue("false", fieldInfo)).toBeNull();
+      expect(validateValue("yes", fieldInfo)).toBeNull();
+      expect(validateValue("no", fieldInfo)).toBeNull();
+    });
+
+    test("rejects invalid boolean", () => {
+      const result = validateValue("maybe", fieldInfo);
+      expect(result).not.toBeNull();
+      expect(result?.severity).toBe("error");
+    });
+  });
+
+  describe("date field", () => {
+    const fieldInfo = { type: "date" };
+
+    test("accepts valid date", () => {
+      expect(validateValue("2024", fieldInfo)).toBeNull();
+      expect(validateValue("2024-01", fieldInfo)).toBeNull();
+      expect(validateValue("2024-01-15", fieldInfo)).toBeNull();
+    });
+
+    test("rejects invalid date", () => {
+      const result = validateValue("yesterday", fieldInfo);
+      expect(result).not.toBeNull();
+      expect(result?.severity).toBe("error");
+    });
+  });
+
+  describe("keyword field", () => {
+    test("accepts valid keyword value", () => {
+      const fieldInfo = { type: "keyword", values: ["fiction", "non-fiction"] };
+      expect(validateValue("fiction", fieldInfo)).toBeNull();
+      expect(validateValue("FICTION", fieldInfo)).toBeNull();
+    });
+
+    test("warns on unknown keyword value", () => {
+      const fieldInfo = { type: "keyword", values: ["fiction", "non-fiction"] };
+      const result = validateValue("horror", fieldInfo);
+      expect(result).not.toBeNull();
+      expect(result?.severity).toBe("warning");
+    });
+
+    test("allows any value when values list is not provided", () => {
+      const fieldInfo = { type: "keyword" };
+      expect(validateValue("anything", fieldInfo)).toBeNull();
+    });
+  });
+
+  describe("skips validation for special formats", () => {
+    const fieldInfo = { type: "number" };
+
+    test("skips contains() command", () => {
+      expect(validateValue("contains(foo)", fieldInfo)).toBeNull();
+    });
+
+    test("skips range", () => {
+      expect(validateValue("10..50", fieldInfo)).toBeNull();
+    });
+
+    test("skips comparison operators", () => {
+      expect(validateValue(">10", fieldInfo)).toBeNull();
+      expect(validateValue("<50", fieldInfo)).toBeNull();
+      expect(validateValue(">=18", fieldInfo)).toBeNull();
+      expect(validateValue("<=100", fieldInfo)).toBeNull();
+    });
+  });
+
+  describe("string field", () => {
+    test("accepts any value", () => {
+      const fieldInfo = { type: "string" };
+      expect(validateValue("hello", fieldInfo)).toBeNull();
+      expect(validateValue("anything goes", fieldInfo)).toBeNull();
+    });
   });
 });
