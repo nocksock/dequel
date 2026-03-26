@@ -87,6 +87,11 @@ defmodule Dequel.Semantic.Coerce do
 
   def coerce(value, type)
 
+  # Dynamic values — resolve via Dequel.Dynamic for date types, pass through otherwise
+  def coerce({:dynamic, name}, type) when type in @date_types do
+    apply(Dequel.Dynamic, type, [name])
+  end
+
   # Already the right type - pass through
   def coerce(value, _) when not is_binary(value), do: value
 
@@ -206,7 +211,15 @@ defmodule Dequel.Semantic.Coerce do
       iex> Dequel.Semantic.Coerce.date_range("2024", :utc_datetime)
       {:range, ~U[2024-01-01 00:00:00Z], ~U[2024-12-31 23:59:59Z]}
   """
-  @spec date_range(String.t(), atom()) :: {:range, term(), term()} | {:exact, term()} | :error
+  @spec date_range(term(), atom()) :: {:range, term(), term()} | {:exact, term()} | :error
+
+  # Dynamic values — resolve via Dequel.Dynamic
+  def date_range({:dynamic, name}, type) when type in @date_types do
+    case apply(Dequel.Dynamic, type, [name]) do
+      {:range, start_val, end_val} -> {:range, start_val, end_val}
+      val -> {:exact, val}
+    end
+  end
 
   # YYYY-MM — partial month range
   def date_range(<<_, _, _, _, ?-, _, _>> = value, date_type)

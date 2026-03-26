@@ -232,6 +232,55 @@ defmodule Dequel.Semantic.CoerceTest do
     end
   end
 
+  describe "coerce/2 with dynamic values" do
+    test "resolves :today to current date" do
+      assert Coerce.coerce({:dynamic, :today}, :date) == Date.utc_today()
+    end
+
+    test "resolves :today to naive_datetime" do
+      assert Coerce.coerce({:dynamic, :today}, :naive_datetime) ==
+               NaiveDateTime.new!(Date.utc_today(), ~T[00:00:00])
+    end
+
+    test "resolves :today to utc_datetime" do
+      assert Coerce.coerce({:dynamic, :today}, :utc_datetime) ==
+               DateTime.new!(Date.utc_today(), ~T[00:00:00], "Etc/UTC")
+    end
+
+    test "passes through dynamic for non-date types" do
+      assert Coerce.coerce({:dynamic, :today}, :integer) == {:dynamic, :today}
+      assert Coerce.coerce({:dynamic, :today}, :string) == {:dynamic, :today}
+    end
+  end
+
+  describe "date_range/2 with dynamic values" do
+    test "range dynamic returns :range" do
+      today = Date.utc_today()
+
+      assert Coerce.date_range({:dynamic, :"this-month"}, :date) ==
+               {:range, Date.beginning_of_month(today), Date.end_of_month(today)}
+    end
+
+    test "range dynamic with naive_datetime" do
+      today = Date.utc_today()
+
+      assert Coerce.date_range({:dynamic, :"this-month"}, :naive_datetime) ==
+               {:range, NaiveDateTime.new!(Date.beginning_of_month(today), ~T[00:00:00]),
+                NaiveDateTime.new!(Date.end_of_month(today), ~T[23:59:59])}
+    end
+
+    test "point dynamic returns :exact" do
+      assert Coerce.date_range({:dynamic, :today}, :date) == {:exact, Date.utc_today()}
+    end
+
+    test "this-year returns full year range" do
+      year = Date.utc_today().year
+
+      assert Coerce.date_range({:dynamic, :"this-year"}, :date) ==
+               {:range, Date.new!(year, 1, 1), Date.new!(year, 12, 31)}
+    end
+  end
+
   describe "coerce/2 with :string and unknown types" do
     test "passes through string values for :string type" do
       assert Coerce.coerce("hello", :string) == "hello"

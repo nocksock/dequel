@@ -156,6 +156,28 @@ defmodule Dequel.Semantic.Analyzer do
     {:not, meta, analyze(inner, resolver)}
   end
 
+  # Equality with dynamic value — may need range expansion based on field type
+  def analyze({:==, meta, [field, {:dynamic, _} = dyn]}, resolver) when is_binary(field) do
+    atom_field = to_field_atom(field, resolver)
+
+    case resolve_field(resolver, atom_field) do
+      %{kind: :field, type: type} ->
+        case Coerce.date_range(dyn, type) do
+          {:range, start_val, end_val} ->
+            {:between, meta, [atom_field, start_val, end_val]}
+
+          {:exact, val} ->
+            {:==, meta, [atom_field, val]}
+
+          :error ->
+            {:==, meta, [atom_field, dyn]}
+        end
+
+      _ ->
+        {:==, meta, [atom_field, dyn]}
+    end
+  end
+
   # Equality on partial dates — expand to :between range
   def analyze({:==, meta, [field, value]}, resolver)
       when is_binary(field) and is_binary(value) do
@@ -358,6 +380,13 @@ defmodule Dequel.Semantic.Analyzer do
 
   # Coerces a value based on field type from resolver
   defp coerce_value(nil, _field, value), do: value
+
+  defp coerce_value(resolver, field, {:dynamic, _} = dyn) when is_function(resolver, 1) do
+    case resolver.(field) do
+      %{kind: :field, type: type} -> Coerce.coerce(dyn, type)
+      _ -> dyn
+    end
+  end
 
   defp coerce_value(resolver, field, value) when is_function(resolver, 1) do
     case resolver.(field) do

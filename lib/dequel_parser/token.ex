@@ -58,73 +58,19 @@ defmodule Dequel.Parser.Token do
       dynamic_value("tomorrow"),
       dynamic_value("yesterday"),
       dynamic_value("this-year"),
-      dynamic_value("this-month"),
       dynamic_value("this-month-start"),
-      dynamic_value("this-month-end")
+      dynamic_value("this-month-end"),
+      dynamic_value("this-month")
     ])
   end
 
-  def dynamic_value("today" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.to_iso8601()
-    )
-  end
-
-  def dynamic_value("tomorrow" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.add(1)
-      |> Date.to_iso8601()
-    )
-  end
-
-  def dynamic_value("yesterday" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.add(-1)
-      |> Date.to_iso8601()
-    )
-  end
-
-  def dynamic_value("this-year" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.to_iso8601()
-      |> String.slice(0..3)
-    )
-  end
-
-  def dynamic_value("this-month" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.to_iso8601()
-      |> String.slice(0..6)
-    )
-  end
-
-  def dynamic_value("this-month-start" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.beginning_of_month()
-      |> Date.to_iso8601()
-    )
-  end
-
-  def dynamic_value("this-month-end" = v) do
-    string(v)
-    |> replace(
-      Date.utc_today()
-      |> Date.end_of_month()
-      |> Date.to_iso8601()
-    )
-  end
+  def dynamic_value("today" = v), do: string(v) |> replace({:dynamic, :today})
+  def dynamic_value("tomorrow" = v), do: string(v) |> replace({:dynamic, :tomorrow})
+  def dynamic_value("yesterday" = v), do: string(v) |> replace({:dynamic, :yesterday})
+  def dynamic_value("this-year" = v), do: string(v) |> replace({:dynamic, :"this-year"})
+  def dynamic_value("this-month-start" = v), do: string(v) |> replace({:dynamic, :"this-month-start"})
+  def dynamic_value("this-month-end" = v), do: string(v) |> replace({:dynamic, :"this-month-end"})
+  def dynamic_value("this-month" = v), do: string(v) |> replace({:dynamic, :"this-month"})
 
   def value do
     choice([

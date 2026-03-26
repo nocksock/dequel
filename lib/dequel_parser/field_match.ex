@@ -181,4 +181,5 @@ defmodule Dequel.Parser.FieldMatch do
   def postfix_between_negated([field, :between, start_val, end_val]) do
     {:not, [], {:between, [], [field, start_val, end_val]}}
   end
+
 end
