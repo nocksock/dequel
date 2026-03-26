@@ -54,6 +54,7 @@ defmodule Dequel.Parser.Token do
     choice([
       string_with_quotes(),
       identifier(),
+      date_literal(),
       number()
     ])
   end

@@ -675,7 +675,10 @@ defmodule Dequel.ParserTest do
   end
 
   describe "date literals in comparisons" do
-    test "date equality requires quoting",
+    test "date equality ",
+      do: assert(~Q[published_at:2024-01-15] == {:==, [], ["published_at", "2024-01-15"]})
+
+    test "date equality with optional quoting",
       do: assert(~Q[published_at:"2024-01-15"] == {:==, [], ["published_at", "2024-01-15"]})
 
     test "date greater than",
