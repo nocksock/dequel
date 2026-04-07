@@ -765,4 +765,13 @@ defmodule Dequel.ParserTest do
     test "negated between predicate",
       do: assert(~Q[price:!between(10 50)] == {:not, [], {:between, [], ["price", "10", "50"]}})
   end
+
+  describe "invalid queries should be rejected" do
+    test "dangling word before field:value expression should fail" do
+      result = Dequel.Parser.parse!("some.field: value_a another field:one_of(value_b, value_c)")
+
+      assert {:error, _reason} = result,
+             "Expected parser to reject query with dangling word, but got: #{inspect(result)}"
+    end
+  end
 end

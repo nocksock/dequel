@@ -5,7 +5,7 @@ defmodule Dequel.MixProject do
     [
       name: "Dequel",
       app: :dequel,
-      version: "0.8.3",
+      version: "0.8.4",
       elixir: "~> 1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),

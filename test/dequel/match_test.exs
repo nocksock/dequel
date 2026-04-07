@@ -93,7 +93,7 @@ defmodule Dequel.MatchTest do
 
     test "contains", %{lotr: lotr} do
       assert Dequel.matches?(lotr, "title:*Rings")
-      assert Dequel.matches?(lotr, "title:*Lord*")
+      assert Dequel.matches?(lotr, "title:*\"Lord\"")
       refute Dequel.matches?(lotr, "title:*Potter")
     end
 

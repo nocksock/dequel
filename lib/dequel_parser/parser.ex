@@ -38,6 +38,12 @@ defmodule Dequel.Parser do
   )
 
   defparsec(
+    :query,
+    spaced(parsec(:expression))
+    |> eos()
+  )
+
+  defparsec(
     :term,
     choice([
       parsec(:factor) |> concat(op_explicit_and()) |> parsec(:expression) |> reduce(:postfix),
@@ -71,6 +77,6 @@ defmodule Dequel.Parser do
     ])
   )
 
-  def parse!(input), do: unwrap(expression(input))
+  def parse!(input), do: unwrap(query(input))
   def field_match!(input), do: unwrap(field_match(input))
 end
