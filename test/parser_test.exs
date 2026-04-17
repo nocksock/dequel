@@ -774,4 +774,82 @@ defmodule Dequel.ParserTest do
              "Expected parser to reject query with dangling word, but got: #{inspect(result)}"
     end
   end
+
+  describe "line breaks in queries" do
+    test "line break between two conditions",
+      do:
+        assert(
+          ~Q"""
+          a:a
+          b:b
+          """ ==
+            {:and, [],
+             [
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
+             ]}
+        )
+
+    test "line break with indentation",
+      do:
+        assert(
+          ~Q"""
+          a:a
+            b:b
+          """ ==
+            {:and, [],
+             [
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
+             ]}
+        )
+
+    test "multiple line breaks between conditions",
+      do:
+        assert(
+          ~Q"""
+          a:a
+
+          b:b
+          """ ==
+            {:and, [],
+             [
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
+             ]}
+        )
+
+    test "line break with OR operator",
+      do:
+        assert(
+          ~Q"""
+          a:a ||
+          b:b
+          """ ==
+            {:or, [],
+             [
+               {:==, [], ["a", "a"]},
+               {:==, [], ["b", "b"]}
+             ]}
+        )
+
+    test "line break with three conditions",
+      do:
+        assert(
+          ~Q"""
+          a:a
+          b:b
+          c:c
+          """ ==
+            {:and, [],
+             [
+               {:==, [], ["a", "a"]},
+               {:and, [],
+                [
+                  {:==, [], ["b", "b"]},
+                  {:==, [], ["c", "c"]}
+                ]}
+             ]}
+        )
+  end
 end

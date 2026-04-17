@@ -76,7 +76,7 @@ defmodule Dequel.Parser.Token do
 
   def colon, do: spaced(string(":"))
 
-  def op_implicit_and, do: string(" ") |> replace(:and)
+  def op_implicit_and, do: ascii_string([?\s, ?\t, ?\n, ?\r], min: 1) |> replace(:and)
 
   def op_explicit_and,
     do:
