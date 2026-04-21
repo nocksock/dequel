@@ -19,7 +19,9 @@ const Highlights = HighlightStyle.define([
   { tag: customTag.Value, class: 'cnd-val' },
   { tag: customTag.Command, class: 'cnd-val cnd-cmd' },
   { tag: customTag.Field, class: 'cnd-fld' },
+  { tag: customTag.DynamicValue, class: 'cnd-val cnd-dynamic' },
   { tag: t.string, class: 'string' },
+  { tag: t.number, class: 'cnd-val' },
   { tag: t.lineComment, class: 'comment' },
 ])
 
@@ -28,20 +30,40 @@ const Highlights = HighlightStyle.define([
 const parserWithMetadata = parser.configure({
   props: [
     styleTags({
+      // Condition structure
       'Condition/:': customTag.Operator,
       'ExcludeCondition/:': customTag.Operator,
       'Condition/Field/...': customTag.Field,
-      'Command!': customTag.Command,
-      'Separator!': customTag.Operator,
-      Comment: t.lineComment,
       Field: customTag.Field,
+
+      // Command and values
+      'Command!': customTag.Command,
       'Value!': customTag.Value,
+      'Separator!': customTag.Operator,
+
+      // Logical operators
+      'And Or': customTag.Operator,
+
+      // Comparison and range operators
+      'CompareOp Contains StartsWith EndsWith Not RangeSep': customTag.Operator,
+
+      // Special value types
+      DynamicValue: customTag.DynamicValue,
+      DateLiteral: t.number,
+
+      // Object blocks
+      'ObjectBlock/Identifier': customTag.Field,
+
+      // Comments
+      Comment: t.lineComment,
     }),
     indentNodeProp.add({
       Query: context => context.column(context.node.from) + context.unit,
+      ObjectBlock: context => context.column(context.node.from) + context.unit,
     }),
     foldNodeProp.add({
       Query: foldInside,
+      ObjectBlock: foldInside,
     }),
   ],
 })

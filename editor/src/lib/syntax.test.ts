@@ -36,6 +36,36 @@ describe('closestCondition', () => {
     const field = condition?.getChild('Field')
     expect(input.slice(field!.from, field!.to)).toBe('region_id')
   })
+
+  test('finds condition with relationship path field', () => {
+    const { node, input } = getNodeAt('author.bio:fo|o')
+    const condition = closestCondition(node)
+    expect(condition?.name).toBe('Condition')
+    const field = condition?.getChild('Field')
+    expect(input.slice(field!.from, field!.to)).toBe('author.bio')
+  })
+
+  test('finds condition when cursor is right after colon (empty value)', () => {
+    const { node } = getNodeAt('author.bio:|')
+    const condition = closestCondition(node)
+    expect(condition?.name).toBe('Condition')
+  })
+
+  test('colon position check for value detection', () => {
+    // When cursor is at `author.bio:|`, position is 11
+    // Colon is from 10 to 11, so cursorPos >= colonNode.to should be true
+    const { node, cursorPos } = getNodeAt('author.bio:|')
+    const condition = closestCondition(node)
+    const colonNode = condition?.getChild(':')
+
+    expect(colonNode).not.toBeNull()
+    expect(cursorPos).toBe(11)
+    expect(colonNode!.to).toBe(11)
+    // cursorPos >= colonNode.to should be true for value position
+    expect(cursorPos >= colonNode!.to).toBe(true)
+    // But cursorPos > colonNode.to is false! This is the bug.
+    expect(cursorPos > colonNode!.to).toBe(false)
+  })
 })
 
 describe('parseCondition', () => {

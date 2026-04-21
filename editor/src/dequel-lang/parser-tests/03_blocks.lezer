@@ -1,0 +1,155 @@
+# parentheses grouping
+
+(a:1 || b:2) c:3
+
+==>
+
+QueryList(
+  Query(
+    Group(
+      "(",
+      Query(
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+        Or("||"),
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+      ),
+      ")"
+    ),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# nested parentheses
+
+(a:1 && (b:2 || c:3))
+
+==>
+
+QueryList(
+  Query(
+    Group(
+      "(",
+      Query(
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+        And("&&"),
+        Group(
+          "(",
+          Query(
+            Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+            Or("||"),
+            Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+          ),
+          ")"
+        )
+      ),
+      ")"
+    )
+  )
+)
+
+# object block simple
+
+items { name:foo }
+
+==>
+
+QueryList(
+  Query(
+    ObjectBlock(
+      Identifier,
+      "{",
+      Query(
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+      ),
+      "}"
+    )
+  )
+)
+
+# object block with multiple conditions
+
+items { name:foo status:active }
+
+==>
+
+QueryList(
+  Query(
+    ObjectBlock(
+      Identifier,
+      "{",
+      Query(
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+      ),
+      "}"
+    )
+  )
+)
+
+# object block with operators
+
+items { name:foo && price:>10 }
+
+==>
+
+QueryList(
+  Query(
+    ObjectBlock(
+      Identifier,
+      "{",
+      Query(
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+        And("&&"),
+        Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+      ),
+      "}"
+    )
+  )
+)
+
+# nested object blocks
+
+orders { items { name:foo } }
+
+==>
+
+QueryList(
+  Query(
+    ObjectBlock(
+      Identifier,
+      "{",
+      Query(
+        ObjectBlock(
+          Identifier,
+          "{",
+          Query(
+            Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+          ),
+          "}"
+        )
+      ),
+      "}"
+    )
+  )
+)
+
+# object block combined with conditions
+
+type:order items { name:foo }
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    ObjectBlock(
+      Identifier,
+      "{",
+      Query(
+        Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+      ),
+      "}"
+    )
+  )
+)
+

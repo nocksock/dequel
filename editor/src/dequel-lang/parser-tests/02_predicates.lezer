@@ -1,0 +1,154 @@
+# contains shorthand
+
+name:*foo
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ShorthandPredicate(Contains, Value(Identifier))))
+  )
+)
+
+# starts with shorthand
+
+title:^The
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ShorthandPredicate(StartsWith, Value(Identifier))))
+  )
+)
+
+# ends with shorthand
+
+file:$txt
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ShorthandPredicate(EndsWith, Value(Identifier))))
+  )
+)
+
+# value negation
+
+field:!value
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(NegatedPredicate(Not, SimplePredicate(Value(Identifier)))))
+  )
+)
+
+# negated comparison
+
+age:!>18
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(NegatedPredicate(Not, ComparisonPredicate(CompareOp, Value(Number)))))
+  )
+)
+
+# negated shorthand
+
+name:!*foo
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(NegatedPredicate(Not, ShorthandPredicate(Contains, Value(Identifier)))))
+  )
+)
+
+# bracket shorthand single value
+
+status:[active]
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(BracketPredicate("[", Value(Identifier), "]")))
+  )
+)
+
+# bracket shorthand multiple values
+
+status:[active, pending]
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(BracketPredicate("[", Value(Identifier), ",", Value(Identifier), "]")))
+  )
+)
+
+# bracket shorthand with strings
+
+category:["foo bar", "baz qux"]
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(BracketPredicate("[", Value(String), ",", Value(String), "]")))
+  )
+)
+
+# bracket shorthand with numbers
+
+id:[1, 2, 3]
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(BracketPredicate("[", Value(Number), ",", Value(Number), ",", Value(Number), "]")))
+  )
+)
+
+# predicate flag (parsed as identifier, semantics handled by runtime)
+
+name:ends_with("foo", i)
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(Command(
+      Identifier,
+      "(",
+      ArgList(Argument(String), ",", Argument(Identifier)),
+      ")"
+    )))
+  )
+)
+
+# command without flag
+
+name:ends_with("foo")
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(Command(
+      Identifier,
+      "(",
+      ArgList(Argument(String)),
+      ")"
+    )))
+  )
+)
+

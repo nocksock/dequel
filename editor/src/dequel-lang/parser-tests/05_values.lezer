@@ -1,0 +1,192 @@
+# dynamic value today
+
+date:@today
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DynamicValue))))
+  )
+)
+
+# dynamic value tomorrow
+
+date:@tomorrow
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DynamicValue))))
+  )
+)
+
+# dynamic value yesterday
+
+date:@yesterday
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DynamicValue))))
+  )
+)
+
+# dynamic value this-year
+
+created:>=@this-year
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(DynamicValue))))
+  )
+)
+
+# dynamic value this-month
+
+created:@this-month
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DynamicValue))))
+  )
+)
+
+# dynamic value this-month-start
+
+start:@this-month-start
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DynamicValue))))
+  )
+)
+
+# dynamic value this-month-end
+
+end:@this-month-end
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DynamicValue))))
+  )
+)
+
+# date literal full
+
+date:2024-01-15
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DateLiteral))))
+  )
+)
+
+# date literal year-month
+
+date:2024-01
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(DateLiteral))))
+  )
+)
+
+# date comparison
+
+created:>=2024-01-01
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(DateLiteral))))
+  )
+)
+
+# date range
+
+date:2024-01-01..2024-12-31
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(RangePredicate(Value(DateLiteral), RangeSep, Value(DateLiteral))))
+  )
+)
+
+# decimal number
+
+price:19.99
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# negative number
+
+temp:-10
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# negative decimal
+
+temp:-10.5
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# comparison with decimal
+
+price:>=9.99
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+  )
+)
+
+# comparison with negative
+
+temp:<-5
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+  )
+)
+

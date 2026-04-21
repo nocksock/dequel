@@ -221,6 +221,43 @@ describe('append actions', () => {
     })
     expect(result).toBe('title:foo status:active region { title:| }')
   })
+
+  test('replaces partial field when typing field name (no colon yet)', () => {
+    const result = applyAndGetResult('auth|', makeAppendAction('title:'))
+    expect(result).toBe('title:')
+  })
+
+  test('replaces partial field mid-word', () => {
+    const result = applyAndGetResult('au|th', makeAppendAction('title:'))
+    expect(result).toBe('title:')
+  })
+
+  test('replaces partial field and positions cursor after colon', () => {
+    const result = applyAndGetResult('auth|', makeAppendAction('title:|'), { showCursor: true })
+    expect(result).toBe('title:|')
+  })
+
+  test('replaces partial field after existing complete condition', () => {
+    const result = applyAndGetResult('genre:"fiction" auth|', makeAppendAction('title:'))
+    expect(result).toBe('genre:"fiction" title:')
+  })
+
+  test('appends when condition is complete (has colon)', () => {
+    const result = applyAndGetResult('title:|', makeAppendAction('genre:'))
+    expect(result).toBe('title:genre:')
+  })
+
+  test('replaces relationship path including trailing dot', () => {
+    // When typing "author." and clicking on "author.bio:", should replace entire "author." with "author.bio:"
+    const result = applyAndGetResult('author.|', makeAppendAction('author.bio:|'), { showCursor: true })
+    expect(result).toBe('author.bio:|')
+  })
+
+  test('replaces relationship path with partial field after dot', () => {
+    // When typing "author.b" and clicking on "author.bio:", should replace entire "author.b" with "author.bio:"
+    const result = applyAndGetResult('author.b|', makeAppendAction('author.bio:|'), { showCursor: true })
+    expect(result).toBe('author.bio:|')
+  })
 })
 
 describe('insert at end (appendDoc replacement)', () => {

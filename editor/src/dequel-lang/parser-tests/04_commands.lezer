@@ -6,11 +6,17 @@ id:oneOf(1,2,3)
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Command(
-      Identifier, 
-      Argument(Number),
-      Argument(Number),
-      Argument(Number),
+    Condition(Field(Identifier), ":", Predicate(Command(
+      Identifier,
+      "(",
+      ArgList(
+        Argument(Number),
+        ",",
+        Argument(Number),
+        ",",
+        Argument(Number)
+      ),
+      ")"
     )))
   )
 )
@@ -23,11 +29,18 @@ id:anyFn(something,1,2)
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Command(
-      Identifier, 
-      Argument(Identifier),
-      Argument(Number),
-      Argument(Number),
+    Condition(Field(Identifier), ":", Predicate(Command(
+      Identifier,
+      "(",
+      ArgList(
+        Argument(Identifier),
+        ",",
+        Argument(Number),
+        ",",
+        Argument(Number)
+      ),
+      ")"
     )))
   )
 )
+

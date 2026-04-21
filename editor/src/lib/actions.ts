@@ -109,18 +109,42 @@ export function applyInsert(ctx: ActionContext, text: string, position: 'cursor'
 
 /**
  * Apply an append action.
- * Appends to the end of the current query with appropriate spacing.
+ * If currently typing a field (partial condition without value), replaces it.
+ * Otherwise appends to the end of the current query with appropriate spacing.
  * The value can contain '|' to indicate cursor position.
  */
 export function applyAppend(ctx: ActionContext, value: string): TransactionSpec {
     if (!ctx.node) return {}
 
+    const cleanValue = value.replace('|', '')
+    const cursorOffset = value.indexOf('|')
+
+    // Check if we're in a partial field (typing a field name but no predicate yet)
+    // This happens when: we're in a Field node, and the condition has no colon yet
+    if (ctx.condition) {
+        const colonNode = ctx.condition.getChild(':')
+        const fieldNode = ctx.condition.getChild('Field')
+
+        // If we have a field but no colon, we're typing a field - replace the entire condition
+        // This handles cases like "author.|" where Field is "author" but there's a trailing dot
+        if (fieldNode && !colonNode) {
+            return {
+                selection: {
+                    anchor: ctx.condition.from + (cursorOffset >= 0 ? cursorOffset : cleanValue.length),
+                },
+                changes: ctx.state.changes({
+                    from: ctx.condition.from,
+                    to: ctx.condition.to,
+                    insert: cleanValue,
+                }),
+            }
+        }
+    }
+
+    // Default: append to end of query
     const query = closest('Query', ctx.node) || ctx.node
     const charAt = ctx.state.sliceDoc(ctx.node.to, ctx.node.to + 1)
     const prefix = isWhitespace(charAt) ? '' : ' '
-
-    const cleanValue = value.replace('|', '')
-    const cursorOffset = value.indexOf('|')
     const insertValue = prefix + cleanValue
 
     return {
@@ -186,8 +210,10 @@ export function applySetPredicate(ctx: ActionContext, value: string): Transactio
 
     // Extract existing value to preserve when switching predicates
     // Priority: Command args > Value content (String, Identifier, Number)
+    // New structure: Predicate > Command or Predicate > SimplePredicate > Value
     const currentCommand = predicate?.getChild('Command')
-    const currentValue = predicate?.getChild('Value')
+    const simplePredicate = predicate?.getChild('SimplePredicate')
+    const currentValue = simplePredicate?.getChild('Value')
     const existingArgs = currentCommand
         ? extractCommandArgs(currentCommand, ctx.state.doc)
         : currentValue

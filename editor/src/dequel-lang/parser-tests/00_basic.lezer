@@ -6,8 +6,8 @@ type:markets title:EDEKA
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    Condition(Field, ":", Predicate(Value(Identifier)))
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
   )
 )
 
@@ -19,8 +19,8 @@ type:markets market_id:123
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    Condition(Field, ":", Predicate(Value(Number)))
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
   )
 )
 
@@ -32,8 +32,8 @@ type:markets    title:EDEKA
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    Condition(Field, ":", Predicate(Value(Identifier)))
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
   )
 )
 
@@ -45,8 +45,38 @@ type:markets -title:EDEKA
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    ExcludeCondition(Field, ":", Predicate(Value(Identifier)))
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    ExcludeCondition("-", Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+  )
+)
+
+# line breaks with indentation are allowed
+
+type:markets
+  title:EDEKA
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+  )
+)
+
+# line breaks with multiple conditions
+
+type:markets
+  title:EDEKA
+  -status:closed
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    ExcludeCondition("-", Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
   )
 )
 
@@ -61,10 +91,10 @@ type:markets
 
 QueryList(
   Query(
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    Condition(Field, ":", Predicate(Value(Identifier))),
-    Condition(Field, ":", Predicate(Value(String))),
-    Condition(Field, ":", Predicate(Value(Number))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(String)))),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
   )
 )
 

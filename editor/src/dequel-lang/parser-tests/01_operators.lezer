@@ -1,0 +1,160 @@
+# comparison greater than
+
+age:>18
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+  )
+)
+
+# comparison less than
+
+price:<100
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+  )
+)
+
+# comparison greater than or equal
+
+age:>=21
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+  )
+)
+
+# comparison less than or equal
+
+price:<=50
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(ComparisonPredicate(CompareOp, Value(Number))))
+  )
+)
+
+# range syntax
+
+price:10..50
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(RangePredicate(Value(Number), RangeSep, Value(Number))))
+  )
+)
+
+# range with decimals
+
+price:9.99..19.99
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(RangePredicate(Value(Number), RangeSep, Value(Number))))
+  )
+)
+
+# explicit AND operator
+
+a:1 && b:2
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+    And("&&"),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# explicit OR operator
+
+x:foo || y:bar
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Or("||"),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+  )
+)
+
+# word AND operator
+
+a:1 AND b:2
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+    And(And),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# word OR operator
+
+x:foo OR y:bar
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier)))),
+    Or(Or),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Identifier))))
+  )
+)
+
+# lowercase and/or
+
+a:1 and b:2 or c:3
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+    And(And),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+    Or(Or),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+
+# mixed operators
+
+a:1 && b:2 || c:3
+
+==>
+
+QueryList(
+  Query(
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+    And("&&"),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number)))),
+    Or("||"),
+    Condition(Field(Identifier), ":", Predicate(SimplePredicate(Value(Number))))
+  )
+)
+

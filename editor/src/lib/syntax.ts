@@ -89,13 +89,22 @@ export function serializeCondition(parts: Omit<ConditionParts, 'node'>): string 
 /**
  * Extract argument text from a Command node.
  * Returns the text between the parentheses (excluding them).
+ * Returns empty string for commands with empty parens like empty().
+ * Returns null if the node is not a Command.
  */
 export function extractCommandArgs(
   command: SyntaxNode,
   doc: { sliceString: (from: number, to: number) => string }
 ): string | null {
-  const args = command.getChildren('Argument')
-  if (args.length === 0) return null
+  // Command structure: Identifier "(" ArgList? ")"
+  // ArgList structure: Argument ("," Argument)*
+  if (command.name !== 'Command') return null
+
+  const argList = command.getChild('ArgList')
+  if (!argList) return ''  // Empty parens like empty()
+
+  const args = argList.getChildren('Argument')
+  if (args.length === 0) return ''
 
   // Get text from first arg start to last arg end
   const firstArg = args[0]
