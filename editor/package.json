@@ -1,6 +1,6 @@
 {
   "name": "dequel-editor",
-  "version": "0.6.1",
+  "version": "0.8.5",
   "description": "CodeMirror-based editor for Dequel query language",
   "type": "module",
   "main": "./dist/dequel-editor.js",
