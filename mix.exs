@@ -5,7 +5,7 @@ defmodule Dequel.MixProject do
     [
       name: "Dequel",
       app: :dequel,
-      version: "0.8.4",
+      version: "0.8.5",
       elixir: "~> 1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -26,8 +26,9 @@ defmodule Dequel.MixProject do
   end
 
   defp elixirc_paths(:test),
-    do: ["lib", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
+    do: ["lib", "credo_checks", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
 
+  defp elixirc_paths(:dev), do: ["lib", "credo_checks"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
@@ -35,7 +36,7 @@ defmodule Dequel.MixProject do
       {:nimble_parsec, "~> 1.4"},
       {:jason, "~> 1.2"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test]},
       {:telemetry, "~> 1.3"},
       {:ecto_sql, "~> 3.10"},
       {:ecto_sqlite3, "~> 0.16"}
