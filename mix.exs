@@ -13,7 +13,7 @@ defmodule Dequel.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       source_url: "https://github.com/nocksock/dequel",
       docs: [
-        formatters: ["html", "llms"],
+        formatters: ["html"],
         extras: [
           "README.md"
         ]
@@ -26,9 +26,9 @@ defmodule Dequel.MixProject do
   end
 
   defp elixirc_paths(:test),
-    do: ["lib", "credo_checks", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
+    do: ["lib", "test/support", "test/dequel_ecto/support", "test/dequel_ets/support"]
 
-  defp elixirc_paths(:dev), do: ["lib", "credo_checks"]
+  defp elixirc_paths(:dev), do: ["lib"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
