@@ -78,4 +78,12 @@ defmodule Dequel do
   """
   @spec preloads(binary() | tuple()) :: list()
   defdelegate preloads(query), to: Dequel.Preloads, as: :extract
+
+  @doc """
+  Filters a list of records based on a Dequel query. Useful for in-memory 
+  filtering of preloaded structs.
+  """
+  def filter(records, input) do
+    Dequel.Adapter.Ets.FilterImpl.find_all(input, records)
+  end
 end
