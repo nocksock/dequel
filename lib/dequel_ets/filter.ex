@@ -19,7 +19,7 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
         list when is_list(list)  -> 
           expected_value in list
         value -> 
-          Comparators.get_field_value(record, field) == expected_value
+          value == expected_value
         end
     end)
   end
