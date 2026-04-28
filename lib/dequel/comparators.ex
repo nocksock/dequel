@@ -9,7 +9,7 @@ defmodule Dequel.Comparators do
   @doc """
   Gets a field value from a map or struct.
 
-  Handles atoms, strings (converted to existing atoms), and paths (list of atoms).
+  Handles atoms, strings (converted to existing atoms), and paths (list of atoms or strings).
 
   ## Examples
 
@@ -19,18 +19,20 @@ defmodule Dequel.Comparators do
       iex> Dequel.Comparators.get_field_value(%{author: %{name: "Bob"}}, [:author, :name])
       "Bob"
 
+      iex> Dequel.Comparators.get_field_value(%{author: %{name: "Bob"}}, ["author", "name"])
+      "Bob"
+
+      iex> Dequel.Comparators.get_field_value(%{author: nil}, ["author", "name"])
+      nil
+
   """
-  @spec get_field_value(map(), atom() | [atom()] | binary()) :: any()
+  @spec get_field_value(map(), atom() | [atom() | binary()] | binary()) :: any()
   def get_field_value(record, field) when is_atom(field) do
     Map.get(record, field)
   end
 
   def get_field_value(record, path) when is_list(path) do
-    Enum.reduce_while(path, record, fn
-      _field, nil -> {:halt, nil}
-      field, current when is_map(current) -> {:cont, Map.get(current, field)}
-      _field, _ -> {:halt, nil}
-    end)
+    traverse_path(record, path)
   end
 
   def get_field_value(record, field) when is_binary(field) do
@@ -41,6 +43,29 @@ defmodule Dequel.Comparators do
       # Atom doesn't exist - field name not recognized, treat as nil
       nil
   end
+
+
+  defp traverse_path(nil, _path), do: nil
+  defp traverse_path(value, []), do: value
+
+  defp traverse_path(current, [field | rest]) when is_map(current) do
+    traverse_path(get_map_value(current, field), rest)
+  end
+
+  defp traverse_path(current, path) when is_list(current) do
+    # Traverse into each list element and collect results
+    results =
+      current
+      |> Enum.map(&traverse_path(&1, path))
+      |> Enum.reject(&is_nil/1)
+
+    case results do
+      [] -> nil
+      _ -> {:any, results}
+    end
+  end
+
+  defp traverse_path(_current, _path), do: nil
 
   @doc """
   Compares two values using the given comparison operator function.
@@ -185,6 +210,10 @@ defmodule Dequel.Comparators do
   @spec string_match?(any(), binary(), :contains | :starts_with | :ends_with) :: boolean()
   def string_match?(nil, _value, _operation), do: false
 
+  def string_match?({:any, values}, value, operation) do
+    Enum.any?(values, &string_match?(&1, value, operation))
+  end
+
   def string_match?(field_value, value, operation) when is_binary(field_value) do
     case operation do
       :contains -> String.contains?(field_value, value)
@@ -218,5 +247,17 @@ defmodule Dequel.Comparators do
       %DateTime{} = dt -> {:ok, dt}
       _ -> :error
     end
+  end
+
+  # Tries atom key first (most common for Elixir maps), falls back to string key
+  defp get_map_value(map, key) when is_binary(key) do
+    atom_key = String.to_existing_atom(key)
+    Map.get(map, atom_key)
+  rescue
+    ArgumentError -> Map.get(map, key)
+  end
+
+  defp get_map_value(map, key) when is_atom(key) do
+    Map.get(map, key)
   end
 end
