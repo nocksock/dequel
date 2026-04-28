@@ -39,7 +39,10 @@ defmodule Dequel.Parser do
 
   defparsec(
     :query,
-    spaced(parsec(:expression))
+    choice([
+      spaced(parsec(:expression)),
+      empty() |> reduce(:postfix_empty)
+    ])
     |> eos()
   )
 

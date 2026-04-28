@@ -111,6 +111,8 @@ defmodule Dequel.Parser.FieldMatch do
 
   def postfix([field, op, value]), do: {op, [], [field, value]}
 
+  def postfix_empty(_), do: {:empty, [], []}
+
   # Bracket shorthand: single value → equality, multiple values → IN
   def postfix_bracket([field, value]), do: {:==, [], [field, value]}
   def postfix_bracket([field | values]), do: {:in, [], [field, values]}
@@ -181,5 +183,4 @@ defmodule Dequel.Parser.FieldMatch do
   def postfix_between_negated([field, :between, start_val, end_val]) do
     {:not, [], {:between, [], [field, start_val, end_val]}}
   end
-
 end

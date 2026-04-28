@@ -5,16 +5,13 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
 
   alias Dequel.Comparators
 
-  def filter(input, records) when is_binary(input) do
-    # Handle empty/whitespace-only queries - return all records unchanged
-    if String.trim(input) == "" do
-      records
-    else
-      input
-      |> Dequel.Parser.parse!()
-      |> filter(records)
-    end
+  def filter(input, records) when is_binary(input) and is_list(records) do
+    input
+    |> Dequel.Parser.parse!()
+    |> filter(records)
   end
+
+  def filter({:empty, _, _}, records), do: records
 
   def filter({:==, [], [field, value]}, records) do
     Enum.filter(records, fn record ->
