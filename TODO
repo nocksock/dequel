@@ -1,0 +1,3 @@
+- [ ] Rename current ETS Module to List
+- [ ] Add benchee for List
+- [ ] Refactor lib/dequel_ets/filter.ex to use either streams or collecting filter fns
