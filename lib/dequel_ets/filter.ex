@@ -13,9 +13,14 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
 
   def filter({:empty, _, _}, records), do: records
 
-  def filter({:==, [], [field, value]}, records) do
+  def filter({:==, [], [field, expected_value]}, records) do
     Enum.filter(records, fn record ->
-      Comparators.get_field_value(record, field) == value
+      case Comparators.get_field_value(record, field) do
+        list when is_list(list)  -> 
+          expected_value in list
+        value -> 
+          Comparators.get_field_value(record, field) == expected_value
+        end
     end)
   end
 
@@ -93,7 +98,10 @@ defmodule Dequel.Adapter.Ets.FilterImpl do
 
   def filter({:in, [], [field, values]}, records) do
     Enum.filter(records, fn record ->
-      Comparators.get_field_value(record, field) in values
+      case Comparators.get_field_value(record, field) do
+        list when is_list(list) -> Enum.any?(values, &(&1 in list))
+        value -> value in values
+      end
     end)
   end
 

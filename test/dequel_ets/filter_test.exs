@@ -246,6 +246,27 @@ defmodule Dequel.Adapter.EtsTest do
       assert Dequel.filter(all, "-author.name:Alice") == [bob, nobody]
     end
 
+    test "lists in nested" do
+      posts = [
+        %{id: 1, title: "Post 1", tags: ["a", "b"]},
+        %{id: 2, title: "Post 2", tags: ["b", "c"]},
+        %{id: 3, title: "Post 3", tags: []}
+      ]
+
+      a = [Enum.at(posts, 0)]
+      b = [Enum.at(posts, 0), Enum.at(posts, 1)]
+      c = [Enum.at(posts, 1)]
+
+      assert Dequel.filter(posts, "tags:a") == a
+      assert Dequel.filter(posts, "tags:b") == b
+      assert Dequel.filter(posts, """
+        tags:a or tags:c
+      """) == a ++ c
+      assert Dequel.filter(posts, """
+        tags:[a, c]
+      """) == a ++ c
+    end
+
     test "list traversal" do
       tolkien = %{id: 1, name: "tolkien", books: [%{title: "The Hobbit"}, %{title: "Lord of the Rings"}]}
       martin = %{id: 2, name: "martin", books: [%{title: "A Game of Thrones"}]}
